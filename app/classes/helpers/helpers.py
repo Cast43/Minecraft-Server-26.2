@@ -343,26 +343,45 @@ class Helpers:
                     raise
             return java_paths
 
-        # If we get here we're linux so we will use 'update-alternatives'
-        # (If distro does not have update-alternatives then manual input.)
+        # If we get here we're linux so we will use debian 'update-alternatives' or arch's archlinux-java
+        # (If distro does not have update-alternatives/archlinux-java then manual input.)
 
         # Sometimes u-a will be in /sbin on some distros (which is annoying.)
         ua_path = "/usr/bin/update-alternatives"
         if not os.path.exists(ua_path):
             logger.warning("update-alternatives not found! Trying /sbin")
             ua_path = "/usr/sbin/update-alternatives"
+        if os.path.exists(ua_path):
+            # Debian Linux
+            try:
+                paths = subprocess.check_output(
+                    [ua_path, "--list", "java"], encoding="utf8"
+                )
 
-        try:
-            paths = subprocess.check_output(
-                [ua_path, "--list", "java"], encoding="utf8"
-            )
+                if re.match("^(/[^/ ]*)+/?$", paths):
+                    return paths.split("\n")
+            except Exception as e:
+                logger.error(f"Java Detect Error: {e}")
+            return []  # handle all execution paths
 
-            if re.match("^(/[^/ ]*)+/?$", paths):
-                return paths.split("\n")
+        logger.warning("sbin/update-alternatives not found! Trying archlinux-java")
+        ua_path = "/usr/bin/archlinux-java"
+        if not os.path.exists(ua_path):
+            logger.warning("archlinux-java not found! Trying /sbin")
+            ua_path = "/usr/sbin/archlinux-java"
+        if os.path.exists(ua_path):
+            # Arch Linux
+            try:
+                paths = subprocess.check_output([ua_path, "status"], encoding="utf8")
 
-        except Exception as e:
-            logger.error(f"Java Detect Error: {e}")
-            return []
+                if matched := re.findall("(\\bjava-\\d+-[\\w/]+\\b)", paths):
+                    return [
+                        os.path.join(os.path.sep, "usr", "lib", "jvm", m, "bin", "java")
+                        for m in matched
+                    ]
+            except Exception as e:
+                logger.error(f"Java Detect Error: {e}")
+        return []  # handle all execution paths
 
     @staticmethod
     def float_to_string(gbs: float):
