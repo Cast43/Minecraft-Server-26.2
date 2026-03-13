@@ -343,8 +343,10 @@ class Helpers:
                     raise
             return java_paths
 
-        # If we get here we're linux so we will use debian 'update-alternatives' or arch's archlinux-java
-        # (If distro does not have update-alternatives/archlinux-java then manual input.)
+        # If we get here we're linux so we will use one of the following
+        # * Debian: 'update-alternatives'
+        # * Arch: 'archlinux-java'
+        # * Unknown: <manual input>
 
         # Sometimes u-a will be in /sbin on some distros (which is annoying.)
         ua_path = "/usr/bin/update-alternatives"
