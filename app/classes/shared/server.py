@@ -358,7 +358,7 @@ class ServerInstance:
                 seconds=5,
                 id="stats_" + str(self.server_id),
             )
-        except:
+        except ConflictingIdError:
             self.server_scheduler.remove_job("stats_" + str(self.server_id))
             self.server_scheduler.add_job(
                 self.realtime_stats,
