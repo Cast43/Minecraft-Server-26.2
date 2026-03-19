@@ -1,4 +1,6 @@
+import re
 import os
+import glob
 import uuid
 import json
 import time
@@ -11,12 +13,16 @@ from pathlib import PurePosixPath, Path
 
 from app.classes.big_bucket.bigbucket import BigBucket
 from app.classes.big_bucket.hytale import HytaleJSON
-from app.classes.controllers.server_perms_controller import PermissionsServers
+from app.classes.controllers.server_perms_controller import (
+    PermissionsServers,
+    EnumPermissionsServer,
+)
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.websocket_manager import WebSocketManager
 from app.classes.steamcmd.steamcmd import SteamCMD
+from app.classes.models.servers import HelperServers
 
 
 logger = logging.getLogger(__name__)
@@ -107,14 +113,14 @@ class ImportHelpers:
 
     def download_steam_server(self, app_id, server_id, server_dir, server_exe):
         download_thread = threading.Thread(
-            target=self.create_steam_server,
+            target=self._create_steam_server,
             daemon=True,
             args=(app_id, server_id, server_dir, server_exe),
             name=f"{server_id}_download",
         )
         download_thread.start()
 
-    def create_steam_server(self, app_id, server_id, server_dir, server_exe):
+    def _create_steam_server(self, app_id, server_id, server_dir, server_exe):
         if not server_exe:
             server_exe = "game.exe"  # replace with actual exe eventually
 
@@ -152,19 +158,17 @@ class ImportHelpers:
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
 
-    def download_bedrock_server(self, path, new_id):
+    def download_threaded_bedrock_server(self, path, new_id):
         bedrock_url = Helpers.get_latest_bedrock_url()
         download_thread = threading.Thread(
-            target=self.download_threaded_bedrock_server,
+            target=self._download_bedrock_server,
             daemon=True,
             args=(path, new_id, bedrock_url),
             name=f"{new_id}_download",
         )
         download_thread.start()
 
-    def download_threaded_bedrock_server(
-        self, path, new_id, bedrock_url, server_update=False
-    ):
+    def _download_bedrock_server(self, path, new_id, bedrock_url, server_update=False):
         """
         Downloads the latest Bedrock server, unzips it, sets necessary permissions.
 
@@ -212,14 +216,14 @@ class ImportHelpers:
 
     def download_install_threaded_hytale(self, path, new_id):
         download_thread = threading.Thread(
-            target=self.download_install_hytale,
+            target=self._download_install_hytale,
             daemon=True,
             args=(path, new_id),
             name=f"{new_id}_download",
         )
         download_thread.start()
 
-    def download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
+    def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
         server_users = PermissionsServers.get_server_user_list(new_id)
 
         bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
@@ -344,3 +348,243 @@ class ImportHelpers:
                     }
                 }
                 perms_file.write(json.dumps(decoded, indent=4))
+
+    def _install_type_forge(self, server_path: str | Path, new_id: uuid.UUID):
+        server_obj = HelperServers.get_server_obj(new_id)
+        process = subprocess.Popen(
+            server_obj.execution_command,
+            cwd=server_path,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        while process.poll() is None:
+            line = process.stdout.readline().strip()
+            if not line:
+                continue
+
+            line = line.strip()
+            if len(WebSocketManager().clients) > 0:
+                WebSocketManager().broadcast_page_params(
+                    "/panel/server_detail",
+                    {"id": new_id},
+                    "vterm_new_line",
+                    {"line": line + "<br />"},
+                    required_permission=EnumPermissionsServer.TERMINAL,
+                )
+        try:
+            # Getting the forge version from the executable command
+            version = re.findall(
+                r"(?:forge|neoforge)-installer-([0-9\.]+)((?:)|"
+                r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
+                server_obj.execution_command,
+            )
+            version_info = re.findall(
+                r"(forge|neoforge)-installer-([0-9\.]+)((?:)|"
+                r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
+                server_obj.execution_command,
+            )
+            version_param = version_info[0][1].split(".")
+            version_major = int(version_param[0])
+            version_minor = int(version_param[1])
+            if len(version_param) > 2:
+                version_sub = int(version_param[2])
+            else:
+                version_sub = 0
+
+            # Checking which version we are with
+            if version_major <= 1 and version_minor < 17:
+                # OLD VERSION < 1.17
+
+                # Retrieving the executable jar filename
+                file_path = glob.glob(
+                    f"{server_obj.path}/" f"{version_info[0][0]}-{version[0][1]}*.jar"
+                )[0]
+                file_name = re.findall(
+                    r"(forge[-0-9.]+.jar)",
+                    file_path,
+                )[0]
+
+                # Let's set the proper server executable
+                server_obj.executable = os.path.join(file_name)
+
+                # Get memory values
+                memory_values = re.findall(
+                    r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
+                    server_obj.execution_command,
+                )
+
+                # Now lets set up the new run command.
+                # This is based off the run.sh/bat that
+                # Forge uses in 1.17 and <
+                execution_command = (
+                    f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
+                    f' -jar "{file_name}" nogui'
+                )
+                server_obj.execution_command = execution_command
+
+            elif (
+                version_major <= 1 and version_minor <= 20 and version_sub < 3
+            ) or version_info[0][0] == "neoforge":
+                # NEW VERSION >= 1.17 and <= 1.20.2
+                # (no jar file in server dir, only run.bat and run.sh)
+
+                run_file_path = ""
+                if self.helper.is_os_windows():
+                    run_file_path = os.path.join(server_obj.path, "run.bat")
+                else:
+                    run_file_path = os.path.join(server_obj.path, "run.sh")
+
+                if Helpers.check_file_perms(run_file_path) and os.path.isfile(
+                    run_file_path
+                ):
+                    run_file = open(run_file_path, "r", encoding="utf-8")
+                    run_file_text = run_file.read()
+                else:
+                    logger.error(
+                        "ERROR ! Forge install can't read the scripts files."
+                        " Aborting ..."
+                    )
+                    return
+
+                # We get the server command parameters from forge script
+                server_command = re.findall(
+                    r"java @([a-zA-Z0-9_\.]+)"
+                    r" @([a-z./\-]+)"
+                    r"([0-9.\-]+(?:-[a-zA-Z0-9]+)?)"
+                    r"\/\b([a-z_0-9]+\.txt)\b"
+                    r"( .{2,4})?",
+                    run_file_text,
+                )[0]
+
+                version = server_command[2]
+                executable_path = f"{server_command[1]}{server_command[2]}/"
+                # Let's set the proper server executable
+                server_obj.executable = os.path.join(
+                    f"{executable_path}{version_info[0][0]}-{version}" "-server.jar"
+                )
+                # Now lets set up the new run command.
+                # This is based off the run.sh/bat that
+                # Forge uses in 1.17 and <
+                execution_command = (
+                    f"java @{server_command[0]}"
+                    f" @{executable_path}{server_command[3]} nogui"
+                    f" {server_command[4]}"
+                )
+                server_obj.execution_command = execution_command
+            else:
+                # NEW VERSION >= 1.20.3
+                # (executable jar is back in server dir)
+
+                # Retrieving the executable jar filename
+                file_path = glob.glob(f"{server_obj.path}/forge-{version[0][0]}*.jar")[
+                    0
+                ]
+                file_name = re.findall(
+                    r"(forge-[\-0-9.]+-shim.jar)",
+                    file_path,
+                )[0]
+
+                # Let's set the proper server executable
+                server_obj.executable = os.path.join(file_name)
+
+                # Get memory values
+                memory_values = re.findall(
+                    r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
+                    server_obj.execution_command,
+                )
+
+                # Now lets set up the new run command.
+                # This is based off the run.sh/bat that
+                # Forge uses in 1.17 and <
+                execution_command = (
+                    f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
+                    f' -jar "{file_name}" nogui'
+                )
+                server_obj.execution_command = execution_command
+        except:
+            logger.debug("Could not find run file.")
+        HelperServers.update_server(server_obj)
+
+    def download_threaded_exe(self, jar, server, version, path, server_id):
+        update_thread = threading.Thread(
+            name=f"server_download-{server_id}-{server}-{version}",
+            target=self._download_exe,
+            daemon=True,
+            args=(jar, server, version, path, server_id),
+        )
+        update_thread.start()
+
+    def _download_exe(self, jar, server, version, path, server_id):
+        """
+        Downloads a server JAR file and performs post-download actions including
+        notifying users and setting import status.
+
+        This method waits for the server registration to complete, retrieves the
+        download URL for the specified server JAR file.
+
+        Upon successful download, it either runs the installer for
+        Forge servers or simply finishes the import process for other types. It
+        notifies server users about the completion of the download.
+
+        Parameters:
+            - jar (str): The category of the JAR file to download.
+            - server (str): The type of server software (e.g., 'forge', 'paper').
+            - version (str): The version of the server software.
+            - path (str): The local filesystem path where the JAR file will be saved.
+            - server_id (str): The unique identifier for the server being updated or
+                imported, used for notifying users and setting the import status.
+
+        Returns:
+            - bool: True if the JAR file was successfully downloaded and saved;
+                False otherwise.
+
+        The method ensures that the server is properly registered before proceeding
+        with the download and handles exceptions by logging errors and reverting
+        the import status if necessary.
+        """
+        # delaying download for server register to finish
+        time.sleep(3)
+
+        fetch_url = self.big_bucket.get_fetch_url(jar, server, version)
+        if not fetch_url:
+            return False
+
+        server_users = PermissionsServers.get_server_user_list(server_id)
+
+        # Make sure the server is registered before updating its stats
+        while True:
+            try:
+                ServersController.set_import(server_id)
+                for user in server_users:
+                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+                break
+            except Exception as ex:
+                logger.debug(f"Server not registered yet. Delaying download - {ex}")
+
+        # Initiate Download
+        jar_dir = os.path.dirname(path)
+        jar_name = os.path.basename(path)
+        logger.info(fetch_url)
+        success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
+
+        # Post-download actions
+        if success:
+            if server in ("forge-installer", "neoforge-installer"):
+                # If this is the newer Forge version, run the installer
+                return self._install_type_forge(jar_dir, server_id)
+            ServersController.finish_import(server_id)
+
+            # Notify users
+            for user in server_users:
+                WebSocketManager().broadcast_user(
+                    user, "notification", "Executable download finished"
+                )
+                time.sleep(3)  # Delay for user notification
+                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        else:
+            logger.error(f"Unable to save jar to {path} due to download failure.")
+            ServersController.finish_import(server_id)
+
+        return success
