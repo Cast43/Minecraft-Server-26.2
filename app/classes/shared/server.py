@@ -31,7 +31,10 @@ from app.classes.models.servers import HelperServers, Servers
 from app.classes.models.server_stats import HelperServerStats
 from app.classes.models.management import HelpersManagement, HelpersWebhooks
 from app.classes.models.users import HelperUsers
-from app.classes.models.server_permissions import PermissionsServers
+from app.classes.models.server_permissions import (
+    PermissionsServers,
+    EnumPermissionsServer,
+)
 from app.classes.shared.console import Console
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
@@ -173,14 +176,13 @@ class ServerOutBuf:
 
         logger.debug("Broadcasting new virtual terminal line")
 
-        # TODO: Do not send data to clients who do not have permission to view
-        # this server's console
         if len(WebSocketManager().clients) > 0:
             WebSocketManager().broadcast_page_params(
                 SERVER_DETAIL_URL,
                 {"id": self.server_id},
                 "vterm_new_line",
                 {"line": highlighted + "<br />"},
+                required_permission=EnumPermissionsServer.TERMINAL,
             )
 
 
