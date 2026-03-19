@@ -617,7 +617,7 @@ class Controller:
                     )
                     server_obj.executable_update_url = url
                     self.servers.update_server(server_obj)
-                self.big_bucket.download_jar(
+                self.import_helper.download_threaded_exe(
                     create_data["category"],
                     create_data["type"],
                     create_data["version"],
@@ -646,7 +646,7 @@ class Controller:
         elif data["create_type"] == "minecraft_bedrock":
             if root_create_data["create_type"] == "download_exe":
                 ServersController.set_import(new_server_id)
-                self.import_helper.download_bedrock_server(
+                self.import_helper.download_threaded_bedrock_server(
                     new_server_path, new_server_id
                 )
             elif root_create_data["create_type"] == "import_server":
@@ -896,7 +896,7 @@ class Controller:
             server_type="minecraft-bedrock",
         )
         ServersController.set_import(new_id)
-        self.import_helper.download_bedrock_server(new_server_dir, new_id)
+        self.import_helper.download_threaded_bedrock_server(new_server_dir, new_id)
         return new_id
 
     # **********************************************************************************
