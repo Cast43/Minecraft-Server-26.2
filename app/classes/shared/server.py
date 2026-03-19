@@ -337,54 +337,15 @@ class ServerInstance:
         # remove the scheduled job since it's ran
         return self.server_scheduler.remove_job(str(self.server_id))
 
-    def run_threaded_server(self, user_id, forge_install=False):
+    def run_threaded_server(self, user_id):
         # start the server
         self.server_thread = threading.Thread(
             target=self.start_server,
             daemon=True,
-            args=(
-                user_id,
-                forge_install,
-            ),
+            args=(user_id,),
             name=f"{self.server_id}_server_thread",
         )
         self.server_thread.start()
-
-        # Register an shedule for polling server stats when running
-        logger.info(f"Polling server statistics {self.name} every {5} seconds")
-        Console.info(f"Polling server statistics {self.name} every {5} seconds")
-        try:
-            self.server_scheduler.add_job(
-                self.realtime_stats,
-                "interval",
-                seconds=5,
-                id="stats_" + str(self.server_id),
-            )
-        except ConflictingIdError:
-            self.server_scheduler.remove_job("stats_" + str(self.server_id))
-            self.server_scheduler.add_job(
-                self.realtime_stats,
-                "interval",
-                seconds=5,
-                id="stats_" + str(self.server_id),
-            )
-        logger.info(f"Saving server statistics {self.name} every {30} seconds")
-        Console.info(f"Saving server statistics {self.name} every {30} seconds")
-        try:
-            self.server_scheduler.add_job(
-                self.record_server_stats,
-                "interval",
-                seconds=30,
-                id="save_stats_" + str(self.server_id),
-            )
-        except ConflictingIdError:
-            self.server_scheduler.remove_job("save_stats_" + str(self.server_id))
-            self.server_scheduler.add_job(
-                self.record_server_stats,
-                "interval",
-                seconds=30,
-                id="save_stats_" + str(self.server_id),
-            )
 
     def check_startup_java(self):
         logger.info(
@@ -454,16 +415,7 @@ class ServerInstance:
             logger.critical(f"Unable to write/access {self.server_path}")
             Console.critical(f"Unable to write/access {self.server_path}")
 
-    @callback
-    def start_server(self, user_id, forge_install=False):
-        # Clear cached game port so it's recomputed from current config
-        self._game_port_cache = None
-
-        if not user_id:
-            user_lang = self.helper.get_setting("language")
-        else:
-            user_lang = HelperUsers.get_user_lang_by_id(user_id)
-
+    def can_server_start(self, user_id, user_lang):
         # Checks if user is currently attempting to move global server
         # dir
         if self.helper.dir_migration:
@@ -480,7 +432,7 @@ class ServerInstance:
             )
             return False
 
-        if self.stats_helper.get_import_status() and not forge_install:
+        if self.stats_helper.get_import_status():
             if user_id:
                 WebSocketManager().broadcast_user(
                     user_id,
@@ -493,18 +445,267 @@ class ServerInstance:
                 )
             return False
 
+        if self.check_running():
+            logger.error("Server is already running - Cancelling Startup")
+            Console.error("Server is already running - Cancelling Startup")
+            return False
+
+        if self.check_update():
+            logger.error("Server is updating. Terminating startup.")
+            return False
+        return True
+
+    def do_generic_start(self, user_id, user_lang):
+        try:
+            self.process = subprocess.Popen(
+                self.server_command,
+                cwd=self.server_path,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+        except Exception as ex:
+            # Checks for java on initial fail
+            if not self.helper.detect_java():
+                if user_id:
+                    WebSocketManager().broadcast_user(
+                        user_id,
+                        "send_error",
+                        {
+                            "error": self.helper.translation.translate(
+                                "error", "noJava", user_lang
+                            ).format(self.name)
+                        },
+                    )
+                return False
+            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            if user_id:
+                WebSocketManager().broadcast_user(
+                    user_id,
+                    "send_error",
+                    {
+                        "error": self.helper.translation.translate(
+                            "error", "start-error", user_lang
+                        ).format(self.name, ex)
+                    },
+                )
+
+    def do_minecraft_bedrock_start(self, user_id, user_lang):
+        if Helpers.is_os_windows():
+            try:
+                self.process = subprocess.Popen(
+                    self.server_command,
+                    cwd=self.server_path,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+            except Exception as ex:
+                logger.error(
+                    f"Server {self.name} failed to start with error code: {ex}"
+                )
+                if user_id:
+                    WebSocketManager().broadcast_user(
+                        user_id,
+                        "send_error",
+                        {
+                            "error": self.helper.translation.translate(
+                                "error", "start-error", user_lang
+                            ).format(self.name, ex)
+                        },
+                    )
+            return
+
+        logger.info(
+            f"Bedrock and Unix detected for server {self.name}. "
+            f"Switching to appropriate execution string"
+        )
+        my_env = os.environ
+        my_env["LD_LIBRARY_PATH"] = self.server_path
+        try:
+            self.process = subprocess.Popen(
+                self.server_command,
+                cwd=self.server_path,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=my_env,
+            )
+        except Exception as ex:
+            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            if user_id:
+                WebSocketManager().broadcast_user(
+                    user_id,
+                    "send_error",
+                    {
+                        "error": self.helper.translation.translate(
+                            "error", "start-error", user_lang
+                        ).format(self.name, ex)
+                    },
+                )
+
+    def setup_steam_env(self, my_env):
+        if Helpers.check_file_exists(Path(self.server_path, "env.json")):
+            with open(
+                Path(self.server_path, "env.json"), "r", encoding="utf-8"
+            ) as env_file:
+                env_file_data = json.load(env_file)
+                for key, value in env_file_data.items():
+                    if "path" in key.lower():
+                        items_validated = []
+                        for item in value["contents"]:
+                            try:
+                                p = Helpers.validate_traversal(self.server_path, item)
+                            except ValueError:
+                                logger.warning(
+                                    "Path traversal detected on server {self.server_id} for env {k} value {i}, skipping"
+                                )
+                            p = str(p).replace(":", "\\:")
+                            items_validated.append(p)
+                        if my_env.get(key, None):
+                            if value["mode"] == "append":
+                                items_validated.insert(0, my_env[key])
+                            elif value["mode"] == "prepend":
+                                items_validated.append(my_env[key])
+                        my_env[key] = ":".join(items_validated)
+                    else:
+                        items = value["contents"]
+                        if value["mode"] == "append":
+                            items.insert(0, my_env[key])
+                        elif value["mode"] == "prepend":
+                            items.append(my_env[key])
+                        my_env[key] = ",".join(items)
+                        return True
+        return False
+
+    def do_steam_server_start(self, user_id, user_lang):
+        my_env = os.environ
+        env_mod = self.setup_steam_env(my_env)
+        if env_mod:
+            logger.debug(
+                "Launching process for server %s with modified environment %s",
+                self.server_id,
+                my_env,
+            )
+        else:
+            logger.debug(
+                "Launching process for server %s with un-modified environment",
+                self.server_id,
+            )
+        try:
+            self.process = subprocess.Popen(
+                self.server_command,
+                cwd=self.server_path,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=my_env,
+            )
+        except Exception as ex:
+            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            if user_id:
+                WebSocketManager().broadcast_user(
+                    user_id,
+                    "send_start_error",
+                    {
+                        "error": self.helper.translation.translate(
+                            "error", "start-error", user_lang
+                        ).format(self.name, ex)
+                    },
+                )
+                return
+
+    def after_start(self, user_id, user_lang):
+        self.is_crashed = False
+        self.stats_helper.server_crash_reset()
+        self.record_server_stats()
+        check_internet_thread = threading.Thread(
+            target=self.check_internet_thread,
+            daemon=True,
+            args=(
+                user_id,
+                user_lang,
+            ),
+            name=f"{self.name}_Internet",
+        )
+        check_internet_thread.start()
+        # Checks if this is the servers first run.
+        if self.stats_helper.get_first_run():
+            self.stats_helper.set_first_run()
+            loc_server_port = self.stats_helper.get_server_stats()["server_port"]
+            # Sends port reminder message.
+            WebSocketManager().broadcast_user(
+                user_id,
+                "send_error",
+                {
+                    "error": self.helper.translation.translate(
+                        "error", "portReminder", user_lang
+                    ).format(self.name, loc_server_port)
+                },
+            )
+            server_users = PermissionsServers.get_server_user_list(self.server_id)
+            for user in server_users:
+                if user != user_id:
+                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        else:
+            server_users = PermissionsServers.get_server_user_list(self.server_id)
+            for user in server_users:
+                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+
+        # Register an shedule for polling server stats when running
+        logger.info(f"Polling server statistics {self.name} every {5} seconds")
+        Console.info(f"Polling server statistics {self.name} every {5} seconds")
+        try:
+            self.server_scheduler.add_job(
+                self.realtime_stats,
+                "interval",
+                seconds=5,
+                id="stats_" + str(self.server_id),
+            )
+        except ConflictingIdError:
+            self.server_scheduler.remove_job("stats_" + str(self.server_id))
+            self.server_scheduler.add_job(
+                self.realtime_stats,
+                "interval",
+                seconds=5,
+                id="stats_" + str(self.server_id),
+            )
+        logger.info(f"Saving server statistics {self.name} every {30} seconds")
+        Console.info(f"Saving server statistics {self.name} every {30} seconds")
+        try:
+            self.server_scheduler.add_job(
+                self.record_server_stats,
+                "interval",
+                seconds=30,
+                id="save_stats_" + str(self.server_id),
+            )
+        except ConflictingIdError:
+            self.server_scheduler.remove_job("save_stats_" + str(self.server_id))
+            self.server_scheduler.add_job(
+                self.record_server_stats,
+                "interval",
+                seconds=30,
+                id="save_stats_" + str(self.server_id),
+            )
+
+    @callback
+    def start_server(self, user_id):
+        # Clear cached game port so it's recomputed from current config
+        self._game_port_cache = None
+
+        if not user_id:
+            user_lang = self.helper.get_setting("language")
+        else:
+            user_lang = HelperUsers.get_user_lang_by_id(user_id)
+
+        if not self.can_server_start(user_id, user_lang):
+            return
+
         logger.info(
             f"Start command detected. Reloading settings from DB for server {self.name}"
         )
         self.setup_server_run_command()
         # fail safe in case we try to start something already running
-        if self.check_running():
-            logger.error("Server is already running - Cancelling Startup")
-            Console.error("Server is already running - Cancelling Startup")
-            return False
-        if self.check_update():
-            logger.error("Server is updating. Terminating startup.")
-            return False
 
         logger.info(f"Launching Server {self.name} with command {self.server_command}")
         Console.info(f"Launching Server {self.name} with command {self.server_command}")
@@ -523,9 +724,6 @@ class ServerInstance:
                     "eula= true",
                     "eula =true",
                 ]
-        # If this is a forge installer we're running we can bypass the eula checks.
-        if forge_install is True:
-            e_flag = True
         if not e_flag and self.settings["type"] == "minecraft-java":
             if user_id:
                 WebSocketManager().broadcast_user(
@@ -546,166 +744,13 @@ class ServerInstance:
             f"Starting server in {self.server_path} with command: {self.server_command}"
         )
 
-        if (
-            not Helpers.is_os_windows()
-            and HelperServers.get_server_type_by_id(self.server_id)
-            == "minecraft-bedrock"
-        ):
-            logger.info(
-                f"Bedrock and Unix detected for server {self.name}. "
-                f"Switching to appropriate execution string"
-            )
-            my_env = os.environ
-            my_env["LD_LIBRARY_PATH"] = self.server_path
-            try:
-                self.process = subprocess.Popen(
-                    self.server_command,
-                    cwd=self.server_path,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    env=my_env,
-                )
-            except Exception as ex:
-                logger.error(
-                    f"Server {self.name} failed to start with error code: {ex}"
-                )
-                if user_id:
-                    WebSocketManager().broadcast_user(
-                        user_id,
-                        "send_error",
-                        {
-                            "error": self.helper.translation.translate(
-                                "error", "start-error", user_lang
-                            ).format(self.name, ex)
-                        },
-                    )
-                if forge_install:
-                    # Reset import status if failed while forge installing
-                    self.stats_helper.finish_import()
-                return False
-        # ***********************************************
-        # ***********************************************
-        #               STEAM SERVERS
-        # ***********************************************
-        # ***********************************************
-        elif HelperServers.get_server_type_by_id(self.server_id) == "steam_cmd":
-            my_env = os.environ
-            env_mod = False
-            if Helpers.check_file_exists(Path(self.server_path, "env.json")):
-                with open(
-                    Path(self.server_path, "env.json"), "r", encoding="utf-8"
-                ) as env_file:
-                    env_file_data = json.load(env_file)
-                    for key, value in env_file_data.items():
-                        if "path" in key.lower():
-                            items_validated = []
-                            for item in value["contents"]:
-                                try:
-                                    p = Helpers.validate_traversal(
-                                        self.server_path, item
-                                    )
-                                except ValueError:
-                                    logger.warning(
-                                        "Path traversal detected on server {self.server_id} for env {k} value {i}, skipping"
-                                    )
-                                p = str(p).replace(":", "\\:")
-                                items_validated.append(p)
-                            if my_env.get(key, None):
-                                if value["mode"] == "append":
-                                    items_validated.insert(0, my_env[key])
-                                elif value["mode"] == "prepend":
-                                    items_validated.append(my_env[key])
-                            my_env[key] = ":".join(items_validated)
-                        else:
-                            items = value["contents"]
-                            if value["mode"] == "append":
-                                items.insert(0, my_env[key])
-                            elif value["mode"] == "prepend":
-                                items.append(my_env[key])
-                            my_env[key] = ",".join(items)
-                    env_mod = True
-            if env_mod:
-                logger.debug(
-                    "Launching process for server %s with modified environment %s",
-                    self.server_id,
-                    my_env,
-                )
-            else:
-                logger.debug(
-                    "Launching process for server %s with un-modified environment",
-                    self.server_id,
-                )
-            try:
-                self.process = subprocess.Popen(
-                    self.server_command,
-                    cwd=self.server_path,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    env=my_env,
-                )
-            except Exception as ex:
-                logger.error(
-                    f"Server {self.name} failed to start with error code: {ex}"
-                )
-                if user_id:
-                    WebSocketManager().broadcast_user(
-                        user_id,
-                        "send_start_error",
-                        {
-                            "error": self.helper.translation.translate(
-                                "error", "start-error", user_lang
-                            ).format(self.name, ex)
-                        },
-                    )
-                    return
-
-        else:
-            logger.debug(
-                "Starting server %s with unknown type %s",
-                self.server_id,
-                HelperServers.get_server_type_by_id(self.server_id),
-            )
-            try:
-                self.process = subprocess.Popen(
-                    self.server_command,
-                    cwd=self.server_path,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                )
-            except Exception as ex:
-                # Checks for java on initial fail
-                if not self.helper.detect_java():
-                    if user_id:
-                        WebSocketManager().broadcast_user(
-                            user_id,
-                            "send_error",
-                            {
-                                "error": self.helper.translation.translate(
-                                    "error", "noJava", user_lang
-                                ).format(self.name)
-                            },
-                        )
-                    return False
-                logger.error(
-                    f"Server {self.name} failed to start with error code: {ex}"
-                )
-                if user_id:
-                    WebSocketManager().broadcast_user(
-                        user_id,
-                        "send_error",
-                        {
-                            "error": self.helper.translation.translate(
-                                "error", "start-error", user_lang
-                            ).format(self.name, ex)
-                        },
-                    )
-                if forge_install:
-                    # Reset import status if failed while forge installing
-                    self.stats_helper.finish_import()
-                return False
+        match HelperServers.get_server_type_by_id(self.server_id):
+            case "minecraft-java" | "hytale":
+                self.do_generic_start(user_id, user_lang)
+            case "minecraft-bedrock":
+                self.do_minecraft_bedrock_start(user_id, user_lang)
+            case "steam_cmd":
+                self.do_steam_server_start(user_id, user_lang)
 
         out_buf = ServerOutBuf(self.helper, self.process, self.server_id)
 
@@ -722,41 +767,7 @@ class ServerInstance:
         if self.process.poll() is None:
             logger.info(f"Server {self.name} running with PID {self.process.pid}")
             Console.info(f"Server {self.name} running with PID {self.process.pid}")
-            self.is_crashed = False
-            self.stats_helper.server_crash_reset()
-            self.record_server_stats()
-            check_internet_thread = threading.Thread(
-                target=self.check_internet_thread,
-                daemon=True,
-                args=(
-                    user_id,
-                    user_lang,
-                ),
-                name=f"{self.name}_Internet",
-            )
-            check_internet_thread.start()
-            # Checks if this is the servers first run.
-            if self.stats_helper.get_first_run():
-                self.stats_helper.set_first_run()
-                loc_server_port = self.stats_helper.get_server_stats()["server_port"]
-                # Sends port reminder message.
-                WebSocketManager().broadcast_user(
-                    user_id,
-                    "send_error",
-                    {
-                        "error": self.helper.translation.translate(
-                            "error", "portReminder", user_lang
-                        ).format(self.name, loc_server_port)
-                    },
-                )
-                server_users = PermissionsServers.get_server_user_list(self.server_id)
-                for user in server_users:
-                    if user != user_id:
-                        WebSocketManager().broadcast_user(user, "send_start_reload", {})
-            else:
-                server_users = PermissionsServers.get_server_user_list(self.server_id)
-                for user in server_users:
-                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+            self.after_start(user_id, user_lang)
         else:
             logger.warning(
                 f"Server PID {self.process.pid} died right after starting "
@@ -781,10 +792,6 @@ class ServerInstance:
                 self.detect_crash, "interval", seconds=30, id=f"c_{self.server_id}"
             )
 
-        # If this is a forge install we'll call the watcher to do the things
-        if forge_install:
-            self.forge_install_watcher()
-
     def check_internet_thread(self, user_id, user_lang):
         if user_id:
             if not Helpers.check_internet():
@@ -797,173 +804,6 @@ class ServerInstance:
                         )
                     },
                 )
-
-    def forge_install_watcher(self):
-        # Enter for install if that parameter is true
-        while True:
-            # We'll watch the process
-            if self.process.poll() is None:
-                # IF process still has not exited we'll keep looping
-                time.sleep(5)
-                Console.debug("Installing Forge...")
-            else:
-                # Process has exited. Lets do some work to setup the new
-                # run command.
-                # Let's grab the server object we're going to update.
-                server_obj: Servers = HelperServers.get_server_obj(self.server_id)
-
-                # The forge install is done so we can delete that install file.
-                os.remove(os.path.join(server_obj.path, server_obj.executable))
-
-                # We need to grab the exact forge version number.
-                # We know we can find it here in the run.sh/bat script.
-                try:
-                    # Getting the forge version from the executable command
-                    version = re.findall(
-                        r"(?:forge|neoforge)-installer-([0-9\.]+)((?:)|"
-                        r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
-                        server_obj.execution_command,
-                    )
-                    version_info = re.findall(
-                        r"(forge|neoforge)-installer-([0-9\.]+)((?:)|"
-                        r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
-                        server_obj.execution_command,
-                    )
-                    version_param = version_info[0][1].split(".")
-                    version_major = int(version_param[0])
-                    version_minor = int(version_param[1])
-                    if len(version_param) > 2:
-                        version_sub = int(version_param[2])
-                    else:
-                        version_sub = 0
-
-                    # Checking which version we are with
-                    if version_major <= 1 and version_minor < 17:
-                        # OLD VERSION < 1.17
-
-                        # Retrieving the executable jar filename
-                        file_path = glob.glob(
-                            f"{server_obj.path}/"
-                            f"{version_info[0][0]}-{version[0][1]}*.jar"
-                        )[0]
-                        file_name = re.findall(
-                            r"(forge[-0-9.]+.jar)",
-                            file_path,
-                        )[0]
-
-                        # Let's set the proper server executable
-                        server_obj.executable = os.path.join(file_name)
-
-                        # Get memory values
-                        memory_values = re.findall(
-                            r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
-                            server_obj.execution_command,
-                        )
-
-                        # Now lets set up the new run command.
-                        # This is based off the run.sh/bat that
-                        # Forge uses in 1.17 and <
-                        execution_command = (
-                            f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
-                            f' -jar "{file_name}" nogui'
-                        )
-                        server_obj.execution_command = execution_command
-                        Console.debug(SUCCESSMSG)
-
-                    elif (
-                        version_major <= 1 and version_minor <= 20 and version_sub < 3
-                    ) or version_info[0][0] == "neoforge":
-                        # NEW VERSION >= 1.17 and <= 1.20.2
-                        # (no jar file in server dir, only run.bat and run.sh)
-
-                        run_file_path = ""
-                        if self.helper.is_os_windows():
-                            run_file_path = os.path.join(server_obj.path, "run.bat")
-                        else:
-                            run_file_path = os.path.join(server_obj.path, "run.sh")
-
-                        if Helpers.check_file_perms(run_file_path) and os.path.isfile(
-                            run_file_path
-                        ):
-                            run_file = open(run_file_path, "r", encoding="utf-8")
-                            run_file_text = run_file.read()
-                        else:
-                            Console.error(
-                                "ERROR ! Forge install can't read the scripts files."
-                                " Aborting ..."
-                            )
-                            return
-
-                        # We get the server command parameters from forge script
-                        server_command = re.findall(
-                            r"java @([a-zA-Z0-9_\.]+)"
-                            r" @([a-z./\-]+)"
-                            r"([0-9.\-]+(?:-[a-zA-Z0-9]+)?)"
-                            r"\/\b([a-z_0-9]+\.txt)\b"
-                            r"( .{2,4})?",
-                            run_file_text,
-                        )[0]
-
-                        version = server_command[2]
-                        executable_path = f"{server_command[1]}{server_command[2]}/"
-                        # Let's set the proper server executable
-                        server_obj.executable = os.path.join(
-                            f"{executable_path}{version_info[0][0]}-{version}"
-                            "-server.jar"
-                        )
-                        # Now lets set up the new run command.
-                        # This is based off the run.sh/bat that
-                        # Forge uses in 1.17 and <
-                        execution_command = (
-                            f"java @{server_command[0]}"
-                            f" @{executable_path}{server_command[3]} nogui"
-                            f" {server_command[4]}"
-                        )
-                        server_obj.execution_command = execution_command
-                        Console.debug(SUCCESSMSG)
-                    else:
-                        # NEW VERSION >= 1.20.3
-                        # (executable jar is back in server dir)
-
-                        # Retrieving the executable jar filename
-                        file_path = glob.glob(
-                            f"{server_obj.path}/forge-{version[0][0]}*.jar"
-                        )[0]
-                        file_name = re.findall(
-                            r"(forge-[\-0-9.]+-shim.jar)",
-                            file_path,
-                        )[0]
-
-                        # Let's set the proper server executable
-                        server_obj.executable = os.path.join(file_name)
-
-                        # Get memory values
-                        memory_values = re.findall(
-                            r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
-                            server_obj.execution_command,
-                        )
-
-                        # Now lets set up the new run command.
-                        # This is based off the run.sh/bat that
-                        # Forge uses in 1.17 and <
-                        execution_command = (
-                            f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
-                            f' -jar "{file_name}" nogui'
-                        )
-                        server_obj.execution_command = execution_command
-                        Console.debug(SUCCESSMSG)
-                except:
-                    logger.debug("Could not find run file.")
-                    # TODO Use regex to get version and rebuild simple execution
-
-                # We'll update the server with the new information now.
-                HelperServers.update_server(server_obj)
-                self.stats_helper.finish_import()
-                server_users = PermissionsServers.get_server_user_list(self.server_id)
-
-                for user in server_users:
-                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
-                break
 
     def stop_crash_detection(self):
         # This is only used if the crash detection settings change
