@@ -46,6 +46,7 @@ with redirect_stderr(NullWriter()):
 
 logger = logging.getLogger(__name__)
 SUCCESSMSG = "SUCCESS! Forge install completed"
+SERVER_DETAIL_URL = "/panel/server_detail"
 
 
 def extract_backup_info(res):
@@ -166,7 +167,7 @@ class ServerOutBuf:
                 break
 
     def new_line_handler(self, new_line):
-        new_line = re.sub("(\033\\[(0;)?[0-9]*[A-z]?(;[0-9])?m?)", " ", new_line)
+        new_line = re.sub("(\x1b\\[(0;)?\\d*[A-z]?(;\\d)?m?)", " ", new_line)
         new_line = re.sub("[A-z]{2}\b\b", "", new_line)
         highlighted = self.helper.log_colors(html.escape(new_line))
 
@@ -176,7 +177,7 @@ class ServerOutBuf:
         # this server's console
         if len(WebSocketManager().clients) > 0:
             WebSocketManager().broadcast_page_params(
-                "/panel/server_detail",
+                SERVER_DETAIL_URL,
                 {"id": self.server_id},
                 "vterm_new_line",
                 {"line": highlighted + "<br />"},
@@ -1557,7 +1558,7 @@ class ServerInstance:
             ws_params["string"] = message
         for user in server_users:
             WebSocketManager().broadcast_user_page(
-                "/panel/server_detail", user, "update_button_status", ws_params
+                SERVER_DETAIL_URL, user, "update_button_status", ws_params
             )
         current_executable = os.path.join(
             Helpers.get_os_understandable_path(self.settings["path"]),
@@ -1658,7 +1659,7 @@ class ServerInstance:
                 time.sleep(3)
             for user in server_users:
                 WebSocketManager().broadcast_user_page(
-                    "/panel/server_detail",
+                    SERVER_DETAIL_URL,
                     user,
                     "update_button_status",
                     {
@@ -1808,7 +1809,7 @@ class ServerInstance:
             )
 
             WebSocketManager().broadcast_page_params(
-                "/panel/server_detail",
+                SERVER_DETAIL_URL,
                 {"id": str(self.server_id)},
                 "update_server_details",
                 {
