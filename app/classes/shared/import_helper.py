@@ -573,7 +573,7 @@ class ImportHelpers:
         if success:
             if server in ("forge-installer", "neoforge-installer"):
                 # If this is the newer Forge version, run the installer
-                return self._install_type_forge(jar_dir, server_id)
+                self._install_type_forge(jar_dir, server_id)
             ServersController.finish_import(server_id)
 
             # Notify users
