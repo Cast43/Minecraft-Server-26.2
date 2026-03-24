@@ -9,7 +9,6 @@ from app.classes.models.server_permissions import (
     EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
-from app.classes.shared.import_helper import WebSocketManager
 
 logger = logging.getLogger(__name__)
 
@@ -17,9 +16,10 @@ HYTALE_0UTPUT_NAME = "hytale.zip"
 
 
 class HytaleInstaller:
-    def __init__(self, helper, file_helper):
+    def __init__(self, helper, file_helper, websocket_manager):
         self.helper = helper
         self.file_helper = file_helper
+        self.websocket_manager = websocket_manager
 
     def install(self, bb_cache: dict, server_path: Path, new_id: uuid.UUID):
         try:
@@ -29,6 +29,7 @@ class HytaleInstaller:
             install_command = self._get_install_command(
                 server_path, windows_exe, unix_exe
             )
+            print(install_command)
         except KeyError:
             logger.error("Failed to create Hytale server with keyerror")
             return
@@ -96,8 +97,8 @@ class HytaleInstaller:
                 continue
 
             line = line.strip()
-            if len(WebSocketManager().clients) > 0:
-                WebSocketManager().broadcast_page_params(
+            if len(self.websocket_manager().clients) > 0:
+                self.websocket_manager().broadcast_page_params(
                     "/panel/server_detail",
                     {"id": new_id},
                     "vterm_new_line",
@@ -116,7 +117,7 @@ class HytaleInstaller:
                 ) as auth_file:
                     auth_file.write(url_line)
                 for user in server_users:
-                    WebSocketManager().broadcast_user(
+                    self.websocket_manager().broadcast_user(
                         user,
                         "hytale_auth",
                         {"link": line, "server_id": new_id},

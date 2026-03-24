@@ -31,8 +31,12 @@ class ImportHelpers:
         self.file_helper: FileHelpers = file_helper
         self.helper: Helpers = helper
         self.big_bucket = BigBucket(helper)
-        self.modded_installer = ModdedInstaller(self.helper)
-        self.hytale_installer = HytaleInstaller(self.helper, self.file_helper)
+        self.modded_installer = ModdedInstaller(
+            self.helper, ServersController, WebSocketManager
+        )
+        self.hytale_installer = HytaleInstaller(
+            self.helper, self.file_helper, WebSocketManager
+        )
 
     def import_zipped_server(
         self,
