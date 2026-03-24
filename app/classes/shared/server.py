@@ -1444,7 +1444,9 @@ class ServerInstance:
                 self.settings["executable_update_url"], jar_dir, jar_file_name
             )
         elif self.server_object.type == "hytale":
-            self.import_helper.download_install_hytale(self.server_path, self.server_id)
+            self.import_helper._download_install_hytale(
+                self.server_path, self.server_id
+            )
             downloaded = True
         # SteamCMD #####################
         elif HelperServers.get_server_type_by_id(self.server_id) == "steam_cmd":
