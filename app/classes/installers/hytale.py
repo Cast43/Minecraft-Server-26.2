@@ -4,7 +4,10 @@ import logging
 import subprocess
 from pathlib import PurePosixPath, Path
 
-from app.classes.models.server_permissions import PermissionsServers
+from app.classes.models.server_permissions import (
+    PermissionsServers,
+    EnumPermissionsServer,
+)
 from app.classes.big_bucket.hytale import HytaleJSON
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
@@ -102,6 +105,7 @@ class HytaleInstaller:
                     {"id": new_id},
                     "vterm_new_line",
                     {"line": line + "<br />"},
+                    required_permission=EnumPermissionsServer.TERMINAL,
                 )
             if (
                 line.startswith(self.hytale_json.parsing_lines.url_line_start)
