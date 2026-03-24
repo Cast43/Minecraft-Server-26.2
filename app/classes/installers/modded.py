@@ -6,7 +6,6 @@ import subprocess
 from pathlib import Path
 
 from app.classes.web.websocket_handler import WebSocketManager
-from app.classes.controllers.servers_controller import ServersController
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +14,7 @@ class ModdedInstaller:
     def __init__(self, helper):
         self.helper = helper
 
-    def install(self, server_path: str | Path, new_id):
-        server_obj = ServersController.get_server_obj(new_id)
+    def install(self, server_path: str | Path, new_id, server_obj):
         self._run_installer(server_obj, server_path, new_id)
 
         try:

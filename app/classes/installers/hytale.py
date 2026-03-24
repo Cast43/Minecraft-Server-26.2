@@ -9,8 +9,6 @@ from app.classes.models.server_permissions import (
     EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
-from app.classes.controllers.servers_controller import ServersController
-from app.classes.helpers.helpers import Helpers
 from app.classes.web.websocket_handler import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -33,7 +31,6 @@ class HytaleInstaller:
             )
         except KeyError:
             logger.error("Failed to create Hytale server with keyerror")
-            ServersController.finish_import(new_id)
             return
         self._download_component(server_path, unix_exe, windows_exe)
         self._run_installer(install_command, server_path, new_id)
@@ -182,7 +179,9 @@ class HytaleInstaller:
             server_path (str | Path): filesystem location of the server data
         """
         # Make sure we do not overwrite user data
-        if not Helpers.check_file_exists(str(Path(server_path, "permissions.json"))):
+        if not self.helper.check_file_exists(
+            str(Path(server_path, "permissions.json"))
+        ):
             with open(
                 Path(server_path, "permissions.json"), "w", encoding="utf-8"
             ) as perms_file:

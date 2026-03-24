@@ -295,8 +295,9 @@ class ImportHelpers:
         if success:
             match server:
                 case "forge-installer" | "neoforge-installer":
+                    server_obj = ServersController.get_server_obj(server_id)
                     # If this is the newer Forge version, run the installer
-                    self.modded_installer.install(jar_dir, server_id)
+                    self.modded_installer.install(jar_dir, server_id, server_obj)
 
             ServersController.finish_import(server_id)
 
