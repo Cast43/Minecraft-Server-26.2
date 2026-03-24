@@ -5,7 +5,7 @@ import logging
 import subprocess
 from pathlib import Path
 
-from app.classes.web.websocket_handler import WebSocketManager
+from app.classes.shared.import_helper import WebSocketManager, ServersController
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +98,7 @@ class ModdedInstaller:
         server_obj.execution_command = (
             f'java -Xms{xms} -Xmx{xmx} -jar "{file_name}" nogui'
         )
+        ServersController.update_server(server_obj)
 
     def _handle_mid(self, server_obj, loader):
         run_file = "run.bat" if self.helper.is_os_windows() else "run.sh"
@@ -131,6 +132,7 @@ class ModdedInstaller:
         server_obj.execution_command = (
             f"java @{arg1} @{exec_path}{txt} nogui {extra or ''}"
         )
+        ServersController.update_server(server_obj)
 
         return True
 
@@ -145,3 +147,4 @@ class ModdedInstaller:
         server_obj.execution_command = (
             f'java -Xms{xms} -Xmx{xmx} -jar "{file_name}" nogui'
         )
+        ServersController.update_server(server_obj)

@@ -9,7 +9,7 @@ from app.classes.models.server_permissions import (
     EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
-from app.classes.web.websocket_handler import WebSocketManager
+from app.classes.shared.import_helper import WebSocketManager
 
 logger = logging.getLogger(__name__)
 

@@ -291,6 +291,7 @@ class ImportHelpers:
         logger.info(fetch_url)
         success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
 
+        ServersController.finish_import(server_id)
         # Post-download actions
         if success:
             match server:
@@ -298,8 +299,6 @@ class ImportHelpers:
                     server_obj = ServersController.get_server_obj(server_id)
                     # If this is the newer Forge version, run the installer
                     self.modded_installer.install(jar_dir, server_id, server_obj)
-
-            ServersController.finish_import(server_id)
 
             # Notify users
             for user in server_users:
@@ -310,6 +309,5 @@ class ImportHelpers:
                 WebSocketManager().broadcast_user(user, "send_start_reload", {})
         else:
             logger.error(f"Unable to save jar to {path} due to download failure.")
-            ServersController.finish_import(server_id)
 
         return success
