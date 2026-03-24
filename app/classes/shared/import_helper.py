@@ -1,28 +1,22 @@
-import re
 import os
-import glob
 import uuid
-import json
 import time
-import shlex
 import pathlib
 import logging
 import threading
-import subprocess
-from pathlib import PurePosixPath, Path
+from pathlib import Path
 
 from app.classes.big_bucket.bigbucket import BigBucket
-from app.classes.big_bucket.hytale import HytaleJSON
 from app.classes.controllers.server_perms_controller import (
     PermissionsServers,
-    EnumPermissionsServer,
 )
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.websocket_manager import WebSocketManager
 from app.classes.steamcmd.steamcmd import SteamCMD
-from app.classes.models.servers import HelperServers
+from app.classes.installers.modded import ModdedInstaller
+from app.classes.installers.hytale import HytaleInstaller
 
 
 logger = logging.getLogger(__name__)
@@ -37,6 +31,8 @@ class ImportHelpers:
         self.file_helper: FileHelpers = file_helper
         self.helper: Helpers = helper
         self.big_bucket = BigBucket(helper)
+        self.modded_installer = ModdedInstaller(self.helper)
+        self.hytale_installer = HytaleInstaller(self.helper, self.file_helper)
 
     def import_zipped_server(
         self,
@@ -227,285 +223,11 @@ class ImportHelpers:
         server_users = PermissionsServers.get_server_user_list(new_id)
 
         bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        try:
-            hytale_json = HytaleJSON(bb_cache)
-            unix_exe = PurePosixPath(hytale_json.linux_installer_url).name
-            windows_exe = PurePosixPath(hytale_json.windows_installer_url).name
-        except KeyError:
-            logger.error("Failed to create Hytale server with keyerror")
-            ServersController.finish_import(new_id)
-            return
-        install_command = (
-            f"./{unix_exe} "
-            f"{hytale_json.commands.download_path_command} {HYTALE_0UTPUT_NAME}"
-        )
-        if self.helper.is_os_windows():
-            install_command = (
-                f"{server_path}/{windows_exe} "
-                f"{hytale_json.commands.download_path_command} {HYTALE_0UTPUT_NAME}"
-            )
-            self.file_helper.ssl_get_file(
-                hytale_json.windows_installer_url, server_path, windows_exe
-            )
-        else:
-            self.file_helper.ssl_get_file(
-                hytale_json.linux_installer_url, server_path, unix_exe
-            )
-            os.chmod(Path(server_path, unix_exe), 0o2760)  # set executable permissions
-            install_command = shlex.split(install_command)
-        process = subprocess.Popen(
-            install_command,
-            cwd=server_path,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        url_line = ""
-        while process.poll() is None:
-            line = process.stdout.readline().strip()
-            if not line:
-                continue
+        self.hytale_installer.install(bb_cache, server_path, new_id)
 
-            line = line.strip()
-            # TODO: Do not send data to clients who do not have permission to view
-            # this server's console
-            if len(WebSocketManager().clients) > 0:
-                WebSocketManager().broadcast_page_params(
-                    "/panel/server_detail",
-                    {"id": new_id},
-                    "vterm_new_line",
-                    {"line": line + "<br />"},
-                )
-            if (
-                line.startswith(hytale_json.parsing_lines.url_line_start)
-                and url_line == ""
-            ):
-                url_line = line
-                with open(
-                    Path(server_path, "hytale_install_auth_url.txt"),
-                    "w",
-                    encoding="utf-8",
-                ) as auth_file:
-                    auth_file.write(url_line)
-                for user in server_users:
-                    WebSocketManager().broadcast_user(
-                        user,
-                        "hytale_auth",
-                        {"link": line, "server_id": new_id},
-                    )
-
-        # Unzip downloaded archive.
-        self.file_helper.unzip_file(
-            Path(server_path, HYTALE_0UTPUT_NAME),
-            server_path,
-        )
-        self.install_or_update_monitoring_plugins(new_id, server_path)
         ServersController.finish_import(new_id)
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
-
-    def install_or_update_monitoring_plugins(
-        self, server_id: uuid.UUID, server_path: str | Path
-    ):
-        bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        try:
-            hytale_json = HytaleJSON(bb_cache)
-        except KeyError:
-            logger.error("Failed to download hytale plugins with keyerror")
-            return
-        logger.info("Installing Nitrado Webserver Plugin to server %s", server_id)
-        # make sure our mods dir exists before doing anything
-        # Download webserver plugin required for query plugin
-        self.helper.ensure_dir_exists(Path(server_path, "mods"))
-        self.file_helper.ssl_get_file(
-            hytale_json.plugins.webserver_plugin_url,
-            Path(server_path, "mods"),
-            "nitrado-webserver.jar",
-        )
-        # Download query plugin
-        logger.info("Installing Nitrado Query Plugin to server %s", server_id)
-        self.file_helper.ssl_get_file(
-            hytale_json.plugins.query_plugin_url,
-            Path(server_path, "mods"),
-            "nitrado-query.jar",
-        )
-        self.modify_permissions_json(server_path)
-
-    def modify_permissions_json(self, server_path: str | Path):
-        # Make sure we do not overwrite user data
-        if not Helpers.check_file_exists(str(Path(server_path, "permissions.json"))):
-            with open(
-                Path(server_path, "permissions.json"), "w", encoding="utf-8"
-            ) as perms_file:
-                decoded = {
-                    "groups": {
-                        "ANONYMOUS": [
-                            "nitrado.query.web.read.server",
-                            "nitrado.query.web.read.universe",
-                            "nitrado.query.web.read.players",
-                        ]
-                    }
-                }
-                perms_file.write(json.dumps(decoded, indent=4))
-
-    def _install_type_forge(self, server_path: str | Path, new_id: uuid.UUID):
-        server_obj = HelperServers.get_server_obj(new_id)
-        process = subprocess.Popen(
-            server_obj.execution_command,
-            cwd=server_path,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        while process.poll() is None:
-            line = process.stdout.readline().strip()
-            if not line:
-                continue
-
-            line = line.strip()
-            if len(WebSocketManager().clients) > 0:
-                WebSocketManager().broadcast_page_params(
-                    "/panel/server_detail",
-                    {"id": new_id},
-                    "vterm_new_line",
-                    {"line": line + "<br />"},
-                    required_permission=EnumPermissionsServer.TERMINAL,
-                )
-        try:
-            # Getting the forge version from the executable command
-            version = re.findall(
-                r"(?:forge|neoforge)-installer-([0-9\.]+)((?:)|"
-                r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
-                server_obj.execution_command,
-            )
-            version_info = re.findall(
-                r"(forge|neoforge)-installer-([0-9\.]+)((?:)|"
-                r"(?:-([0-9\.]+)-[a-zA-Z]+)).jar",
-                server_obj.execution_command,
-            )
-            version_param = version_info[0][1].split(".")
-            version_major = int(version_param[0])
-            version_minor = int(version_param[1])
-            if len(version_param) > 2:
-                version_sub = int(version_param[2])
-            else:
-                version_sub = 0
-
-            # Checking which version we are with
-            if version_major <= 1 and version_minor < 17:
-                # OLD VERSION < 1.17
-
-                # Retrieving the executable jar filename
-                file_path = glob.glob(
-                    f"{server_obj.path}/" f"{version_info[0][0]}-{version[0][1]}*.jar"
-                )[0]
-                file_name = re.findall(
-                    r"(forge[-0-9.]+.jar)",
-                    file_path,
-                )[0]
-
-                # Let's set the proper server executable
-                server_obj.executable = os.path.join(file_name)
-
-                # Get memory values
-                memory_values = re.findall(
-                    r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
-                    server_obj.execution_command,
-                )
-
-                # Now lets set up the new run command.
-                # This is based off the run.sh/bat that
-                # Forge uses in 1.17 and <
-                execution_command = (
-                    f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
-                    f' -jar "{file_name}" nogui'
-                )
-                server_obj.execution_command = execution_command
-
-            elif (
-                version_major <= 1 and version_minor <= 20 and version_sub < 3
-            ) or version_info[0][0] == "neoforge":
-                # NEW VERSION >= 1.17 and <= 1.20.2
-                # (no jar file in server dir, only run.bat and run.sh)
-
-                run_file_path = ""
-                if self.helper.is_os_windows():
-                    run_file_path = os.path.join(server_obj.path, "run.bat")
-                else:
-                    run_file_path = os.path.join(server_obj.path, "run.sh")
-
-                if Helpers.check_file_perms(run_file_path) and os.path.isfile(
-                    run_file_path
-                ):
-                    run_file = open(run_file_path, "r", encoding="utf-8")
-                    run_file_text = run_file.read()
-                else:
-                    logger.error(
-                        "ERROR ! Forge install can't read the scripts files."
-                        " Aborting ..."
-                    )
-                    return
-
-                # We get the server command parameters from forge script
-                server_command = re.findall(
-                    r"java @([a-zA-Z0-9_\.]+)"
-                    r" @([a-z./\-]+)"
-                    r"([0-9.\-]+(?:-[a-zA-Z0-9]+)?)"
-                    r"\/\b([a-z_0-9]+\.txt)\b"
-                    r"( .{2,4})?",
-                    run_file_text,
-                )[0]
-
-                version = server_command[2]
-                executable_path = f"{server_command[1]}{server_command[2]}/"
-                # Let's set the proper server executable
-                server_obj.executable = os.path.join(
-                    f"{executable_path}{version_info[0][0]}-{version}" "-server.jar"
-                )
-                # Now lets set up the new run command.
-                # This is based off the run.sh/bat that
-                # Forge uses in 1.17 and <
-                execution_command = (
-                    f"java @{server_command[0]}"
-                    f" @{executable_path}{server_command[3]} nogui"
-                    f" {server_command[4]}"
-                )
-                server_obj.execution_command = execution_command
-            else:
-                # NEW VERSION >= 1.20.3
-                # (executable jar is back in server dir)
-
-                # Retrieving the executable jar filename
-                file_path = glob.glob(f"{server_obj.path}/forge-{version[0][0]}*.jar")[
-                    0
-                ]
-                file_name = re.findall(
-                    r"(forge-[\-0-9.]+-shim.jar)",
-                    file_path,
-                )[0]
-
-                # Let's set the proper server executable
-                server_obj.executable = os.path.join(file_name)
-
-                # Get memory values
-                memory_values = re.findall(
-                    r"-Xms([A-Z0-9\.]+) -Xmx([A-Z0-9\.]+)",
-                    server_obj.execution_command,
-                )
-
-                # Now lets set up the new run command.
-                # This is based off the run.sh/bat that
-                # Forge uses in 1.17 and <
-                execution_command = (
-                    f"java -Xms{memory_values[0][0]} -Xmx{memory_values[0][1]}"
-                    f' -jar "{file_name}" nogui'
-                )
-                server_obj.execution_command = execution_command
-        except:
-            logger.debug("Could not find run file.")
-        HelperServers.update_server(server_obj)
 
     def download_threaded_exe(self, jar, server, version, path, server_id):
         update_thread = threading.Thread(
@@ -571,9 +293,11 @@ class ImportHelpers:
 
         # Post-download actions
         if success:
-            if server in ("forge-installer", "neoforge-installer"):
-                # If this is the newer Forge version, run the installer
-                self._install_type_forge(jar_dir, server_id)
+            match server:
+                case "forge-installer" | "neoforge-installer":
+                    # If this is the newer Forge version, run the installer
+                    self.modded_installer.install(jar_dir, server_id)
+
             ServersController.finish_import(server_id)
 
             # Notify users
