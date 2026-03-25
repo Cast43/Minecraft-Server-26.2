@@ -8,8 +8,8 @@ import datetime
 import threading
 import logging
 import subprocess
+import peewee
 import html
-import glob
 import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -813,17 +813,16 @@ class ServerInstance:
             )
 
     def check_internet_thread(self, user_id, user_lang):
-        if user_id:
-            if not Helpers.check_internet():
-                WebSocketManager().broadcast_user(
-                    user_id,
-                    "send_error",
-                    {
-                        "error": self.helper.translation.translate(
-                            "error", "internet", user_lang
-                        )
-                    },
-                )
+        if user_id and not Helpers.check_internet():
+            WebSocketManager().broadcast_user(
+                user_id,
+                "send_error",
+                {
+                    "error": self.helper.translation.translate(
+                        "error", "internet", user_lang
+                    )
+                },
+            )
 
     def stop_crash_detection(self):
         # This is only used if the crash detection settings change
@@ -832,7 +831,7 @@ class ServerInstance:
             logger.info(f"Detected crash detection shut off for server {self.name}")
             try:
                 self.server_scheduler.remove_job("c_" + str(self.server_id))
-            except:
+            except JobLookupError:
                 logger.error(
                     f"Removing crash watcher for server {self.name} failed. "
                     f"Assuming it was never started."
@@ -854,7 +853,7 @@ class ServerInstance:
                 self.server_scheduler.add_job(
                     self.detect_crash, "interval", seconds=30, id=f"c_{self.server_id}"
                 )
-            except:
+            except ConflictingIdError:
                 logger.info(f"Job with id c_{self.server_id} already running...")
 
     def stop_threaded_server(self):
@@ -875,7 +874,7 @@ class ServerInstance:
             logger.info(f"Removing crash watcher for server {self.name}")
             try:
                 self.server_scheduler.remove_job("c_" + str(self.server_id))
-            except:
+            except JobLookupError:
                 logger.error(
                     f"Removing crash watcher for server {self.name} failed. "
                     f"Assuming it was never started."
@@ -1184,10 +1183,9 @@ class ServerInstance:
                 "Found shutdown preference. Delaying"
                 + "backup start. Shutting down server."
             )
-            if not update:
-                if self.check_running():
-                    self.stop_server()
-                    self.was_running = True
+            if not update and self.check_running():
+                self.stop_server()
+                self.was_running = True
 
         backup_thread = threading.Thread(
             target=self.backup_server,
@@ -1647,8 +1645,6 @@ class ServerInstance:
         # only get stats if clients are connected.
         # no point in burning cpu
         if len(WebSocketManager().clients) > 0:
-            total_players = 0
-            max_players = 0
             servers_ping = []
             raw_ping_result = []
             raw_ping_result = self.get_raw_server_stats(self.server_id)
@@ -1707,8 +1703,6 @@ class ServerInstance:
                     "players_cache": self.player_cache,
                 },
             )
-            total_players += int(raw_ping_result.get("online"))
-            max_players += int(raw_ping_result.get("max"))
 
             # self.record_server_stats()
 
@@ -1717,7 +1711,7 @@ class ServerInstance:
                     WebSocketManager().broadcast_page(
                         "/panel/dashboard", "update_server_status", servers_ping
                     )
-                except:
+                except RuntimeError:
                     Console.critical("Can't broadcast server status to websocket")
 
     def check_backup_by_id(self, backup_id: str) -> bool:
@@ -1728,7 +1722,49 @@ class ServerInstance:
                 return True
         return False
 
-    def _get_game_port(self, server_type, server_port, server_path, execution_command):
+    def _get_hytale_port(self) -> int:
+        # Try to parse --bind 0.0.0.0:<port> from the execution command
+        if self.settings["execution_command"]:
+            bind_match = re.search(
+                r"--bind\s+[\d.]+:(\d+)", self.settings["execution_command"]
+            )
+            if bind_match:
+                game_port = int(bind_match.group(1))
+            else:
+                # Fallback: Hytale query port is game port + 3
+                game_port = self.settings["server_port"] - 3
+        else:
+            game_port = self.settings["server_port"] - 3
+        return game_port
+
+    def _get_mc_java_port(self):
+        game_port = self.settings["server_port"]
+        # Try to read server-port from server.properties
+        properties_path = os.path.join(self.settings["path"], "server.properties")
+        try:
+            with open(properties_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("server-port="):
+                        game_port = int(line.split("=", 1)[1].strip())
+                        break
+        except FileNotFoundError:
+            logger.warning(
+                "server.properties not found at %s for server %s"
+                " — unable to parse game port",
+                properties_path,
+                self.server_id,
+            )
+        except (ValueError, OSError) as e:
+            logger.warning(
+                "Failed to parse game port from %s for server %s: %s",
+                properties_path,
+                self.server_id,
+                e,
+            )
+        return game_port
+
+    def _get_game_port(self):
         """Derive the game port from server config, cached per server lifecycle.
 
         The monitoring/query port stored in the DB may differ from the port
@@ -1738,45 +1774,14 @@ class ServerInstance:
         if self._game_port_cache is not None:
             return self._game_port_cache
 
-        game_port = server_port
+        game_port = self.settings["server_port"]
 
-        match server_type:
+        match self.settings["type"]:
             case "hytale":
-                # Try to parse --bind 0.0.0.0:<port> from the execution command
-                if execution_command:
-                    bind_match = re.search(r"--bind\s+[\d.]+:(\d+)", execution_command)
-                    if bind_match:
-                        game_port = int(bind_match.group(1))
-                    else:
-                        # Fallback: Hytale query port is game port + 3
-                        game_port = server_port - 3
-                else:
-                    game_port = server_port - 3
+                game_port = self._get_hytale_port()
 
             case "minecraft-java":
-                # Try to read server-port from server.properties
-                properties_path = os.path.join(server_path, "server.properties")
-                try:
-                    with open(properties_path, "r", encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if line.startswith("server-port="):
-                                game_port = int(line.split("=", 1)[1].strip())
-                                break
-                except FileNotFoundError:
-                    logger.warning(
-                        "server.properties not found at %s for server %s"
-                        " — unable to parse game port",
-                        properties_path,
-                        self.server_id,
-                    )
-                except (ValueError, OSError) as e:
-                    logger.warning(
-                        "Failed to parse game port from %s for server %s: %s",
-                        properties_path,
-                        self.server_id,
-                        e,
-                    )
+                game_port = self._get_mc_java_port()
 
         self._game_port_cache = game_port
         return game_port
@@ -1802,12 +1807,7 @@ class ServerInstance:
         internal_ip = server["server_ip"]
         server_port = server["server_port"]
         server_name = server.get("server_name", f"ID#{server_id}")
-        game_port = self._get_game_port(
-            server_type,
-            server_port,
-            server.get("path", ""),
-            server.get("execution_command", ""),
-        )
+        game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{server}' on {internal_ip}:{server_port}")
         if server_type in ("minecraft-bedrock", "raknet"):
@@ -1817,7 +1817,7 @@ class ServerInstance:
         else:
             try:
                 int_mc_ping = ping(internal_ip, int(server_port))
-            except:
+            except OSError:
                 int_mc_ping = False
 
         int_data = False
@@ -1911,7 +1911,7 @@ class ServerInstance:
 
         try:
             server = HelperServers.get_server_obj(server_id)
-        except:
+        except peewee.DoesNotExist:
             return {
                 "id": server_id,
                 "started": False,
@@ -1950,12 +1950,7 @@ class ServerInstance:
 
         internal_ip = server_dt["server_ip"]
         server_port = server_dt["server_port"]
-        game_port = self._get_game_port(
-            server_type,
-            server_port,
-            server_dt.get("path", ""),
-            server_dt.get("execution_command", ""),
-        )
+        game_port = self._get_game_port()
 
         logger.debug(f"Pinging server '{self.name}' on {internal_ip}:{server_port}")
         if HelperServers.get_server_type_by_id(server_id) in (
