@@ -780,7 +780,9 @@ class ServerInstance:
         self.is_crashed = False
         self.stats_helper.server_crash_reset()
 
-        self.start_time = str(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"))
+        self.start_time = str(
+            datetime.datetime.now(tz=ZoneInfo("Etc/UTC")).strftime("%Y-%m-%d %H:%M:%S")
+        )
 
         if self.process.poll() is None:
             logger.info(f"Server {self.name} running with PID {self.process.pid}")
