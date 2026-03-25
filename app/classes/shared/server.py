@@ -50,6 +50,7 @@ with redirect_stderr(NullWriter()):
 logger = logging.getLogger(__name__)
 SUCCESSMSG = "SUCCESS! Forge install completed"
 SERVER_DETAIL_URL = "/panel/server_detail"
+EULA_FILE = "eula.txt"
 
 
 def extract_backup_info(res):
@@ -159,12 +160,10 @@ class ServerOutBuf:
         )
         while True:
             if self.proc.poll() is None:
-                char = text_wrapper.read(1)  # modified
-                # TODO: we may want to benchmark reading in blocks and userspace
-                # processing it later, reads are kind of expensive as a syscall
+                char = text_wrapper.read(1)
                 self.process_byte(char)
             else:
-                flush = text_wrapper.read()  # modified
+                flush = text_wrapper.read()
                 for char in flush:
                     self.process_byte(char)
                 break
@@ -544,39 +543,58 @@ class ServerInstance:
                     },
                 )
 
-    def setup_steam_env(self, my_env):
-        if Helpers.check_file_exists(Path(self.server_path, "env.json")):
+    def _get_env_file(self) -> dict:
+        try:
             with open(
                 Path(self.server_path, "env.json"), "r", encoding="utf-8"
             ) as env_file:
-                env_file_data = json.load(env_file)
-                for key, value in env_file_data.items():
-                    if "path" in key.lower():
-                        items_validated = []
-                        for item in value["contents"]:
-                            try:
-                                p = Helpers.validate_traversal(self.server_path, item)
-                            except ValueError:
-                                logger.warning(
-                                    "Path traversal detected on server {self.server_id} for env {k} value {i}, skipping"
-                                )
-                            p = str(p).replace(":", "\\:")
-                            items_validated.append(p)
-                        if my_env.get(key, None):
-                            if value["mode"] == "append":
-                                items_validated.insert(0, my_env[key])
-                            elif value["mode"] == "prepend":
-                                items_validated.append(my_env[key])
-                        my_env[key] = ":".join(items_validated)
-                    else:
-                        items = value["contents"]
-                        if value["mode"] == "append":
-                            items.insert(0, my_env[key])
-                        elif value["mode"] == "prepend":
-                            items.append(my_env[key])
-                        my_env[key] = ",".join(items)
-                        return True
-        return False
+                return json.load(env_file)
+        except (OSError, json.JSONDecodeError):
+            logger.error("Failed to capture steamCMD env file. Returning empty dict")
+            return {}
+
+    def _validate_env_contents(self, value: dict, key: str) -> list:
+        items_validated = []
+        for item in value["contents"]:
+            try:
+                p = Helpers.validate_traversal(self.server_path, item)
+                p = str(p).replace(":", "\\:")
+                items_validated.append(p)
+            except ValueError:
+                logger.warning(
+                    (
+                        "Path traversal detected on server "
+                        "%s for env %s value %s, skipping"
+                    ),
+                    self.server_id,
+                    key,
+                    item,
+                )
+        return items_validated
+
+    def setup_steam_env(self, my_env):
+        env_file_data = self._get_env_file()
+
+        for key, value in env_file_data.items():
+            is_path = "path" in key.lower()
+
+            items = (
+                self._validate_env_contents(value, key)
+                if is_path
+                else list(value["contents"])
+            )
+
+            existing = my_env.get(key)
+            if existing:
+                if value["mode"] == "append":
+                    items = [existing, *items]
+                elif value["mode"] == "prepend":
+                    items = [*items, existing]
+
+            separator = ":" if is_path else ","
+            my_env[key] = separator.join(items)
+
+        return True
 
     def do_steam_server_start(self, user_id, user_lang):
         my_env = os.environ
@@ -713,9 +731,9 @@ class ServerInstance:
         # Checks for eula. Creates one if none detected.
         # If EULA is detected and not set to true we offer to set it true.
         e_flag = False
-        if Helpers.check_file_exists(os.path.join(self.settings["path"], "eula.txt")):
+        if Helpers.check_file_exists(os.path.join(self.settings["path"], EULA_FILE)):
             with open(
-                os.path.join(self.settings["path"], "eula.txt"), "r", encoding="utf-8"
+                os.path.join(self.settings["path"], EULA_FILE), "r", encoding="utf-8"
             ) as f:
                 line = f.readline().lower()
                 e_flag = line in [
@@ -1090,7 +1108,7 @@ class ServerInstance:
         self.server_scheduler.remove_job("c_" + str(self.server_id))
 
     def agree_eula(self, user_id):
-        eula_file = os.path.join(self.server_path, "eula.txt")
+        eula_file = os.path.join(self.server_path, EULA_FILE)
         with open(eula_file, "w", encoding="utf-8") as f:
             f.write("eula=true")
         self.run_threaded_server(user_id)
