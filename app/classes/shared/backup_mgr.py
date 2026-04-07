@@ -195,7 +195,7 @@ class BackupManager:
         Returns:
              backup_valid (bool): true is backup location is valid
         """
-        server_path = Path(server_inst.server_path).resolve()
+        server_path = Path(server_inst.settings["path"]).resolve()
         backup_target = Path(backup_config["backup_location"]).resolve()
         # Preventing server path from being a parent of backup path
         if server_path in backup_target.parents:
@@ -288,13 +288,13 @@ class BackupManager:
             )
             logger.info(
                 f"Creating backup of server {server.name}"
-                f" (ID#{server.server_id}, path={server.server_path}) "
+                f" (ID#{server.server_id}, path={server.settings['path']}) "
                 f"at '{backup_filename}'"
             )
             excluded_dirs = HelpersManagement.get_excluded_backup_dirs(
                 backup_config["backup_id"]
             )
-            server_dir = Helpers.get_os_understandable_path(server.server_path)
+            server_dir = Helpers.get_os_understandable_path(server.settings["path"])
 
             self.file_helper.make_backup(
                 Helpers.get_os_understandable_path(backup_filename),
@@ -458,7 +458,7 @@ class BackupManager:
 
         # Create backup variables.
         use_compression = backup_config["compress"]
-        source_path = Path(server.server_path)
+        source_path = Path(server.settings["path"])
         backup_repository_path = (
             Path(backup_config["backup_location"]) / "snapshot_backups"
         )

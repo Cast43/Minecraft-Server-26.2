@@ -514,7 +514,7 @@ class PanelHandler(BaseHandler):
                 )
                 server["alert"] = server_obj.last_backup_failed
                 server["update"] = (
-                    server_obj.update_available
+                    server_obj.update_manager.update_available
                     and server["server_data"]["update_watcher"]
                 )  # Only add update notify if user has the watcher enabled
 
@@ -553,7 +553,7 @@ class PanelHandler(BaseHandler):
                     server_id
                 )
                 page_data["backup_failed"] = server_obj.last_backup_failed
-                page_data["update"] = server_obj.update_available
+                page_data["update"] = server_obj.update_manager.update_available
                 page_data["update_next_run"] = server_obj.server_scheduler.get_job(
                     f"{server_obj.server_id}_update_watcher"
                 ).next_run_time.strftime("%m/%d/%Y, %H:%M:%S")

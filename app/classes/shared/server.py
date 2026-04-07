@@ -39,8 +39,8 @@ from app.classes.remote_stats.ping import ping, ping_raknet
 from app.classes.remote_stats.stats import Stats
 from app.classes.shared.console import Console
 from app.classes.shared.null_writer import NullWriter
+from app.classes.shared.update_mgr import UpdateManager
 from app.classes.shared.websocket_manager import WebSocketManager
-from app.classes.steamcmd.steamcmd import SteamCMD
 from app.classes.web.webhooks.webhook_factory import WebhookFactory
 
 with redirect_stderr(NullWriter()):
@@ -268,13 +268,14 @@ class ServerInstance:
         self.stats_helper.server_crash_reset()
         self.stats_helper.set_update(False)
         # Start update watcher
+        self.update_manager = UpdateManager(self.import_helper, self.helper)
         self.server_scheduler.add_job(
-            self.check_server_version,
+            self.update_manager.check_server_version,
             "interval",
             hours=12,
             id=f"{str(self.server_id)}_update_watcher",
+            args=[self.settings],
         )
-        self.update_available = False
 
     # **********************************************************************************
     #                               Minecraft Server Management
@@ -306,7 +307,7 @@ class ServerInstance:
         self.name = server_name
         self.settings = server_data_obj
         # Check update relies on up to date information from self.settings.
-        self.check_server_version()
+        self.update_manager.check_server_version(self.settings)
         # Running it after instead of during init function
 
         self.record_server_stats()
@@ -1163,7 +1164,7 @@ class ServerInstance:
 
         restore_thread.start()
 
-    def server_backup_threader(self, backup_id=None, update=False):
+    def server_backup_threader(self, backup_id=None):
         backup_config = self.get_backup_config(backup_id)
         # Check to see if we're already backing up
         if self.check_backup_by_id(backup_config["backup_id"]):
@@ -1183,7 +1184,7 @@ class ServerInstance:
                 "Found shutdown preference. Delaying"
                 + "backup start. Shutting down server."
             )
-            if not update and self.check_running():
+            if self.check_running():
                 self.stop_server()
                 self.was_running = True
 
@@ -1211,7 +1212,7 @@ class ServerInstance:
         logger.info(f"Backup Thread started for server {self.settings['server_name']}.")
 
     @callback
-    def backup_server(self, backup_id) -> dict | bool:
+    def backup_server(self, backup_id) -> dict:
         logger.info(f"Starting server {self.name} (ID {self.server_id}) backup")
         server_users = PermissionsServers.get_server_user_list(self.server_id)
         # Alert the start of the backup to the authorized users.
@@ -1268,7 +1269,7 @@ class ServerInstance:
         reason = backup_status["message"]
         if not backup_name:
             return {
-                "backup_status": "❌",
+                "backup_status": "failed",
                 "backup_error": reason,
             }
         if backup_size:
@@ -1286,10 +1287,10 @@ class ServerInstance:
         backup_status = json.loads(
             HelpersManagement.get_backup_config(backup_id)["status"]
         )
-        last_backup_status = "✅"
+        last_backup_status = "ok"
         reason = ""
         if backup_status["status"] == "Failed":
-            last_backup_status = "❌"
+            last_backup_status = "failed"
             reason = backup_status["message"]
         return {
             "backup_name": backup_name,
@@ -1376,7 +1377,7 @@ class ServerInstance:
     def check_update(self):
         return self.stats_helper.get_server_stats()["updating"]
 
-    def threaded_jar_update(self):
+    def _pre_update_checks(self, was_started: bool):
         server_users = PermissionsServers.get_server_user_list(self.server_id)
         # check to make sure a backup config actually exists before starting the update
         if len(self.management_helper.get_backups_by_server(self.server_id, True)) <= 0:
@@ -1390,28 +1391,9 @@ class ServerInstance:
                 )
             logger.error(f"Back config does not exist for {self.name}. Update Failed.")
             self.stats_helper.set_update(False)
-            return
-        was_started = "-1"
-
-        ###############################
-        # Backup Server ###############
-        ###############################
-
+            return False
         # Get default backup configuration
         backup_config = HelpersManagement.get_default_server_backup(self.server_id)
-        # start threaded backup
-        self.server_backup_threader(backup_config["backup_id"], True)
-
-        # checks if server is running. Calls shutdown if it is running.
-        if self.check_running():
-            was_started = True
-            logger.info(
-                f"Server with PID {self.process.pid} is running. "
-                f"Sending shutdown command"
-            )
-            self.stop_threaded_server()
-        else:
-            was_started = False
         ws_params = {
             "isUpdating": self.check_update(),
             "server_id": self.server_id,
@@ -1428,90 +1410,21 @@ class ServerInstance:
             WebSocketManager().broadcast_user_page(
                 SERVER_DETAIL_URL, user, "update_button_status", ws_params
             )
-        current_executable = os.path.join(
-            Helpers.get_os_understandable_path(self.settings["path"]),
-            self.settings["executable"],
-        )
-        backing_up = True
-        # wait for backup
-        while backing_up:
-            # Check to see if we're already backing up
-            backing_up = self.check_backup_by_id(backup_config["backup_id"])
-            time.sleep(2)
-
-        # check if backup was successful
-        backup_status = json.loads(
-            HelpersManagement.get_backup_config(backup_config["backup_id"])["status"]
-        )["status"]
-        if backup_status == "Failed":
+        # start backup
+        backup_result = self.backup_server(backup_config["backup_id"])
+        if backup_result["backup_status"] == "failed":
             for user in server_users:
                 WebSocketManager().broadcast_user(
                     user,
                     "notification",
-                    "Backup failed for " + self.name + ". canceling update.",
+                    f"Backup failed for {self.name}. Canceling update.",
                 )
             self.stats_helper.set_update(False)
-            return
-        server_type = HelperServers.get_server_type_by_id(self.server_id)
-        # lets download the files
-        if server_type == "minecraft-java":
-            jar_dir = os.path.dirname(current_executable)
-            jar_file_name = os.path.basename(current_executable)
+            return False
+        return True
 
-            downloaded = FileHelpers.ssl_get_file(
-                self.settings["executable_update_url"], jar_dir, jar_file_name
-            )
-        elif self.server_object.type == "hytale":
-            self.import_helper._download_install_hytale(
-                self.server_path, self.server_id
-            )
-            downloaded = True
-        # SteamCMD #####################
-        elif HelperServers.get_server_type_by_id(self.server_id) == "steam_cmd":
-            try:
-                # Set our storage locations
-                steamcmd_path = os.path.join(self.settings["path"], "steamcmd_files")
-                gamefiles_path = os.path.join(self.settings["path"], "gameserver_files")
-                app_id = SteamCMD.find_app_id(gamefiles_path)
-
-                # Ensure game and steam directories exist in server directory.
-                self.helper.ensure_dir_exists(steamcmd_path)
-                self.helper.ensure_dir_exists(gamefiles_path)
-
-                # Set the SteamCMD install directory for next install.
-                self.steam = SteamCMD(steamcmd_path)
-
-                # Install the game server files.
-                self.steam.app_update(app_id, gamefiles_path, validate=True)
-                downloaded = True
-            except ValueError as e:
-                logger.critical(
-                    f"Failed to update SteamCMD Server \n App ID find failed: \n{e}"
-                )
-                downloaded = False
-            except Exception as e:
-                logger.critical(f"Failed to update SteamCMD Server \n{e}")
-                downloaded = False
-        else:  # Bedrock if nothing else
-            # downloads zip from remote url
-            downloaded = False
-            try:
-                bedrock_url = Helpers.get_latest_bedrock_url()
-                if bedrock_url:
-                    # Use the new method for secure download
-                    self.import_helper.download_threaded_bedrock_server(
-                        self.settings["path"], self.server_id, bedrock_url, True
-                    )
-                    downloaded = True
-            except Exception as e:
-                logger.critical(
-                    f"Failed to download bedrock executable for update \n{e}"
-                )
-
-        ################################
-        # Start Upgraded Server ########
-        ################################
-
+    def _after_update(self, downloaded: bool, was_started: bool):
+        server_users = PermissionsServers.get_server_user_list(self.server_id)
         if downloaded:
             logger.info("Executable updated successfully. Starting Server")
 
@@ -1523,7 +1436,7 @@ class ServerInstance:
                     WebSocketManager().broadcast_user(
                         user,
                         "notification",
-                        "Executable update finished for " + self.name,
+                        f"Executable update finished for {self.name}",
                     )
                 # sleep so first notif can completely run
                 time.sleep(3)
@@ -1545,7 +1458,7 @@ class ServerInstance:
                 "Alert",
                 "-1",
                 self.server_id,
-                "Executable update finished for " + self.name,
+                f"Executable update finished for {self.name}",
                 self.settings["server_ip"],
             )
             if was_started:
@@ -1555,13 +1468,16 @@ class ServerInstance:
                 WebSocketManager().broadcast_user(
                     user,
                     "notification",
-                    "Executable update failed for "
-                    + self.name
-                    + ". Check log file for details.",
+                    (
+                        f"Executable update failed for {self.name}"
+                        ". Check log file for details."
+                    ),
                 )
             logger.error("Executable download failed.")
             self.stats_helper.set_update(False)
-        self.check_server_version()  # Check to make sure the update was
+        self.update_manager.check_server_version(
+            self.settings
+        )  # Check to make sure the update was
         # successful and that we match remote
         for user in server_users:
             WebSocketManager().broadcast_user(
@@ -1570,48 +1486,42 @@ class ServerInstance:
                 {"server_id": self.server_id},
             )
 
-    def check_server_version(self):
-        if not self.settings.get("update_watcher"):
-            logger.debug("User has update watcher turned off. Killing out of function")
-            self.update_available = False
-            return
-        current_hash = self.helper.crypto_helper.calculate_file_hash_sha256(
-            str(
-                Path(
-                    str(self.settings.get("path")),
-                    str(self.settings.get("executable")),
-                )
+    def threaded_jar_update(self):
+        downloaded = False
+        was_started = False
+        # checks if server is running. Calls shutdown if it is running.
+        if self.check_running():
+            was_started = True
+            logger.info(
+                f"Server with PID {self.process.pid} is running. "
+                f"Sending shutdown command"
             )
+            self.stop_threaded_server()
+        pre_success = self._pre_update_checks(was_started)
+        if not pre_success:
+            return
+        current_executable = Path(
+            Helpers.get_os_understandable_path(self.settings["path"]),
+            self.settings["executable"],
         )
-        url_pattern = (
-            r"^https:\/\/(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}"
-            r"(\/[a-zA-Z0-9-._~:/?#\[\]@!$&'()*+,;=]*)?$"
-        )
-        try:  # Get hash from Big Bucket remote
-            if re.match(
-                url_pattern,
-                str(self.server_object.executable_update_url),
-            ):
-                response = requests.get(
-                    f"{self.server_object.executable_update_url}.sha256", timeout=1
+        server_type = HelperServers.get_server_type_by_id(self.server_id)
+        # lets download the files
+        match server_type:
+            case "minecraft-java":
+                downloaded = self.update_manager.update_mc_java(
+                    current_executable, self.settings["executable_update_url"]
                 )
-            else:
-                self.update_available = False
-                return logger.error(
-                    "Server version check failed. Invalid url: %s",
-                    self.server_object.executable_update_url,
+            case "hytale":
+                downloaded = self.update_manager.update_hytale(
+                    self.settings["path"], self.server_id
                 )
-        except TimeoutError as why:
-            self.update_available = False
-            return logger.error("Could not capture remote URL hash with error %s", why)
-        remote_hash = None
-        if response.status_code == 200:
-            remote_hash = response.text
-
-        if remote_hash != current_hash:  # Compare hashes
-            self.update_available = True
-        else:
-            self.update_available = False
+            case "steam_cmd":
+                downloaded = self.update_manager.update_steam_cmd(self.settings["path"])
+            case "minecraft-bedrock":  # Bedrock if nothing else
+                downloaded = self.update_manager.update_mc_bedrock(
+                    self.settings["path"], self.server_id
+                )
+        self._after_update(downloaded, was_started)
 
     def start_dir_calc_task(self):
         server_dt = HelperServers.get_server_data_by_id(self.server_id)
