@@ -18,7 +18,6 @@ from app.classes.steamcmd.steamcmd import SteamCMD
 from app.classes.installers.modded import ModdedInstaller
 from app.classes.installers.hytale import HytaleInstaller
 
-
 logger = logging.getLogger(__name__)
 
 HYTALE_0UTPUT_NAME = "hytale.zip"

@@ -33,7 +33,7 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>警告：</strong>Crafty 无法在没有 JavaScript 的情况下使用！",
-        "getMFA": "保护您的服务器！"
+        "getMFA": "启用多因素验证（MFA）以更好地保护您的账号。如果没有 MFA，您的账号有更大的未授权访问风险。"
     },
     "credits": {
         "developmentTeam": "开发团队",
@@ -114,7 +114,10 @@
         "stop": "停止",
         "storage": "存储",
         "version": "版本",
-        "welcome": "欢迎来到 Crafty Controller"
+        "welcome": "欢迎来到 Crafty Controller",
+        "columnSettings": "列设置",
+        "port": "端口",
+        "serverIcon": "服务器图标"
     },
     "datatables": {
         "i18n": {
@@ -202,7 +205,7 @@
         "migration": "Crafty 的主服务器存储正在被迁移到新位置。期间的所有服务器启动已被暂停。请等待我们完成迁移",
         "no-file": "我们似乎找不到请求的文件。请再次检查路径。Crafty 是否拥有了正确的权限？",
         "noInternet": "Crafty 无法访问网络。服务器创建已被禁用。请检查您的网络连接并刷新此页面。",
-        "noJava": "服务器 {} 启动失败，并输出了以下错误：我们检测到 Java 未安装。请先安装 Java 然后再启动服务器。",
+        "noJava": "服务器 {} 启动失败，错误代码：我们检测到 Java 未安装。请先安装 java 再启动服务器。",
         "portReminder": "我们检测到这是你首次运行 {}。请确保从您的路由器/防火墙转发 {} 端口，以使程序可以从公网远程访问。",
         "privMsg": "以及 ",
         "return": "返回仪表板",
@@ -210,7 +213,8 @@
         "start-error": "服务器 {} 启动失败，错误代码为：{}",
         "superError": "您必须作为超级用户来完成此操作。",
         "terribleFailure": "多糟糕的错误！",
-        "duplicateId": "请求令牌必须仅指定 session_id 或 token_id，而非两者。"
+        "duplicateId": "请求令牌必须仅指定 session_id 或 token_id，而非两者。",
+        "experimental": "您必须启用实验性功能以访问此资源"
     },
     "footer": {
         "allRightsReserved": "All rights reserved",
@@ -235,7 +239,9 @@
         "totpSelect": "验证器应用",
         "passwordRecovery": "恢复密码",
         "totp": "输入验证器代码",
-        "accountDisabled": "您的用户账号出于管理原因已被禁用。请联系您的系统管理员以了解详情。"
+        "accountDisabled": "您的用户账号出于管理原因已被禁用。请联系您的系统管理员以了解详情。",
+        "signInWithPasskey": "使用通行密钥登录",
+        "orSeparator": "或"
     },
     "notify": {
         "activityLog": "活动日志",
@@ -283,7 +289,7 @@
         "roles": "角色",
         "save": "保存",
         "select": "选择",
-        "superConfirm": "仅在你希望此用户能访问所有数据（所有用户账户、服务器、面板设置等）的情况下继续。它们甚至可以撤回您的超级用户权限。",
+        "superConfirm": "仅在你希望此用户能访问所有数据（所有用户账号、服务器、面板设置等）的情况下继续。它们甚至可以撤回您的超级用户权限。",
         "superConfirmTitle": "启用超级用户？您确定吗？",
         "title": "Crafty 配置",
         "user": "用户",
@@ -396,7 +402,7 @@
         "serverAutostartDelayDesc": "自动启动前的延迟（如果已在下方启用）",
         "serverCrashDetection": "服务器崩溃检测",
         "serverExecutable": "服务器可执行文件",
-        "serverExecutableDesc": "服务器的可执行文件",
+        "serverExecutableDesc": "您的服务器执行命令中调用的可执行文件名称。这是我们会更新的文件。",
         "serverExecutionCommand": "服务器运行命令",
         "serverExecutionCommandDesc": "在隐藏的终端内要如何启动服务器",
         "serverIP": "服务器 IP",
@@ -418,7 +424,7 @@
         "stopBeforeDeleting": "请在删除之前停止服务器",
         "timeoutExplain1": "Crafty 执行",
         "timeoutExplain2": "指令之后，在强制结束进程前等待您的服务器停止的时间。",
-        "update": "更新可执行文件",
+        "update": "更新服务器",
         "yesDelete": "是，删除",
         "yesDeleteFiles": "是，删除文件"
     },
@@ -477,7 +483,7 @@
         "renameItemQuestion": "新名称应该是什么？",
         "save": "保存",
         "size": "大小",
-        "unsupportedLanguage": "警告：这不是一个受支持的文件类型",
+        "unsupportedLanguage": "此文件类型无法识别。读取与编辑功能可能受限。",
         "unzip": "解压",
         "upload": "上传",
         "uploadTitle": "上传文件到： ",
@@ -497,7 +503,8 @@
         "repull": "从服务器加载最新文件（所有本地更改将会丢失）",
         "serverModified": "在您加载此页面之后，此文件的状态在服务器上发生了改变。请选择一个选项。",
         "type": "类型",
-        "modified": "已修改"
+        "modified": "已修改",
+        "permissions": "权限"
     },
     "serverMetrics": {
         "resetZoom": "重置缩放",
@@ -641,8 +648,14 @@
         "sizeInGB": "大小（以 GB 为单位）",
         "unsupported": "Crafty 不支持低于 1.8 的 Minecraft 版本。你仍可以安装，但结果无法保证。",
         "uploadButton": "上传",
-        "uploadZip": "上传 Zip 文件以导入服务器",
-        "zipPath": "服务器路径"
+        "uploadZip": "上传 Zip 归档",
+        "zipPath": "服务器路径",
+        "authenticate": "点击此处以完成安装并认证您的 Hytale 账号。",
+        "authenticateAway": "Crafty 不会保存您的凭据。此操作会将您导航至 Crafty 之外。",
+        "experimental": "实验性",
+        "experimentalFeature": "这是一个实验性功能",
+        "plugins": "Crafty 将自动安装以下插件以使 Crafty 中的统计功能正常运作：",
+        "zipError": "文件必须为 zip 压缩包！"
     },
     "sidebar": {
         "contribute": "贡献",
@@ -709,7 +722,8 @@
         "editTOTP": "编辑用户 MFA",
         "hints": "启用提示？",
         "totpHeader": "多因素验证",
-        "selfDisable": "您不能禁用您自己的账号"
+        "selfDisable": "您不能禁用您自己的账号",
+        "passkeyHeader": "通行密钥"
     },
     "validators": {
         "backupName": "备份名称必须为字符串，且最短长度为 3。",
@@ -821,11 +835,63 @@
         "logs": "日志",
         "miscellaneous": "其他",
         "superMFA": "要求超级用户启用 MFA",
-        "monitoring": "监控"
+        "monitoring": "监控",
+        "experimental": "启用实验性功能",
+        "time_range_presets": "指标日期选择器的时间范围预设",
+        "sampling_tiers": "图表数据采样等级（控制时间范围内的数据点密度）",
+        "sampling_fallback_divisor": "回落采样分母（用于超过最后一个等级的时间范围）",
+        "enable_passkey_auth": "启用通行密钥（WebAuthn）认证",
+        "passkey_rp_name": "通行密钥依赖方名称（显示于认证器请求中）",
+        "silent_notif_fields": "将更改静默写入日志的用户字段（无通知弹窗）"
     },
     "serverFilesEditor": {
         "saved": "已保存",
         "save": "保存更改",
         "unsavedChanges": "您确定要离开吗？您有未保存的更改。"
+    },
+    "passkey": {
+        "title": "通行密钥认证",
+        "passkeyTitle": "通行密钥",
+        "addNew": "添加通行密钥",
+        "newPasskey": "新建通行密钥",
+        "newName": "为此通行密钥输入名称",
+        "registerTitle": "为您的通行密钥命名",
+        "defaultName": "我的通行密钥",
+        "name": "名称",
+        "deviceType": "设备类型",
+        "createdAt": "已创建",
+        "lastUsed": "上次使用",
+        "actions": "操作",
+        "delete": "删除",
+        "deleteConfirm": "您确定要删除此通行密钥吗？",
+        "yes": "是",
+        "no": "否",
+        "singleDevice": "已绑定至设备",
+        "multiDevice": "已同步",
+        "backedUp": "已备份",
+        "never": "从未使用",
+        "disabled": "通行密钥认证已禁用。联系您的管理员以启用。",
+        "browserNotSupported": "您的浏览器不支持通行密钥",
+        "cancelled": "通行密钥操作已取消",
+        "insecureContext": "通行密钥需要安全连接。使用 https://localhost 或受信任的 SSL 证书。",
+        "registrationFailed": "通行密钥注册失败",
+        "registrationSuccess": "通行密钥注册成功",
+        "success": "成功",
+        "disablePasswordAuth": "禁用密码认证",
+        "disablePasswordAuthDesc": "当启用时，您只能使用通行密钥登录。密码登录将被屏蔽。",
+        "disablePasswordAuthWarning": "警告：您将只能使用通行密钥登录。请确保您注册了备用通行密钥。",
+        "requiresPasskey": "在禁用密码认证之前，您必须注册至少一个通行密钥。",
+        "passwordAuthDisabled": "您的账号已禁用密码认证。",
+        "deleteFailed": "删除通行密钥失败",
+        "updateFailed": "更新设置失败",
+        "verificationFailed": "验证通行密钥注册失败",
+        "loginFailed": "通行密钥登录失败",
+        "authFailed": "认证失败"
+    },
+    "serverUpdate": {
+        "monitorUpdate": "有新版本时提示",
+        "newVersion": "新版本可用",
+        "updateCtr": "更新中心",
+        "upToDate": "已为最新"
     }
 }
