@@ -14,7 +14,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import peewee
-import requests
 from apscheduler.jobstores.base import ConflictingIdError, JobLookupError
 from apscheduler.schedulers.background import BackgroundScheduler
 
