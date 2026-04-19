@@ -1,11 +1,7 @@
 # Changelog
-## --- [4.10.4] - 2026/TBD
-### New features
-TBD
+## --- [4.10.4] - 2026/04/19
 ### Bug fixes
 - Fix servers with registered webhooks failing to start ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1008))
-### Tweaks
-TBD
 <br><br>
 
 ## --- [4.10.3] - 2026/04/13
