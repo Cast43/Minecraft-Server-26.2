@@ -52,9 +52,9 @@ SERVER_DETAIL_URL = "/panel/server_detail"
 EULA_FILE = "eula.txt"
 
 
-def extract_backup_info(res):
+def extract_backup_info(res) -> dict:
     if not isinstance(res, dict):
-        return {}, {}
+        return {}
     return {
         "backup_name": res.get("backup_name"),
         "backup_size": str(res.get("backup_size")),
