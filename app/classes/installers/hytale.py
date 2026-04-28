@@ -29,7 +29,6 @@ class HytaleInstaller:
             install_command = self._get_install_command(
                 server_path, windows_exe, unix_exe
             )
-            print(install_command)
         except KeyError:
             logger.error("Failed to create Hytale server with keyerror")
             return

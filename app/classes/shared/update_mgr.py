@@ -117,4 +117,3 @@ class UpdateManager:
             self.update_available = True
         else:
             self.update_available = False
-        print(self.update_available)
