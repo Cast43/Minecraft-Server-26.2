@@ -631,7 +631,6 @@ class ServerInstance:
                         ).format(self.name, ex)
                     },
                 )
-                return
 
     def after_start(self, user_id, user_lang):
         self.is_crashed = False
