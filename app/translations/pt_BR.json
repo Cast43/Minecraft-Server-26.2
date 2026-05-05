@@ -31,7 +31,8 @@
         "yes": "Sim"
     },
     "base": {
-        "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>Crafty não funciona propriamente quando JavaScript não está habilitado!"
+        "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>Crafty não funciona propriamente quando JavaScript não está habilitado!",
+        "getMFA": "Ative a autenticação multifator (MFA) para proteger melhor a sua conta. Sem a MFA, sua conta ficará mais vulnerável a acessos não autorizados."
     },
     "credits": {
         "developmentTeam": "Equipe de Desenvolvimento",
@@ -530,5 +531,11 @@
         "userRolesDesc": "Cargos que este usuário possui.",
         "userSettings": "Configurações do Usuário",
         "uses": "Número de Usos Permitidos (-1==Sem Limite)"
+    },
+    "configJson": {
+        "allow_nsfw_profile_pictures": "Permitir fotos de perfil NSFW do Gravatar™",
+        "crafty_logs_delete_after_days": "Por quanto tempo o Crafty deve manter os logs do app (dias)",
+        "enable_user_self_delete": "Permitir que usuários deletem suas próprias contas",
+        "experimental": "Habilitar Recursos Experimentais"
     }
 }
