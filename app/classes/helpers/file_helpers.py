@@ -1167,14 +1167,19 @@ class FileHelpers:
         source_file_manifest.close()
 
     def read_chunk(self, chunk_hash: bytes, repo_path: Path) -> bytes:
-        """Reads data out of a data chunk. Set for version 00 chunks. Does not currently
-        handle encryption.
+        """Read data out of a data chunk. Set for version 00 chunks.
+
+        This function does not currently handle encryption.
 
         Args:
             chunk_hash: Hash of chunk to get out of storage.
             repo_path: Path to the backup repository.
 
         Returns: Data in chunk.
+
+        Raises:
+            RuntimeError: If the given chunk can not be read, is not of version 00,
+            or if decompression of the chunk fails.
 
         """
         # Get chunk path.
@@ -1184,22 +1189,25 @@ class FileHelpers:
         try:
             chunk_file: io.BufferedReader = chunk_path.open("rb")
         except OSError as why:
-            raise RuntimeError(
-                f"Unable to read chunk with hash "
-                f"{CryptoHelper.bytes_to_hex(chunk_hash)}.",
-            ) from why
+            err_msg = (f"Unable to read chunk with hash {
+                    CryptoHelper.bytes_to_hex(chunk_hash)
+                }.",)
+
+            raise RuntimeError(err_msg) from why
 
         # confirm version byte is expected value.
         version: bytes = chunk_file.read(1)
         if version != bytes.fromhex("00"):
+            # Chunk is of unexpected version here. Close chunk and panic out.
             chunk_file.close()
-            raise RuntimeError(
-                f"Chunk is of unexpected version. Unable to read. Version was "
-                f"{CryptoHelper.bytes_to_hex(version)}.",
-            )
+            err_msg = f"Chunk is of unexpected version. Unable to read. Version was {
+                CryptoHelper.bytes_to_hex(version)
+            }."
+
+            raise RuntimeError(err_msg)
 
         # Read encryption byte and none. Code not currently used.
-        # One byte for use encryption byte and 12 bytes of nonce.from
+        # One byte for use encryption byte and 12 bytes of nonce.
         _ = chunk_file.read(13)
 
         # Read compression byte.
@@ -1211,10 +1219,11 @@ class FileHelpers:
             try:
                 chunk_data = self.zlib_decompress_bytes(chunk_data)
             except zlib.error as why:
-                raise RuntimeError(
-                    f"Unable to decompress chunk with hash: "
-                    f"{CryptoHelper.bytes_to_hex(chunk_hash)}.",
-                ) from why
+                err_msg = f"Unable to decompress chunk with hash: {
+                    CryptoHelper.bytes_to_hex(chunk_hash)
+                }."
+
+                raise RuntimeError(err_msg) from why
 
         return chunk_data
 
