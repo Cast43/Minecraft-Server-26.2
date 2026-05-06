@@ -515,24 +515,24 @@ class FileHelpers:
         with zipfile.ZipFile(archive_location, "r") as zip_ref:
             zip_ref.extractall(destination)
 
+    @staticmethod
     def send_percentage(
-        self,
-        user,
+        user: list[str],
         broadcast_data: BackupPercentageBroadcast,
-    ):
-        if isinstance(user, str):
+    ) -> None:
+        """Send a websocket percentage to given user(s).
+
+        Args:
+            user: List of user(s) to send broadcast to.
+            broadcast_data: The information to be sent to the users.
+
+        """
+        for usr in user:
             WebSocketManager().broadcast_user(
-                user,
+                usr,
                 "zip_status",
                 broadcast_data.as_dict(),
             )
-        else:
-            for usr in user:
-                WebSocketManager().broadcast_user(
-                    usr,
-                    "zip_status",
-                    broadcast_data.as_dict(),
-                )
 
     def should_extract(
         self,
