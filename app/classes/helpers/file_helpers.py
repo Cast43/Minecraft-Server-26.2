@@ -736,14 +736,13 @@ class FileHelpers:
         return discovered_files
 
     def clean_old_backups(self, num_to_keep: int, backup_repository_path: Path) -> None:
-        """Remove all old backups from the backup repository based on number of backups to
-        keep.
+        """Remove all old backups from the backup repository.
+
+        Based on number of backups to keep.
 
         Args:
             num_to_keep: Number of backups to keep. Keeps latest n.
             backup_repository_path: Path to the backup repository.
-
-        Return:
 
         """
         if num_to_keep <= 0:
@@ -763,7 +762,7 @@ class FileHelpers:
                 datetime.datetime.strptime(
                     manifest_file.name.split(".")[0],
                     self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
-                ),
+                ).astimezone(),
             )
 
         # sort list of manifests.
