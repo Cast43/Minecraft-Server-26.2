@@ -460,17 +460,15 @@ class ApiServersServerBackupsBackupFilesIndexHandler(BaseApiHandler):
                     "error_data": GENERAL_AUTH_ERROR,
                 },
             )
-
+        backup_list = list(
+            map(
+                str,
+                Path(backup_conf["backup_location"], backup_conf["backup_id"]).glob(
+                    "*.zip"
+                ),
+            )
+        )
         return self.finish_json(
             200,
-            {
-                "backups": list(
-                    map(
-                        str,
-                        Path(
-                            backup_conf["backup_location"], backup_conf["backup_id"]
-                        ).glob("*.zip"),
-                    )
-                )
-            },
+            {"total": len(backup_list), "backups": backup_list},
         )
