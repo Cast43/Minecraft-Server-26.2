@@ -15,9 +15,9 @@ from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import certifi
 
-from app.classes.models.server_permissions import PermissionsServers
 from app.classes.helpers.cryptography_helper import CryptoHelper
 from app.classes.helpers.helpers import Helpers
+from app.classes.models.server_permissions import PermissionsServers
 from app.classes.shared.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class FileHelpers:
         mimetypes.add_type("text/x-log", ".log")
 
     def can_unicode_decode(
-        self, path: str, encoding: str = "utf-8", sample_size: int = 4096
+        self, path: str, encoding: str = "utf-8", sample_size: int = 4096,
     ) -> bool:
         """Check to see if file can be unicode decoded. Check for binary files
 
@@ -75,6 +75,7 @@ class FileHelpers:
 
         Returns:
             bool: Returns true if file can be opened, false if not
+
         """
         try:
             with open(
@@ -99,13 +100,13 @@ class FileHelpers:
 
     @staticmethod
     def ssl_get_file(  # pylint: disable=too-many-positional-arguments
-        url, out_path, out_file, max_retries=3, backoff_factor=2, headers=None
+        url, out_path, out_file, max_retries=3, backoff_factor=2, headers=None,
     ):
-        """
-        Downloads a file from a given URL using HTTPS with SSL context verification,
+        """Downloads a file from a given URL using HTTPS with SSL context verification,
         retries with exponential backoff and providing download progress feedback.
 
-        Parameters:
+        Parameters
+        ----------
             - url (str): The URL of the file to download. Must start with "https".
             - out_path (str): The local path where the file will be saved.
             - out_file (str): The name of the file to save the downloaded content as.
@@ -116,10 +117,12 @@ class FileHelpers:
             - headers (dict, optional):
                 A dictionary of HTTP headers to send with the request.
 
-        Returns:
+        Returns
+        -------
             - bool: True if the download was successful, False otherwise.
 
-        Raises:
+        Raises
+        ------
             - urllib.error.URLError: If a URL error occurs during the download.
             - ssl.SSLError: If an SSL error occurs during the download.
         Exception: If an unexpected error occurs during the download.
@@ -127,6 +130,7 @@ class FileHelpers:
         Note:
         This method logs critical errors and download progress information.
         Ensure that the logger is properly configured to capture this information.
+
         """
         if not url.lower().startswith("https"):
             logger.error("SSL File Get - Error: URL must start with https.")
@@ -141,7 +145,7 @@ class FileHelpers:
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/58.0.3029.110 Safari/537.3"
-                )
+                ),
             }
         req = urllib.request.Request(url, headers=headers)
 
@@ -169,7 +173,7 @@ class FileHelpers:
                             if total_size:
                                 progress = (downloaded / total_size) * 100
                                 logger.info(
-                                    f"SSL File Get - Download progress: {progress:.2f}%"
+                                    f"SSL File Get - Download progress: {progress:.2f}%",
                                 )
                                 WebSocketManager().broadcast_page(
                                     SERVER_DETAIL,
@@ -264,7 +268,7 @@ class FileHelpers:
             path_to_destination += ".zip"
         with ZipFile(path_to_destination, "w") as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8"
+                comment, "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, _dirs, files in os.walk(string_zip_path, topdown=True):
                 ziproot = string_zip_path
@@ -285,7 +289,7 @@ class FileHelpers:
                     except Exception as e:
                         logger.warning(
                             f"Error backing up: {os.path.join(root, file)}!"
-                            f" - Error was: {e}"
+                            f" - Error was: {e}",
                         )
         return True
 
@@ -295,7 +299,7 @@ class FileHelpers:
         path_to_destination += ".zip"
         with ZipFile(path_to_destination, "w", ZIP_DEFLATED) as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8"
+                comment, "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, _dirs, files in os.walk(path_to_zip, topdown=True):
                 ziproot = path_to_zip
@@ -316,7 +320,7 @@ class FileHelpers:
                     except Exception as e:
                         logger.warning(
                             f"Error packaging: {os.path.join(root, file)}!"
-                            f" - Error was: {e}"
+                            f" - Error was: {e}",
                         )
 
         return True
@@ -359,7 +363,7 @@ class FileHelpers:
         compression_mode = ZIP_DEFLATED if compressed else ZIP_STORED
         with ZipFile(path_to_destination, "w", compression_mode) as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8"
+                comment, "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, dirs, files in os.walk(path_to_zip, topdown=True):
                 for l_dir in dirs[:]:
@@ -394,7 +398,7 @@ class FileHelpers:
                         except Exception as e:
                             logger.warning(
                                 f"Error backing up: {os.path.join(root, file)}!"
-                                f" - Error was: {e}"
+                                f" - Error was: {e}",
                             )
                     # debug logging for exlusions list
                     else:
@@ -429,8 +433,7 @@ class FileHelpers:
         return True
 
     def move_item_file_or_dir(self, old_dir, new_dir, item) -> None:
-        """
-        Move item to new location if it is either a file or a dir. Will raise
+        """Move item to new location if it is either a file or a dir. Will raise
         shutil.Error for any errors encountered.
 
         Args:
@@ -460,7 +463,7 @@ class FileHelpers:
         # encountered.
         except shutil.Error as why:
             raise RuntimeError(
-                f"Error moving {old_dir} to {new_dir} with information: {why}"
+                f"Error moving {old_dir} to {new_dir} with information: {why}",
             ) from why
 
     @staticmethod
@@ -484,7 +487,7 @@ class FileHelpers:
                 )
 
     def should_extract(
-        self, file, base_include_path, excluded_files, server_update
+        self, file, base_include_path, excluded_files, server_update,
     ) -> bool:
         """Checks a number of inclusions or exclusions against a given file to see
         if that file should be unpacked to the target directory.
@@ -504,6 +507,7 @@ class FileHelpers:
         Returns:
             bool: Whether or not the file from the list should be included in the
             unzipped archive.
+
         """
         if server_update and file in excluded_files:
             return False
@@ -513,7 +517,7 @@ class FileHelpers:
 
         try:
             pathlib.PurePosixPath(file).relative_to(
-                pathlib.PurePosixPath(base_include_path)
+                pathlib.PurePosixPath(base_include_path),
             )
             return True
         except ValueError:
@@ -531,6 +535,7 @@ class FileHelpers:
 
         Returns:
             str | PurePosixPath: returns the original file name or new file name
+
         """
         if base_include_path:  # Rewrite path of zip_ref_info if we have a base include
             try:
@@ -550,8 +555,7 @@ class FileHelpers:
         user_id=None,
         base_include_path=None,
     ) -> None:
-        """
-        Unzips zip file at zip_path to location generated at new_dir based on zip
+        """Unzips zip file at zip_path to location generated at new_dir based on zip
         contents.
 
         Args:
@@ -590,10 +594,10 @@ class FileHelpers:
                         return logger.error("Traversal detected. Dumping out.")
                     # if the file is one of our ignored names we'll skip it
                     if self.should_extract(
-                        file, base_include_path, ignored_names, server_update
+                        file, base_include_path, ignored_names, server_update,
                     ):
                         info.filename = self.get_archive_internal_name(
-                            file, base_include_path
+                            file, base_include_path,
                         )
                         try:
                             zip_ref.extract(info, destination_path)
@@ -618,6 +622,7 @@ class FileHelpers:
 
         Returns:
             _type_: Path
+
         """
         request_path = path
         if not Path(path).is_absolute():
@@ -627,27 +632,26 @@ class FileHelpers:
 
     @staticmethod
     def get_chunk_path_from_hash(chunk_hash: bytes, repository_location: Path) -> Path:
-        """
-        Given chunk hash and repository location, gets full path to chunk in repo.
+        """Given chunk hash and repository location, gets full path to chunk in repo.
 
         Args:
             chunk_hash: Hash of chunk in bytes.
             repository_location: Path to the backup repository.
 
         Return: Path to chunk in repository.
+
         """
         hash_hex = CryptoHelper.bytes_to_hex(chunk_hash)
         if len(hash_hex) != 128:
             raise ValueError(
                 f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(chunk_hash)}"
+                f"Hash: {CryptoHelper.bytes_to_hex(chunk_hash)}",
             )
         return repository_location / "chunks" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
     def get_file_path_from_hash(file_hash: bytes, repository_location: Path) -> Path:
-        """
-        Get path to file manifest file in repository location given file hash and
+        """Get path to file manifest file in repository location given file hash and
         repository location.
 
         Args:
@@ -661,14 +665,13 @@ class FileHelpers:
         if len(hash_hex) != 128:
             raise ValueError(
                 f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(file_hash)}"
+                f"Hash: {CryptoHelper.bytes_to_hex(file_hash)}",
             )
         return repository_location / "files" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
     def discover_files(target_path: Path, exclusions) -> list[Path]:
-        """
-        Returns a list of all files in a target path, ignores empty directories.
+        """Returns a list of all files in a target path, ignores empty directories.
 
         Args:
             target_path: Path to find all files in.
@@ -700,8 +703,7 @@ class FileHelpers:
         return discovered_files
 
     def clean_old_backups(self, num_to_keep: int, backup_repository_path: Path) -> None:
-        """
-        Remove all old backups from the backup repository based on number of backups to
+        """Remove all old backups from the backup repository based on number of backups to
         keep.
 
         Args:
@@ -709,6 +711,7 @@ class FileHelpers:
             backup_repository_path: Path to the backup repository.
 
         Return:
+
         """
         if num_to_keep <= 0:
             return
@@ -727,7 +730,7 @@ class FileHelpers:
                 datetime.datetime.strptime(
                     manifest_file.name.split(".")[0],
                     self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
-                )
+                ),
             )
 
         # sort list of manifests.
@@ -751,23 +754,22 @@ class FileHelpers:
         self.delete_unused_manifest_files(manifests_datetime, manifest_files_list)
 
         files_to_keep, chunks_to_keep = self.create_file_keepers_set(
-            backup_repository_path, manifests_datetime
+            backup_repository_path, manifests_datetime,
         )
 
         # Delete unused files and chunks.
         self.delete_unused_items_from_repository(
-            files_to_keep, backup_repository_path, False
+            files_to_keep, backup_repository_path, False,
         )
         self.delete_unused_items_from_repository(
-            chunks_to_keep, backup_repository_path, True
+            chunks_to_keep, backup_repository_path, True,
         )
 
     @staticmethod
     def delete_unused_items_from_repository(
-        items_to_keep: set[bytes], backup_repository_path: Path, mode: bool
+        items_to_keep: set[bytes], backup_repository_path: Path, mode: bool,
     ) -> None:
-        """
-        Delete unused chunks for files from the backup repository. Switches type based
+        """Delete unused chunks for files from the backup repository. Switches type based
         on mode.
 
         Args:
@@ -776,6 +778,7 @@ class FileHelpers:
             mode: False for file, True for chunks.
 
         Return:
+
         """
         # Mode False = files. True = chunks.
         if mode:
@@ -801,8 +804,7 @@ class FileHelpers:
         manifest_files_to_keep: list[datetime.datetime],
         manifest_files_list: list[Path],
     ) -> None:
-        """
-        Deletes unused backup manifest files from the backup repository.
+        """Deletes unused backup manifest files from the backup repository.
         :param manifest_files_to_keep: List of manifest files to keep. Datetime list of
         backups to keep.
         :param manifest_files_list: List of all files currently found in the backup
@@ -825,21 +827,21 @@ class FileHelpers:
                 manifest_file.unlink(missing_ok=True)
 
     def create_file_keepers_set(
-        self, backup_repository_path: Path, keepers_datetime_list
+        self, backup_repository_path: Path, keepers_datetime_list,
     ) -> (set[bytes], set[bytes]):
-        """
-        Creates a set of files to keep from a given backup manifest files to keep.
+        """Creates a set of files to keep from a given backup manifest files to keep.
 
         Args:
             backup_repository_path: Path to backup repository.
             keepers_datetime_list: List of manifest files to keep. Datetime list.
 
         Returns: Set of files to keep, set of chunks to keep.
+
         """
         files_to_keep = set()
         for keeper_manifest_datetime in keepers_datetime_list:
             backup_time = keeper_manifest_datetime.strftime(
-                self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING
+                self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
             )
             # Open file
             manifest_file_path = (
@@ -849,7 +851,7 @@ class FileHelpers:
                 manifest_file: io.TextIOWrapper = manifest_file_path.open("r")
             except OSError as why:
                 raise RuntimeError(
-                    f"Unable to open manifest file at {manifest_file_path}"
+                    f"Unable to open manifest file at {manifest_file_path}",
                 ) from why
 
             # Check that manifest is readable with this version.
@@ -857,7 +859,7 @@ class FileHelpers:
                 manifest_file.close()
                 raise RuntimeError(
                     f"Backup manifest is not of correct version. Manifest: "
-                    f"{manifest_file_path}."
+                    f"{manifest_file_path}.",
                 )
 
             for line in manifest_file:
@@ -872,17 +874,16 @@ class FileHelpers:
         # Iterate over files to keep, and record all chunks to keep for those files.
         for file_to_keep in files_to_keep:
             file_chunks = self.get_keeper_chunks_file_file_hash(
-                backup_repository_path, file_to_keep
+                backup_repository_path, file_to_keep,
             )
             for chunk in file_chunks:
                 keeper_chunks.add(chunk)
         return files_to_keep, keeper_chunks
 
     def get_keeper_chunks_file_file_hash(
-        self, backup_repository_location: Path, file_hash: bytes
+        self, backup_repository_location: Path, file_hash: bytes,
     ) -> list[bytes]:
-        """
-        Get chunks that should be kept based on given file.
+        """Get chunks that should be kept based on given file.
 
         Args:
             backup_repository_location: Path to the backup repository.
@@ -892,7 +893,7 @@ class FileHelpers:
 
         """
         file_manifest_path: Path = self.get_file_path_from_hash(
-            file_hash, backup_repository_location
+            file_hash, backup_repository_location,
         )
 
         # Open file and read keeper chunks.
@@ -900,13 +901,13 @@ class FileHelpers:
             file_manifest_file = file_manifest_path.open("r")
         except OSError as why:
             raise RuntimeError(
-                f"Unable to open file manifest file at {file_manifest_path}"
+                f"Unable to open file manifest file at {file_manifest_path}",
             ) from why
 
         if file_manifest_file.readline() != "00\n":
             file_manifest_file.close()
             raise RuntimeError(
-                f"File manifest file {file_manifest_path} is not of a readable version."
+                f"File manifest file {file_manifest_path} is not of a readable version.",
             )
 
         output = set()
@@ -922,8 +923,7 @@ class FileHelpers:
 
     @staticmethod
     def get_local_path_with_base(desired_path: Path, base: Path) -> str:
-        """
-        Removes base from given path.
+        """Removes base from given path.
         Given:
             Path: /root/example.md
             Base: /root/
@@ -949,8 +949,7 @@ class FileHelpers:
         file_hash: bytes,
         use_compression: bool,
     ) -> None:
-        """
-        Saves given file to repository location. Will not save duplicate files or
+        """Saves given file to repository location. Will not save duplicate files or
         duplicate chunks. All errors resolve to RuntimeErrors.
 
         Args:
@@ -966,11 +965,11 @@ class FileHelpers:
         # for files to be processed that are larger than available memory.
         try:
             file_manifest_file_location: Path = self.get_file_path_from_hash(
-                file_hash, repository_location
+                file_hash, repository_location,
             )
         except ValueError as why:
             raise RuntimeError(
-                "Provided file hash does not appear to be of improper length!"
+                "Provided file hash does not appear to be of improper length!",
             ) from why
 
         # Exit if file is already present in the backup repository. Ensure that we don't
@@ -991,7 +990,7 @@ class FileHelpers:
         except OSError as why:
             source_file_obj.close()
             raise RuntimeError(
-                f"Unable to open file manifest file at {file_manifest_file_location}."
+                f"Unable to open file manifest file at {file_manifest_file_location}.",
             ) from why
 
         # Begin reading source and writing to manifest file.
@@ -1017,7 +1016,7 @@ class FileHelpers:
                 self.save_chunk(chunk, repository_location, chunk_hash, use_compression)
             except RuntimeError as why:
                 raise RuntimeError(
-                    f"Unable to save chunk with hash {chunk_hash}."
+                    f"Unable to save chunk with hash {chunk_hash}.",
                 ) from why
 
     def save_chunk(
@@ -1027,8 +1026,7 @@ class FileHelpers:
         chunk_hash: bytes,
         use_compression: bool,
     ) -> None:
-        """
-        Saves chunk to backup repository. Space is made in this version of the chunk
+        """Saves chunk to backup repository. Space is made in this version of the chunk
         for encryption, but that functionality is not yet present.
 
         Args:
@@ -1074,10 +1072,9 @@ class FileHelpers:
             raise RuntimeError(f"Unable to save chunk to {file_location}") from why
 
     def read_file(
-        self, file_hash: bytes, target_path: Path, backup_repo_path: Path
+        self, file_hash: bytes, target_path: Path, backup_repo_path: Path,
     ) -> None:
-        """
-        Read file from file manifest, restores to target path.
+        """Read file from file manifest, restores to target path.
 
         Args:
             file_hash: Hash of file to restore.
@@ -1090,12 +1087,12 @@ class FileHelpers:
         # Get file manifest file path.
         try:
             source_file_manifest_path: Path = self.get_file_path_from_hash(
-                file_hash, backup_repo_path
+                file_hash, backup_repo_path,
             )
         except ValueError as why:
             raise RuntimeError(
                 f"Provided hash does not appear to be of proper length. Hash: "
-                f"{CryptoHelper.bytes_to_hex(file_hash)}"
+                f"{CryptoHelper.bytes_to_hex(file_hash)}",
             ) from why
 
         # Ensure target folder exists.
@@ -1113,7 +1110,7 @@ class FileHelpers:
             target_file.close()
             source_file_manifest.close()
             raise RuntimeError(
-                f"File manifest is not of correct version. File: {file_hash}."
+                f"File manifest is not of correct version. File: {file_hash}.",
             )
 
         # Iterate over file manifest and restore file.
@@ -1125,15 +1122,14 @@ class FileHelpers:
                 target_file.close()
                 source_file_manifest.close()
                 raise RuntimeError(
-                    f"Error restoring chunk with hash: {chunk_hash}."
+                    f"Error restoring chunk with hash: {chunk_hash}.",
                 ) from why
 
         target_file.close()
         source_file_manifest.close()
 
     def read_chunk(self, chunk_hash: bytes, repo_path: Path) -> bytes:
-        """
-        Reads data out of a data chunk. Set for version 00 chunks. Does not currently
+        """Reads data out of a data chunk. Set for version 00 chunks. Does not currently
         handle encryption.
 
         Args:
@@ -1152,7 +1148,7 @@ class FileHelpers:
         except OSError as why:
             raise RuntimeError(
                 f"Unable to read chunk with hash "
-                f"{CryptoHelper.bytes_to_hex(chunk_hash)}."
+                f"{CryptoHelper.bytes_to_hex(chunk_hash)}.",
             ) from why
 
         # confirm version byte is expected value.
@@ -1161,7 +1157,7 @@ class FileHelpers:
             chunk_file.close()
             raise RuntimeError(
                 f"Chunk is of unexpected version. Unable to read. Version was "
-                f"{CryptoHelper.bytes_to_hex(version)}."
+                f"{CryptoHelper.bytes_to_hex(version)}.",
             )
 
         # Read encryption byte and none. Code not currently used.
@@ -1179,15 +1175,14 @@ class FileHelpers:
             except zlib.error as why:
                 raise RuntimeError(
                     f"Unable to decompress chunk with hash: "
-                    f"{CryptoHelper.bytes_to_hex(chunk_hash)}."
+                    f"{CryptoHelper.bytes_to_hex(chunk_hash)}.",
                 ) from why
 
         return chunk_data
 
     @staticmethod
     def zlib_compress_bytes(bytes_to_compress: bytes) -> bytes:
-        """
-        Compress given bytes with zlib.
+        """Compress given bytes with zlib.
 
         Args:
             bytes_to_compress: Bytes to compress.
@@ -1199,8 +1194,7 @@ class FileHelpers:
 
     @staticmethod
     def zlib_decompress_bytes(bytes_to_decompress: bytes) -> bytes:
-        """
-        Decompress given bytes with zlib. Can throw zlib.error if bytes are not zlib
+        """Decompress given bytes with zlib. Can throw zlib.error if bytes are not zlib
         compressed bytes.
 
         Args:
@@ -1221,6 +1215,7 @@ class FileHelpers:
 
         Returns:
             _type_: Integer
+
         """
         # because this is a recursive function, we will return bytes,
         # and set human readable later
