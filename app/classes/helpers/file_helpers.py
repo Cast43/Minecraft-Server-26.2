@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 mimetypes.init(files=[])
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
+BLAKE3_HASH_LENGTH_BYTES = 128
 
 
 class SnapshotFileTypes(Enum):
@@ -646,8 +647,8 @@ class FileHelpers:
             self.send_percentage(server_users, 100, proc_id, True)
 
     @staticmethod
-    def get_absolute_path(server_path, path) -> str:
-        """Takes requested path and returns absolute path
+    def get_absolute_path(server_path: str, path: str) -> str:
+        """Take requested path and returns absolute path.
 
         Args:
             server_path (str): requested server's root path
@@ -675,17 +676,18 @@ class FileHelpers:
 
         """
         hash_hex = CryptoHelper.bytes_to_hex(chunk_hash)
-        if len(hash_hex) != 128:
-            raise ValueError(
-                f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(chunk_hash)}",
-            )
+        if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
+            err_msg = f"Provided hash is of incorrect length. Hash: {
+                CryptoHelper.bytes_to_hex(chunk_hash)
+                }."
+            raise ValueError(err_msg)
         return repository_location / "chunks" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
     def get_file_path_from_hash(file_hash: bytes, repository_location: Path) -> Path:
-        """Get path to file manifest file in repository location given file hash and
-        repository location.
+        """Get path to file manifest file in repository location.
+
+        This is constructed given file hash and repository location.
 
         Args:
             file_hash: Hash of file.
@@ -695,11 +697,11 @@ class FileHelpers:
 
         """
         hash_hex: str = CryptoHelper.bytes_to_hex(file_hash)
-        if len(hash_hex) != 128:
-            raise ValueError(
-                f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(file_hash)}",
-            )
+        if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
+            err_msg = f"Provided hash is of incorrect length. Hash: {
+                CryptoHelper.bytes_to_hex(file_hash)
+                }"
+            raise ValueError(err_msg)
         return repository_location / "files" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
