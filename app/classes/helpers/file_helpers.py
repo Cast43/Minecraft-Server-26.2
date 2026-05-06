@@ -575,8 +575,12 @@ class FileHelpers:
         except ValueError:
             return False
 
-    def get_archive_internal_name(self, file, base_include_path) -> str:
-        """If we have a base include path we will rewrite the internal zip object path
+    def get_archive_internal_name(
+        self, file: str, base_include_path: str | None,
+    ) -> str:
+        """Get relative base path from an archive.
+
+        If we have a base include path we will rewrite the internal zip object path
         to remove the /path/to/file/in/archive so we don't have nested folders when we
         unzip. This will return the relative path to the archive to avoid nesting.
 
@@ -603,7 +607,7 @@ class FileHelpers:
         server_id: str | None,
         user_id: str | None,
     ) -> list[str]:
-        """Get a normalized list of users for unzip_file
+        """Get a normalized list of users for unzip_file.
 
         Args:
             server_id: The server ID to use to get list of relevant users.
@@ -724,6 +728,8 @@ class FileHelpers:
             recipients,
             BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
         )
+
+        return None
 
     @staticmethod
     def get_absolute_path(server_path: str, path: str) -> str:
