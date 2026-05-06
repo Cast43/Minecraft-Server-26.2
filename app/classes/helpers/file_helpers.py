@@ -1244,9 +1244,10 @@ class FileHelpers:
         return zlib.decompress(bytes_to_decompress)
 
     @staticmethod
-    def get_dir_size(server_path):
-        """Recursively calculates dir size. Returns size in bytes. Must calculate human
-        readable based on returned data
+    def get_dir_size(server_path: str) -> int:
+        """Recursively calculates dir size. Returns size in bytes.
+
+        Must calculate human readable based on returned data
 
         Args:
             server_path (str): Path to calculate size
