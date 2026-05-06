@@ -536,13 +536,14 @@ class FileHelpers:
 
     def should_extract(
         self,
-        file,
-        base_include_path,
-        excluded_files,
-        server_update,
+        file: str,
+        base_include_path: str | None,
+        excluded_files: list[str],
+        server_update: bool,  # noqa: FBT001 see unzip file.
     ) -> bool:
-        """Checks a number of inclusions or exclusions against a given file to see
-        if that file should be unpacked to the target directory.
+        """Check a number of inclusions or exclusions against a given file.
+
+        Checks to see if that file should be unpacked to the target directory.
 
         ** Base include path and excluded files should not be used in conjunction with
         eachother.
@@ -571,12 +572,15 @@ class FileHelpers:
             pathlib.PurePosixPath(file).relative_to(
                 pathlib.PurePosixPath(base_include_path),
             )
-            return True
         except ValueError:
             return False
 
+        return True
+
     def get_archive_internal_name(
-        self, file: str, base_include_path: str | None,
+        self,
+        file: str,
+        base_include_path: str | None,
     ) -> str:
         """Get relative base path from an archive.
 
