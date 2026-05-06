@@ -1232,13 +1232,15 @@ class FileHelpers:
 
     @staticmethod
     def zlib_decompress_bytes(bytes_to_decompress: bytes) -> bytes:
-        """Decompress given bytes with zlib. Can throw zlib.error if bytes are not zlib
-        compressed bytes.
+        """Decompress given bytes with zlib.
 
         Args:
             bytes_to_decompress: Bytes to decompress.
 
         Returns: Decompressed bytes.
+
+        Raises:
+            zlib.error: The given bytes were not a zlib compressed blob.
 
         """
         return zlib.decompress(bytes_to_decompress)
