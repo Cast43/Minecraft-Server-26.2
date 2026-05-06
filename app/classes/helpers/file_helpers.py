@@ -10,6 +10,7 @@ import time
 import urllib.request
 import zipfile
 import zlib
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from urllib.error import URLError
@@ -33,6 +34,18 @@ BLAKE3_HASH_LENGTH_BYTES = 128
 class SnapshotFileTypes(Enum):
     FILES = "files"
     CHUNKS = "chunks"
+
+
+@dataclass(frozen=True)
+class BackupPercentageBroadcast:
+    """Give names and types to the backup progress websocket broadcast."""
+
+    id: str | None
+    percent: int
+    complete: bool
+
+    def as_dict(self) -> dict[str, str | int | bool | None]:
+        return {"id": self.id, "percent": self.percent, "complete": self.complete}
 
 
 # Ruff does not like the use of a boolean as a parameter. This is a warning if in the
@@ -497,19 +510,23 @@ class FileHelpers:
         with zipfile.ZipFile(archive_location, "r") as zip_ref:
             zip_ref.extractall(destination)
 
-    def send_percentage(self, user, percent, proc_id, complete):
+    def send_percentage(
+        self,
+        user,
+        broadcast_data: BackupPercentageBroadcast,
+    ):
         if isinstance(user, str):
             WebSocketManager().broadcast_user(
                 user,
                 "zip_status",
-                {"id": None, "percent": percent, "complete": complete},
+                broadcast_data.as_dict(),
             )
         else:
             for usr in user:
                 WebSocketManager().broadcast_user(
                     usr,
                     "zip_status",
-                    {"id": proc_id, "percent": percent, "complete": complete},
+                    broadcast_data.as_dict(),
                 )
 
     def should_extract(
@@ -620,7 +637,14 @@ class FileHelpers:
                     try:
                         self.helper.validate_traversal(destination_path, target)
                     except ValueError:
-                        self.send_percentage(server_users, 100, proc_id, True)
+                        self.send_percentage(
+                            server_users,
+                            BackupPercentageBroadcast(
+                                id=proc_id,
+                                percent=100,
+                                complete=True,
+                            ),
+                        )
                         return logger.error("Traversal detected. Dumping out.")
                     # if the file is one of our ignored names we'll skip it
                     if self.should_extract(
@@ -643,8 +667,18 @@ class FileHelpers:
                                 zip_path,
                             )
                     percent = round((idx / len(files_list)) * 100)
-                    self.send_percentage(server_users, percent, proc_id, False)
-            self.send_percentage(server_users, 100, proc_id, True)
+                    self.send_percentage(
+                        server_users,
+                        BackupPercentageBroadcast(
+                            id=proc_id,
+                            percent=percent,
+                            complete=False,
+                        ),
+                    )
+            self.send_percentage(
+                server_users,
+                BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
+            )
 
     @staticmethod
     def get_absolute_path(server_path: str, path: str) -> str:
