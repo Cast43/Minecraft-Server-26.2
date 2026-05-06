@@ -67,13 +67,16 @@ class ImportHelpers:
         server_type,
         full_exe_path,
     ):
-        self.file_helper.unzip_file(
-            archive_path,
-            new_server_dir,
-            new_id,
-            False,
-            base_include_path=base_include_path,
-        )
+        try:
+            self.file_helper.unzip_file(
+                archive_path,
+                new_server_dir,
+                new_id,
+                False,
+                base_include_path=base_include_path,
+            )
+        except OSError as why:
+            logger.exception(f"Error unzipping file: {why}")
 
         time.sleep(2)
         if (
@@ -186,9 +189,15 @@ class ImportHelpers:
                 unzip_path = self.helper.wtol_path(file_path)
                 destination_path = pathlib.Path(unzip_path).parents[0]
                 # unzips archive that was downloaded.
-                self.file_helper.unzip_file(
-                    unzip_path, destination_path, new_id, server_update=server_update
-                )
+                try:
+                    self.file_helper.unzip_file(
+                        unzip_path,
+                        destination_path,
+                        new_id,
+                        server_update=server_update,
+                    )
+                except OSError as why:
+                    logger.exception(f"Error unzipping file: {why}")
                 # adjusts permissions for execution if os is not windows
 
                 if not self.helper.is_os_windows():
@@ -291,10 +300,13 @@ class ImportHelpers:
                     )
 
         # Unzip downloaded archive.
-        self.file_helper.unzip_file(
-            Path(server_path, HYTALE_0UTPUT_NAME),
-            server_path,
-        )
+        try:
+            self.file_helper.unzip_file(
+                Path(server_path, HYTALE_0UTPUT_NAME),
+                server_path,
+            )
+        except OSError as why:
+            logger.exception(f"Error unzipping archive: {why}")
         self.install_or_update_monitoring_plugins(new_id, server_path)
         ServersController.finish_import(new_id)
         for user in server_users:

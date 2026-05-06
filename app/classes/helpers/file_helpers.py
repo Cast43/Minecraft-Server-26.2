@@ -616,71 +616,76 @@ class FileHelpers:
             server_update: Will skip ignored items list if not set to true. Used for
             updating bedrock servers.
 
-        Returns: None
+        Raises:
+            OSError: If there are file permission or other issue that prevent file
+            operations. All call sites should check for OSError.
 
         """
         server_users = user_id
         if not server_users:
             server_users = PermissionsServers.get_server_user_list(server_id)
 
-        # make sure we're able to access the zip file
-        if Helpers.check_file_perms(zip_path) and os.path.isfile(zip_path):
-            # make sure the directory we're unzipping this to exists
-            Helpers.ensure_dir_exists(destination_path)
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                files_list = zip_ref.namelist()
-                for idx, file in enumerate(files_list):
-                    info = zip_ref.getinfo(file)
-                    # Skip directory entries
-                    if info.is_dir():
-                        continue
+        # I've unwrapped explicity permission checks before the rest of this function.
+        # Doing so before actually unzipping is a bit of a TOCTOU error and is better
+        # handled by catching OSError around call sites rather than explcity checking it
+        # here. All call sites must then check for OSError on this function.
 
-                    target = Path(destination_path, file).resolve()
-                    try:
-                        self.helper.validate_traversal(destination_path, target)
-                    except ValueError:
-                        self.send_percentage(
-                            server_users,
-                            BackupPercentageBroadcast(
-                                id=proc_id,
-                                percent=100,
-                                complete=True,
-                            ),
-                        )
-                        return logger.error("Traversal detected. Dumping out.")
+        # make sure the directory we're unzipping this to exists
+        Helpers.ensure_dir_exists(destination_path)
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            files_list = zip_ref.namelist()
+            for idx, file in enumerate(files_list):
+                info = zip_ref.getinfo(file)
+                # Skip directory entries
+                if info.is_dir():
+                    continue
 
-                    # if the file is one of our ignored names we'll skip it
-                    if not self.should_extract(
-                        file, base_include_path, self.UNZIP_IGNORED_NAMES, server_update
-                    ):
-                        continue
-
-                    info.filename = self.get_archive_internal_name(
-                        file,
-                        base_include_path,
-                    )
-                    try:
-                        zip_ref.extract(info, destination_path)
-                    except FileNotFoundError:
-                        logger.error(
-                            "Could not extract file: %s to %s from archive %s",
-                            file,
-                            destination_path,
-                            zip_path,
-                        )
-                    percent = round((idx / len(files_list)) * 100)
+                target = Path(destination_path, file).resolve()
+                try:
+                    self.helper.validate_traversal(destination_path, target)
+                except ValueError:
                     self.send_percentage(
                         server_users,
                         BackupPercentageBroadcast(
                             id=proc_id,
-                            percent=percent,
-                            complete=False,
+                            percent=100,
+                            complete=True,
                         ),
                     )
-            self.send_percentage(
-                server_users,
-                BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
-            )
+                    return logger.error("Traversal detected. Dumping out.")
+
+                # if the file is one of our ignored names we'll skip it
+                if not self.should_extract(
+                    file, base_include_path, self.UNZIP_IGNORED_NAMES, server_update
+                ):
+                    continue
+
+                info.filename = self.get_archive_internal_name(
+                    file,
+                    base_include_path,
+                )
+                try:
+                    zip_ref.extract(info, destination_path)
+                except FileNotFoundError:
+                    logger.error(
+                        "Could not extract file: %s to %s from archive %s",
+                        file,
+                        destination_path,
+                        zip_path,
+                    )
+                percent = round((idx / len(files_list)) * 100)
+                self.send_percentage(
+                    server_users,
+                    BackupPercentageBroadcast(
+                        id=proc_id,
+                        percent=percent,
+                        complete=False,
+                    ),
+                )
+        self.send_percentage(
+            server_users,
+            BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
+        )
 
     @staticmethod
     def get_absolute_path(server_path: str, path: str) -> str:
