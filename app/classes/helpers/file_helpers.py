@@ -862,15 +862,19 @@ class FileHelpers:
     def create_file_keepers_set(
         self,
         backup_repository_path: Path,
-        keepers_datetime_list,
+        keepers_datetime_list: list[datetime.datetime],
     ) -> tuple[set[bytes], set[bytes]]:
-        """Creates a set of files to keep from a given backup manifest files to keep.
+        """Create a set of files to keep from a given backup manifest files to keep.
 
         Args:
             backup_repository_path: Path to backup repository.
             keepers_datetime_list: List of manifest files to keep. Datetime list.
 
         Returns: Set of files to keep, set of chunks to keep.
+
+        Raises:
+            RuntimeError: If the manifest file can not be read, the manifest is not of
+            the correct version number, down downstream file errors.
 
         """
         files_to_keep = set()
@@ -885,17 +889,16 @@ class FileHelpers:
             try:
                 manifest_file: io.TextIOWrapper = manifest_file_path.open("r")
             except OSError as why:
-                raise RuntimeError(
-                    f"Unable to open manifest file at {manifest_file_path}",
-                ) from why
+                err_msg = f"Unable to open manifest file at {manifest_file_path}"
+                raise RuntimeError(err_msg) from why
 
             # Check that manifest is readable with this version.
             if manifest_file.readline() != "00\n":
                 manifest_file.close()
-                raise RuntimeError(
-                    f"Backup manifest is not of correct version. Manifest: "
-                    f"{manifest_file_path}.",
-                )
+                err_msg = f"Backup manifest is not of correct version. Manifest: {
+                    manifest_file_path
+                    }."
+                raise RuntimeError(err_msg)
 
             for line in manifest_file:
                 # Add hash to keep to output set.
@@ -939,17 +942,17 @@ class FileHelpers:
         try:
             file_manifest_file = file_manifest_path.open("r")
         except OSError as why:
-            raise RuntimeError(
-                f"Unable to open file manifest file at {file_manifest_path}",
-            ) from why
+            err_msg = f"Unable to open file manifest file at {file_manifest_path}"
+            raise RuntimeError(err_msg) from why
 
         if file_manifest_file.readline() != "00\n":
             file_manifest_file.close()
-            raise RuntimeError(
-                f"File manifest file {file_manifest_path} is not of a readable version.",
+            err_msg = (
+                f"File manifest file {file_manifest_path} is not of a readable version."
             )
+            raise RuntimeError(err_msg)
 
-        output = set()
+        output: set[bytes] = set()
 
         for line in file_manifest_file:
             output.add(CryptoHelper.b64_to_bytes(line))
