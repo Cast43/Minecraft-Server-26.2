@@ -962,7 +962,8 @@ class FileHelpers:
 
     @staticmethod
     def get_local_path_with_base(desired_path: Path, base: Path) -> str:
-        """Removes base from given path.
+        """Remove base from given path.
+
         Given:
             Path: /root/example.md
             Base: /root/
@@ -974,10 +975,14 @@ class FileHelpers:
 
         Returns: Local path to file.
 
+        Raises:
+            OSError if given a child path that is not in the parent.
+
         """
         # Check that file is contained in base, and the base is a directory.
         if base not in desired_path.parents:
-            raise OSError(f"{desired_path} is not a child of {base}.")
+            err_msg = f"{desired_path} is not a child of {base}."
+            raise OSError(err_msg)
 
         return str(desired_path.resolve())[len(str(base.resolve())) + 1 :]
 
@@ -986,10 +991,12 @@ class FileHelpers:
         source_file: Path,
         repository_location: Path,
         file_hash: bytes,
-        use_compression: bool,
+        use_compression: bool,  # noqa: FBT001
     ) -> None:
-        """Saves given file to repository location. Will not save duplicate files or
-        duplicate chunks. All errors resolve to RuntimeErrors.
+        """Save given file to repository location.
+
+        Will not save duplicate files or duplicate chunks. All errors resolve to
+        RuntimeErrors.
 
         Args:
             source_file: Source file to save to the backup repository.
@@ -997,7 +1004,10 @@ class FileHelpers:
             file_hash: Hash of file.
             use_compression: If the file in the backup repository should be compressed.
 
-        Returns:
+        Raises:
+            RuntimeError: if the given file has is of the incorrect length, the file can
+            not be read, the file can can not be opned, or downstream file and chunk
+            write errors.
 
         """
         # File is read and saved in 20mb chunks. Should allow memory use to stay low and
@@ -1008,9 +1018,8 @@ class FileHelpers:
                 repository_location,
             )
         except ValueError as why:
-            raise RuntimeError(
-                "Provided file hash does not appear to be of improper length!",
-            ) from why
+            err_msg = "Provided file hash does not appear to be of improper length!"
+            raise RuntimeError(err_msg) from why
 
         # Exit if file is already present in the backup repository. Ensure that we don't
         # try to save the save file twice.
@@ -1022,16 +1031,18 @@ class FileHelpers:
         try:
             source_file_obj = source_file.open("rb")
         except OSError as why:
-            raise RuntimeError(f"Unable to read file at {source_file}.") from why
+            err_msg = f"Unable to read file at {source_file}."
+            raise RuntimeError(err_msg) from why
 
         # Open target file manifest file to write chunks.
         try:
             file_manifest_file = file_manifest_file_location.open("w+")
         except OSError as why:
             source_file_obj.close()
-            raise RuntimeError(
-                f"Unable to open file manifest file at {file_manifest_file_location}.",
-            ) from why
+            err_msg = (
+                f"Unable to open file manifest file at {file_manifest_file_location}."
+            )
+            raise RuntimeError(err_msg) from why
 
         # Begin reading source and writing to manifest file.
         # Write file manifest file version number as first line.
@@ -1055,9 +1066,8 @@ class FileHelpers:
             try:
                 self.save_chunk(chunk, repository_location, chunk_hash, use_compression)
             except RuntimeError as why:
-                raise RuntimeError(
-                    f"Unable to save chunk with hash {chunk_hash}.",
-                ) from why
+                err_msg = f"Unable to save chunk with hash {chunk_hash}."
+                raise RuntimeError(err_msg) from why
 
     def save_chunk(
         self,
