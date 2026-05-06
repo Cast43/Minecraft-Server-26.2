@@ -954,11 +954,7 @@ class FileHelpers:
         for line in file_manifest_file:
             output.add(CryptoHelper.b64_to_bytes(line))
 
-        output_list: list[bytes] = []
-        for item in output:
-            output_list.append(item)
-
-        return output_list
+        return list(output)
 
     @staticmethod
     def get_local_path_with_base(desired_path: Path, base: Path) -> str:
