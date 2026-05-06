@@ -703,8 +703,8 @@ class FileHelpers:
         return repository_location / "files" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
-    def discover_files(target_path: Path, exclusions) -> list[Path]:
-        """Returns a list of all files in a target path, ignores empty directories.
+    def discover_files(target_path: Path, exclusions: list[str]) -> list[Path]:
+        """Return a list of all files in a target path, ignores empty directories.
 
         Args:
             target_path: Path to find all files in.
@@ -714,7 +714,8 @@ class FileHelpers:
         """
         # Check that target is a directory.
         if not target_path.is_dir():
-            raise NotADirectoryError(f"{target_path} is not a directory.")
+            err_msg = f"{target_path} is not a directory."
+            raise NotADirectoryError(err_msg)
 
         discovered_files = []
         excluded_dirs = []
