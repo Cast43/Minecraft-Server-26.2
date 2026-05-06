@@ -1286,4 +1286,4 @@ class FileHelpers:
     @staticmethod
     def has_enough_storage(target_size: float, target_free_storage: float) -> bool:
         """Compare given free size and free storage for enough space."""
-        return target_size > target_free_storage
+        return target_size <= target_free_storage
