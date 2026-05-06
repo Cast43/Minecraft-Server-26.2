@@ -1266,7 +1266,8 @@ class FileHelpers:
         return total
 
     @staticmethod
-    def get_drive_free_space(file_location: Path):
+    def get_drive_free_space(file_location: Path) -> int:
+        """Get the free storage available at a give file path."""
         _total, _used, free = shutil.disk_usage(file_location)
         return free
 
