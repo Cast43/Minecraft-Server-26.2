@@ -1118,7 +1118,11 @@ class FileHelpers:
             target_path: Path to restore file to.
             backup_repo_path: Path to the backup repo.
 
-        Returns:
+        Raises:
+            RuntimeError: When the given file hash is not of the correct length, If
+            there is an issue opening the targeted file path, if the file manifest is
+            not of the correct version, or if there is an error restoring a chunk to the
+            target file.
 
         """
         # Get file manifest file path.
@@ -1128,10 +1132,9 @@ class FileHelpers:
                 backup_repo_path,
             )
         except ValueError as why:
-            raise RuntimeError(
-                f"Provided hash does not appear to be of proper length. Hash: "
-                f"{CryptoHelper.bytes_to_hex(file_hash)}",
-            ) from why
+            err_msg = f"Provided hash does not appear to be of proper length. Hash: {
+                CryptoHelper.bytes_to_hex(file_hash)}"
+            raise RuntimeError(err_msg) from why
 
         # Ensure target folder exists.
         target_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1141,15 +1144,17 @@ class FileHelpers:
             target_file: io.BufferedRandom = target_path.open("wb+")
             source_file_manifest = source_file_manifest_path.open("r")
         except OSError as why:
-            raise RuntimeError("Error opening file for backup restore.") from why
+            err_msg = f"Error opening file at {target_path} for backup restore."
+            raise RuntimeError(err_msg) from why
 
         # Ensure manifest version is of expected value.
         if source_file_manifest.readline() != "00\n":
             target_file.close()
             source_file_manifest.close()
-            raise RuntimeError(
-                f"File manifest is not of correct version. File: {file_hash}.",
-            )
+
+            err_msg = f"File manifest is not of correct version. File: {file_hash}."
+
+            raise RuntimeError(err_msg)
 
         # Iterate over file manifest and restore file.
         for line in source_file_manifest:
@@ -1159,9 +1164,10 @@ class FileHelpers:
             except RuntimeError as why:
                 target_file.close()
                 source_file_manifest.close()
-                raise RuntimeError(
-                    f"Error restoring chunk with hash: {chunk_hash}.",
-                ) from why
+
+                err_msg = f"Error restoring chunk with hash: {chunk_hash}."
+
+                raise RuntimeError(err_msg) from why
 
         target_file.close()
         source_file_manifest.close()
