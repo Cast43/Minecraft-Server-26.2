@@ -60,6 +60,11 @@ class FileHelpers:
     BYTE_TRUE: bytes = bytes.fromhex("01")
     BYTE_FALSE: bytes = bytes.fromhex("00")
     SNAPSHOT_BACKUP_DATE_FORMAT_STRING: str = "%Y-%m-%d-%H-%M-%S"
+    UNZIP_IGNORED_NAMES: list[str] = [
+        "server.properties",
+        "permissions.json",
+        "allowlist.json",
+    ]
 
     def __init__(self, helper):
         self.helper: Helpers = helper
@@ -589,6 +594,7 @@ class FileHelpers:
                 rel = pathlib.PurePosixPath(file).relative_to(base_include_path)
                 return str(rel)
             except ValueError:
+
                 logger.debug("%s is not relative to %s", file, base_include_path)
         return str(file)
 
@@ -613,11 +619,6 @@ class FileHelpers:
         Returns: None
 
         """
-        ignored_names = [
-            "server.properties",
-            "permissions.json",
-            "allowlist.json",
-        ]
         server_users = user_id
         if not server_users:
             server_users = PermissionsServers.get_server_user_list(server_id)
@@ -650,7 +651,7 @@ class FileHelpers:
                     if self.should_extract(
                         file,
                         base_include_path,
-                        ignored_names,
+                        self.UNZIP_IGNORED_NAMES,
                         server_update,
                     ):
                         info.filename = self.get_archive_internal_name(
