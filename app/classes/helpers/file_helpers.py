@@ -634,6 +634,7 @@ class FileHelpers:
                     # Skip directory entries
                     if info.is_dir():
                         continue
+
                     target = Path(destination_path, file).resolve()
                     try:
                         self.helper.validate_traversal(destination_path, target)
@@ -647,26 +648,26 @@ class FileHelpers:
                             ),
                         )
                         return logger.error("Traversal detected. Dumping out.")
+
                     # if the file is one of our ignored names we'll skip it
-                    if self.should_extract(
+                    if not self.should_extract(
+                        file, base_include_path, self.UNZIP_IGNORED_NAMES, server_update
+                    ):
+                        continue
+
+                    info.filename = self.get_archive_internal_name(
                         file,
                         base_include_path,
-                        self.UNZIP_IGNORED_NAMES,
-                        server_update,
-                    ):
-                        info.filename = self.get_archive_internal_name(
+                    )
+                    try:
+                        zip_ref.extract(info, destination_path)
+                    except FileNotFoundError:
+                        logger.error(
+                            "Could not extract file: %s to %s from archive %s",
                             file,
-                            base_include_path,
+                            destination_path,
+                            zip_path,
                         )
-                        try:
-                            zip_ref.extract(info, destination_path)
-                        except FileNotFoundError:
-                            logger.error(
-                                "Could not extract file: %s to %s from archive %s",
-                                file,
-                                destination_path,
-                                zip_path,
-                            )
                     percent = round((idx / len(files_list)) * 100)
                     self.send_percentage(
                         server_users,
