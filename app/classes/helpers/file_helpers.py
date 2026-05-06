@@ -27,6 +27,12 @@ mimetypes.init(files=[])
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
 
+# Ruff does not like the use of a boolean as a parameter. This is a warning if in the
+# case of "True" or "False" being unclear. For this, "use_compression" is fairly
+# explicit when saying "True", or "False". So we are disabling the lint check for FBT001
+# in all such cases. see:
+# https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
+
 
 class FileHelpers:
     allowed_quotes = ['"', "'", "`"]
@@ -1058,10 +1064,12 @@ class FileHelpers:
         file_chunk: bytes,
         repository_location: Path,
         chunk_hash: bytes,
-        use_compression: bool,
+        use_compression: bool,  # noqa: FBT001
     ) -> None:
-        """Saves chunk to backup repository. Space is made in this version of the chunk
-        for encryption, but that functionality is not yet present.
+        """Save chunk to backup repository.
+
+        Space is made in this version of the chunk for encryption, but that
+        functionality is not yet present.
 
         Args:
             file_chunk: chunk data to save to file.
@@ -1069,7 +1077,8 @@ class FileHelpers:
             chunk_hash: hash of chunk.
             use_compression: If the chunk should be compressed before saving to file.
 
-        Return:
+        Raises:
+            RuntimeError: When there is an error saving the chunk to disk.
 
         """
         file_location = self.get_chunk_path_from_hash(chunk_hash, repository_location)
@@ -1103,7 +1112,8 @@ class FileHelpers:
             with file_location.open("wb+") as file:
                 file.write(output)
         except OSError as why:
-            raise RuntimeError(f"Unable to save chunk to {file_location}") from why
+            err_msg = f"Unable to save chunk to {file_location}"
+            raise RuntimeError(err_msg) from why
 
     def read_file(
         self,
