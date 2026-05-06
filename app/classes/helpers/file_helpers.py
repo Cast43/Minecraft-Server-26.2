@@ -11,6 +11,7 @@ import urllib.request
 import zipfile
 import zlib
 from pathlib import Path
+from urllib.error import URLError
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import certifi
@@ -189,8 +190,8 @@ class FileHelpers:
                                     round(progress, 1),
                                 )
                     return True
-            except (urllib.error.URLError, ssl.SSLError) as e:
-                logger.warning(f"SSL File Get - Attempt {attempt+1} failed: {e}")
+            except (URLError, ssl.SSLError) as e:
+                logger.warning(f"SSL File Get - Attempt {attempt + 1} failed: {e}")
                 time.sleep(backoff_factor**attempt)
             except Exception as e:
                 logger.critical(f"SSL File Get - Unexpected error: {e}")
@@ -856,7 +857,7 @@ class FileHelpers:
         self,
         backup_repository_path: Path,
         keepers_datetime_list,
-    ) -> (set[bytes], set[bytes]):
+    ) -> tuple[set[bytes], set[bytes]]:
         """Creates a set of files to keep from a given backup manifest files to keep.
 
         Args:
@@ -1137,7 +1138,7 @@ class FileHelpers:
 
         # Open target.
         try:
-            target_file: io.BufferedReader = target_path.open("wb+")
+            target_file: io.BufferedRandom = target_path.open("wb+")
             source_file_manifest = source_file_manifest_path.open("r")
         except OSError as why:
             raise RuntimeError("Error opening file for backup restore.") from why
