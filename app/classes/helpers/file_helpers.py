@@ -708,6 +708,7 @@ class FileHelpers:
 
         Args:
             target_path: Path to find all files in.
+            exclusions: File path(s) to exclude from this file discovery.
 
         Returns: List of all files in target path.
 
