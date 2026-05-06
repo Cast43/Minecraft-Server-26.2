@@ -10,6 +10,7 @@ import time
 import urllib.request
 import zipfile
 import zlib
+from enum import Enum
 from pathlib import Path
 from urllib.error import URLError
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
@@ -26,6 +27,12 @@ logger = logging.getLogger(__name__)
 mimetypes.init(files=[])
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
+
+
+class SnapshotFileTypes(Enum):
+    FILES = "files"
+    CHUNKS = "chunks"
+
 
 # Ruff does not like the use of a boolean as a parameter. This is a warning if in the
 # case of "True" or "False" being unclear. For this, "use_compression" is fairly
@@ -788,33 +795,32 @@ class FileHelpers:
         self.delete_unused_items_from_repository(
             files_to_keep,
             backup_repository_path,
-            False,
+            SnapshotFileTypes.FILES,
         )
         self.delete_unused_items_from_repository(
             chunks_to_keep,
             backup_repository_path,
-            True,
+            SnapshotFileTypes.CHUNKS,
         )
 
     @staticmethod
     def delete_unused_items_from_repository(
         items_to_keep: set[bytes],
         backup_repository_path: Path,
-        mode: bool,
+        mode: SnapshotFileTypes,
     ) -> None:
-        """Delete unused chunks for files from the backup repository. Switches type based
-        on mode.
+        """Delete unused chunks for files from the backup repository.
+
+        Switches type based on mode.
 
         Args:
             items_to_keep: Set of chunks or files to keep.
             backup_repository_path: Path to backup repository.
-            mode: False for file, True for chunks.
-
-        Return:
+            mode: Which snapshot files to operate on.
 
         """
         # Mode False = files. True = chunks.
-        if mode:
+        if mode == SnapshotFileTypes.CHUNKS:
             item_manifests_path = backup_repository_path / "chunks"
         else:
             item_manifests_path = backup_repository_path / "files"
