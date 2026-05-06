@@ -64,7 +64,10 @@ class FileHelpers:
         mimetypes.add_type("text/x-log", ".log")
 
     def can_unicode_decode(
-        self, path: str, encoding: str = "utf-8", sample_size: int = 4096,
+        self,
+        path: str,
+        encoding: str = "utf-8",
+        sample_size: int = 4096,
     ) -> bool:
         """Check to see if file can be unicode decoded. Check for binary files
 
@@ -100,7 +103,12 @@ class FileHelpers:
 
     @staticmethod
     def ssl_get_file(  # pylint: disable=too-many-positional-arguments
-        url, out_path, out_file, max_retries=3, backoff_factor=2, headers=None,
+        url,
+        out_path,
+        out_file,
+        max_retries=3,
+        backoff_factor=2,
+        headers=None,
     ):
         """Downloads a file from a given URL using HTTPS with SSL context verification,
         retries with exponential backoff and providing download progress feedback.
@@ -268,7 +276,8 @@ class FileHelpers:
             path_to_destination += ".zip"
         with ZipFile(path_to_destination, "w") as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8",
+                comment,
+                "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, _dirs, files in os.walk(string_zip_path, topdown=True):
                 ziproot = string_zip_path
@@ -299,7 +308,8 @@ class FileHelpers:
         path_to_destination += ".zip"
         with ZipFile(path_to_destination, "w", ZIP_DEFLATED) as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8",
+                comment,
+                "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, _dirs, files in os.walk(path_to_zip, topdown=True):
                 ziproot = path_to_zip
@@ -363,7 +373,8 @@ class FileHelpers:
         compression_mode = ZIP_DEFLATED if compressed else ZIP_STORED
         with ZipFile(path_to_destination, "w", compression_mode) as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8",
+                comment,
+                "utf-8",
             )  # comments over 65535 bytes will be truncated
             for root, dirs, files in os.walk(path_to_zip, topdown=True):
                 for l_dir in dirs[:]:
@@ -487,7 +498,11 @@ class FileHelpers:
                 )
 
     def should_extract(
-        self, file, base_include_path, excluded_files, server_update,
+        self,
+        file,
+        base_include_path,
+        excluded_files,
+        server_update,
     ) -> bool:
         """Checks a number of inclusions or exclusions against a given file to see
         if that file should be unpacked to the target directory.
@@ -594,10 +609,14 @@ class FileHelpers:
                         return logger.error("Traversal detected. Dumping out.")
                     # if the file is one of our ignored names we'll skip it
                     if self.should_extract(
-                        file, base_include_path, ignored_names, server_update,
+                        file,
+                        base_include_path,
+                        ignored_names,
+                        server_update,
                     ):
                         info.filename = self.get_archive_internal_name(
-                            file, base_include_path,
+                            file,
+                            base_include_path,
                         )
                         try:
                             zip_ref.extract(info, destination_path)
@@ -754,20 +773,27 @@ class FileHelpers:
         self.delete_unused_manifest_files(manifests_datetime, manifest_files_list)
 
         files_to_keep, chunks_to_keep = self.create_file_keepers_set(
-            backup_repository_path, manifests_datetime,
+            backup_repository_path,
+            manifests_datetime,
         )
 
         # Delete unused files and chunks.
         self.delete_unused_items_from_repository(
-            files_to_keep, backup_repository_path, False,
+            files_to_keep,
+            backup_repository_path,
+            False,
         )
         self.delete_unused_items_from_repository(
-            chunks_to_keep, backup_repository_path, True,
+            chunks_to_keep,
+            backup_repository_path,
+            True,
         )
 
     @staticmethod
     def delete_unused_items_from_repository(
-        items_to_keep: set[bytes], backup_repository_path: Path, mode: bool,
+        items_to_keep: set[bytes],
+        backup_repository_path: Path,
+        mode: bool,
     ) -> None:
         """Delete unused chunks for files from the backup repository. Switches type based
         on mode.
@@ -827,7 +853,9 @@ class FileHelpers:
                 manifest_file.unlink(missing_ok=True)
 
     def create_file_keepers_set(
-        self, backup_repository_path: Path, keepers_datetime_list,
+        self,
+        backup_repository_path: Path,
+        keepers_datetime_list,
     ) -> (set[bytes], set[bytes]):
         """Creates a set of files to keep from a given backup manifest files to keep.
 
@@ -874,14 +902,17 @@ class FileHelpers:
         # Iterate over files to keep, and record all chunks to keep for those files.
         for file_to_keep in files_to_keep:
             file_chunks = self.get_keeper_chunks_file_file_hash(
-                backup_repository_path, file_to_keep,
+                backup_repository_path,
+                file_to_keep,
             )
             for chunk in file_chunks:
                 keeper_chunks.add(chunk)
         return files_to_keep, keeper_chunks
 
     def get_keeper_chunks_file_file_hash(
-        self, backup_repository_location: Path, file_hash: bytes,
+        self,
+        backup_repository_location: Path,
+        file_hash: bytes,
     ) -> list[bytes]:
         """Get chunks that should be kept based on given file.
 
@@ -893,7 +924,8 @@ class FileHelpers:
 
         """
         file_manifest_path: Path = self.get_file_path_from_hash(
-            file_hash, backup_repository_location,
+            file_hash,
+            backup_repository_location,
         )
 
         # Open file and read keeper chunks.
@@ -965,7 +997,8 @@ class FileHelpers:
         # for files to be processed that are larger than available memory.
         try:
             file_manifest_file_location: Path = self.get_file_path_from_hash(
-                file_hash, repository_location,
+                file_hash,
+                repository_location,
             )
         except ValueError as why:
             raise RuntimeError(
@@ -1072,7 +1105,10 @@ class FileHelpers:
             raise RuntimeError(f"Unable to save chunk to {file_location}") from why
 
     def read_file(
-        self, file_hash: bytes, target_path: Path, backup_repo_path: Path,
+        self,
+        file_hash: bytes,
+        target_path: Path,
+        backup_repo_path: Path,
     ) -> None:
         """Read file from file manifest, restores to target path.
 
@@ -1087,7 +1123,8 @@ class FileHelpers:
         # Get file manifest file path.
         try:
             source_file_manifest_path: Path = self.get_file_path_from_hash(
-                file_hash, backup_repo_path,
+                file_hash,
+                backup_repo_path,
             )
         except ValueError as why:
             raise RuntimeError(
