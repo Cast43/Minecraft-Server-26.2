@@ -837,12 +837,14 @@ class FileHelpers:
         manifest_files_to_keep: list[datetime.datetime],
         manifest_files_list: list[Path],
     ) -> None:
-        """Deletes unused backup manifest files from the backup repository.
-        :param manifest_files_to_keep: List of manifest files to keep. Datetime list of
-        backups to keep.
-        :param manifest_files_list: List of all files currently found in the backup
-        repository.
-        :return:
+        """Delete unused backup manifest files from the backup repository.
+
+        Args:
+            manifest_files_to_keep: List of manifest files to keep. Datetime list of
+                backups to keep.
+            manifest_files_list: List of all files currently found in the backup
+                repository.
+
         """
         # This is a little nasty.
         # Iterate over files found in the backup repository.
@@ -853,7 +855,7 @@ class FileHelpers:
                 datetime.datetime.strptime(
                     manifest_file.name.split(".")[0],
                     self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
-                )
+                ).astimezone()
                 not in manifest_files_to_keep
             ):
                 # Delete the file.
