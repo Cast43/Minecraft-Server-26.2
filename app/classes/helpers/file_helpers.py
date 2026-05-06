@@ -598,32 +598,67 @@ class FileHelpers:
                 logger.debug("%s is not relative to %s", file, base_include_path)
         return str(file)
 
-    def unzip_file(
+    @staticmethod
+    def _normalize_websocket_recipients(
+        server_id: str | None,
+        user_id: str | None,
+    ) -> list[str]:
+        """Get a normalized list of users for unzip_file
+
+        Args:
+            server_id: The server ID to use to get list of relevant users.
+            user_id: The user ID of the user.
+
+        """
+        if not user_id:
+            recipients = PermissionsServers.get_server_user_list(server_id)
+        else:
+            recipients: list[str] = [user_id]
+
+        return recipients
+
+    # Disabling the lint for too many position arguments. My notes are in the function.
+    # This bad boy needs a rewrite, I don't understand the websockets enough to make
+    # that happen at the moment.
+    def unzip_file(  # noqa: PLR0913
         self,
-        zip_path,
-        destination_path,
-        server_id=None,
-        server_update: bool = False,
-        proc_id=None,
-        user_id=None,
-        base_include_path=None,
+        zip_path: str,
+        destination_path: Path,
+        server_id: str | None = None,
+        server_update: bool = False,  # noqa: FBT001, FBT002
+        proc_id: str | None = None,
+        user_id: str | None = None,
+        base_include_path: str | None = None,
     ) -> None:
-        """Unzips zip file at zip_path to location generated at new_dir based on zip
-        contents.
+        """Unzips zip file at zip_path.
+
+        Unzips to location generated at new_dir based on zipcontents.
+
+        Boat Note: I'm less convinced about the ruff exception on server_update, I'll
+        leave it for now but happy to re-architect this function to resolve that later.
 
         Args:
             zip_path: Path to zip file to unzip.
+            destination_path: Where the zip file should be unziped to.
+            server_id: The ID of the server associated with this unzip, used for
+                websocket broadcasts.
             server_update: Will skip ignored items list if not set to true. Used for
-            updating bedrock servers.
+                updating bedrock servers.
+            proc_id: Used for websocket broadcasts, not sure what this is.
+            user_id: Used for websocket broadcasts.
+            base_include_path: Used for file/path exclusions.
 
         Raises:
             OSError: If there are file permission or other issue that prevent file
             operations. All call sites should check for OSError.
 
         """
-        server_users = user_id
-        if not server_users:
-            server_users = PermissionsServers.get_server_user_list(server_id)
+        # This function is not perfect, likely needs a rewrite.
+        # I don't understand enough about this function to rewrite it at the moment.
+        # It's trying to do too much, the functionality should be more
+        # compartamentalized. Having this function also handle websockets is difficult.
+
+        recipients = self._normalize_websocket_recipients(server_id, user_id)
 
         # I've unwrapped explicity permission checks before the rest of this function.
         # Doing so before actually unzipping is a bit of a TOCTOU error and is better
@@ -645,18 +680,21 @@ class FileHelpers:
                     self.helper.validate_traversal(destination_path, target)
                 except ValueError:
                     self.send_percentage(
-                        server_users,
+                        recipients,
                         BackupPercentageBroadcast(
                             id=proc_id,
                             percent=100,
                             complete=True,
                         ),
                     )
-                    return logger.error("Traversal detected. Dumping out.")
+                    return logger.exception("Traversal detected. Dumping out.")
 
                 # if the file is one of our ignored names we'll skip it
                 if not self.should_extract(
-                    file, base_include_path, self.UNZIP_IGNORED_NAMES, server_update
+                    file,
+                    base_include_path,
+                    self.UNZIP_IGNORED_NAMES,
+                    server_update,
                 ):
                     continue
 
@@ -667,7 +705,7 @@ class FileHelpers:
                 try:
                     zip_ref.extract(info, destination_path)
                 except FileNotFoundError:
-                    logger.error(
+                    logger.exception(
                         "Could not extract file: %s to %s from archive %s",
                         file,
                         destination_path,
@@ -675,7 +713,7 @@ class FileHelpers:
                     )
                 percent = round((idx / len(files_list)) * 100)
                 self.send_percentage(
-                    server_users,
+                    recipients,
                     BackupPercentageBroadcast(
                         id=proc_id,
                         percent=percent,
@@ -683,7 +721,7 @@ class FileHelpers:
                     ),
                 )
         self.send_percentage(
-            server_users,
+            recipients,
             BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
         )
 
