@@ -476,42 +476,48 @@ class FileHelpers:
                     )
         return True
 
-    def move_item_file_or_dir(self, old_dir, new_dir, item) -> None:
-        """Move item to new location if it is either a file or a dir. Will raise
-        shutil.Error for any errors encountered.
+    def move_item_file_or_dir(self, old_dir: str, new_dir: str, item: str) -> None:
+        """Move item to new location if it is either a file or a dir.
 
         Args:
             old_dir: Old location.
             new_dir: New location.
             item: File or directory name.
 
-        Returns: None
+        Raises:
+            shutil.Error: For any move errors that are encountered.
 
         """
         try:
             # Check if source item is a directory or a file.
-            if os.path.isdir(os.path.join(old_dir, item)):
+            if Path(old_dir, item).is_dir():
                 # Source item is a directory
                 FileHelpers.move_dir_exist(
-                    os.path.join(old_dir, item),
-                    os.path.join(new_dir, item),
+                    Path(old_dir) / item,
+                    Path(new_dir) / item,
                 )
             else:
                 # Source item is a file.
                 FileHelpers.move_file(
-                    os.path.join(old_dir, item),
-                    os.path.join(new_dir, item),
+                    Path(old_dir) / item,
+                    Path(new_dir) / item,
                 )
 
         # Error raised by shutil if an error is encountered. Raising the same error if
         # encountered.
         except shutil.Error as why:
-            raise RuntimeError(
-                f"Error moving {old_dir} to {new_dir} with information: {why}",
-            ) from why
+            err_msg = f"Error moving {old_dir} to {new_dir} with information: {why}"
+            raise RuntimeError(err_msg) from why
 
     @staticmethod
-    def restore_archive(archive_location, destination):
+    def restore_archive(archive_location: str, destination: str) -> None:
+        """Restore zip file into specified destination.
+
+        Args:
+            archive_location: The zip to unzip.
+            destination: The target location to unzip to.
+
+        """
         with zipfile.ZipFile(archive_location, "r") as zip_ref:
             zip_ref.extractall(destination)
 
