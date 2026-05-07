@@ -1,3 +1,4 @@
+from isort import file
 import datetime
 import logging
 import mimetypes
@@ -308,7 +309,7 @@ class FileHelpers:
             return True
 
     @staticmethod
-    def del_dirs(path: str) -> bool:
+    def del_dirs(path: str | Path) -> bool:
         """
         Delete target directory.
 
@@ -320,7 +321,7 @@ class FileHelpers:
         for sub in target_path.iterdir():
             if sub.is_dir():
                 # Delete folder if it is a folder
-                FileHelpers.del_dirs(str(sub))
+                FileHelpers.del_dirs(sub)
             else:
                 # Delete file if it is a file:
                 try:
@@ -328,7 +329,8 @@ class FileHelpers:
                 except Exception as e:
                     clean = False
                     logger.exception(
-                        "Unable to delete file", extra={"file": sub, "error": e}
+                        "Unable to delete file",
+                        extra={"file": sub, "error": e},
                     )
         try:
             # This removes the top-level folder:
@@ -339,17 +341,25 @@ class FileHelpers:
         return clean
 
     @staticmethod
-    def del_file(path):
-        path = pathlib.Path(path)
-        clean = True
+    def del_file(path: str | Path) -> bool:
+        """
+        Delete a target file.
+
+        Args:
+            path: the path to the file to delete
+        """
+        file_path = Path(path)
+        logger.debug("Deleting file", extra={"file path": file_path})
         try:
-            logger.debug(f"Deleting file: {path}")
             # Remove the file
-            os.remove(path)
-            return clean
-        except (FileNotFoundError, PermissionError):
-            logger.error(f"Path specified is not a file or does not exist. {path}")
+            file_path.unlink()
+        except OSError as why:
+            logger.exception(
+                "Unable to delete file",
+                extra={"file path": file_path, "error": why},
+            )
             return False
+        return True
 
     def check_mime_types(self, file_path):
         m_type, _value = mimetypes.guess_type(file_path)
