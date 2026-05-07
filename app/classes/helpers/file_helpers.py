@@ -147,6 +147,18 @@ class FileHelpers:
         return b"\x00" not in chunk
 
     def probably_can_open_file(self, path: str) -> tuple:
+        """
+        Check various file factors to assume it can be read by the text editor.
+
+        This is very computationally expensive and we should probably kill this.
+        There are also some TOCTOU type issues. We should most likely let users try to
+        open any kind of file and just tell the user it can't be opened on open rather
+        than check beforehand.
+
+        Args:
+            path: Path to the file to check.
+
+        """
         if Path(path).is_dir():
             return (False, None)
         mime = mimetypes.guess_type(path)
