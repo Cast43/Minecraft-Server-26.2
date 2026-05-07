@@ -308,25 +308,33 @@ class FileHelpers:
             return True
 
     @staticmethod
-    def del_dirs(path):
-        path = pathlib.Path(path)
+    def del_dirs(path: str) -> bool:
+        """
+        Delete target directory.
+
+        Args:
+            path: Path to delete.
+        """
+        target_path = Path(path)
         clean = True
-        for sub in path.iterdir():
+        for sub in target_path.iterdir():
             if sub.is_dir():
                 # Delete folder if it is a folder
-                FileHelpers.del_dirs(sub)
+                FileHelpers.del_dirs(str(sub))
             else:
                 # Delete file if it is a file:
                 try:
                     sub.unlink()
                 except Exception as e:
                     clean = False
-                    logger.error(f"Unable to delete file {sub}: {e}")
+                    logger.exception(
+                        "Unable to delete file", extra={"file": sub, "error": e}
+                    )
         try:
             # This removes the top-level folder:
-            path.rmdir()
+            target_path.rmdir()
         except Exception:
-            logger.error("Unable to remove top level")
+            logger.exception("Unable to remove top level")
             return False
         return clean
 
@@ -341,8 +349,7 @@ class FileHelpers:
             return clean
         except (FileNotFoundError, PermissionError):
             logger.error(f"Path specified is not a file or does not exist. {path}")
-            clean = False
-            return clean
+            return False
 
     def check_mime_types(self, file_path):
         m_type, _value = mimetypes.guess_type(file_path)
