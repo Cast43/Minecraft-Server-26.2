@@ -361,7 +361,14 @@ class FileHelpers:
             return False
         return True
 
-    def check_mime_types(self, file_path):
+    def check_mime_types(self, file_path: Path) -> str | None:
+        """
+        Attempt to get a file's mime type.
+
+        Args:
+        file_path: Path to target file.
+
+        """
         m_type, _value = mimetypes.guess_type(file_path)
         return m_type
 
