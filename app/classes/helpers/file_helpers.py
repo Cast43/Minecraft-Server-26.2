@@ -173,7 +173,8 @@ class FileHelpers:
         backoff_factor=2,
         headers=None,
     ):
-        """Downloads a file from a given URL using HTTPS with SSL context verification,
+        """
+        Downloads a file from a given URL using HTTPS with SSL context verification,
         retries with exponential backoff and providing download progress feedback.
 
         Parameters
@@ -507,7 +508,8 @@ class FileHelpers:
         return True
 
     def move_item_file_or_dir(self, old_dir: str, new_dir: str, item: str) -> None:
-        """Move item to new location if it is either a file or a dir.
+        """
+        Move item to new location if it is either a file or a dir.
 
         Args:
             old_dir: Old location.
@@ -541,7 +543,8 @@ class FileHelpers:
 
     @staticmethod
     def restore_archive(archive_location: str, destination: str) -> None:
-        """Restore zip file into specified destination.
+        """
+        Restore zip file into specified destination.
 
         Args:
             archive_location: The zip to unzip.
@@ -556,7 +559,8 @@ class FileHelpers:
         user: list[str],
         broadcast_data: BackupPercentageBroadcast,
     ) -> None:
-        """Send a websocket percentage to given user(s).
+        """
+        Send a websocket percentage to given user(s).
 
         Args:
             user: List of user(s) to send broadcast to.
@@ -577,7 +581,8 @@ class FileHelpers:
         excluded_files: list[str],
         server_update: bool,  # noqa: FBT001 see unzip file.
     ) -> bool:
-        """Check a number of inclusions or exclusions against a given file.
+        """
+        Check a number of inclusions or exclusions against a given file.
 
         Checks to see if that file should be unpacked to the target directory.
 
@@ -618,7 +623,8 @@ class FileHelpers:
         file: str,
         base_include_path: str | None,
     ) -> str:
-        """Get relative base path from an archive.
+        """
+        Get relative base path from an archive.
 
         If we have a base include path we will rewrite the internal zip object path
         to remove the /path/to/file/in/archive so we don't have nested folders when we
@@ -647,7 +653,8 @@ class FileHelpers:
         server_id: str | None,
         user_id: str | None,
     ) -> list[str]:
-        """Get a normalized list of users for unzip_file.
+        """
+        Get a normalized list of users for unzip_file.
 
         Args:
             server_id: The server ID to use to get list of relevant users.
@@ -674,7 +681,8 @@ class FileHelpers:
         user_id: str | None = None,
         base_include_path: str | None = None,
     ) -> None:
-        """Unzips zip file at zip_path.
+        """
+        Unzips zip file at zip_path.
 
         Unzips to location generated at new_dir based on zipcontents.
 
@@ -700,14 +708,14 @@ class FileHelpers:
         # This function is not perfect, likely needs a rewrite.
         # I don't understand enough about this function to rewrite it at the moment.
         # It's trying to do too much, the functionality should be more
-        # compartamentalized. Having this function also handle websockets is difficult.
+        # compartmentalized. Having this function also handle websockets is difficult.
 
         recipients = self._normalize_websocket_recipients(server_id, user_id)
 
-        # I've unwrapped explicity permission checks before the rest of this function.
+        # I've unwrapped explicitly permission checks before the rest of this function.
         # Doing so before actually unzipping is a bit of a TOCTOU error and is better
-        # handled by catching OSError around call sites rather than explcity checking it
-        # here. All call sites must then check for OSError on this function.
+        # handled by catching OSError around call sites rather than explicitly checking
+        # it here. All call sites must then check for OSError on this function.
 
         # make sure the directory we're unzipping this to exists
         Helpers.ensure_dir_exists(destination_path)
@@ -773,7 +781,8 @@ class FileHelpers:
 
     @staticmethod
     def get_absolute_path(server_path: str, path: str) -> str:
-        """Take requested path and returns absolute path.
+        """
+        Take requested path and returns absolute path.
 
         Args:
             server_path (str): requested server's root path
@@ -791,7 +800,8 @@ class FileHelpers:
 
     @staticmethod
     def get_chunk_path_from_hash(chunk_hash: bytes, repository_location: Path) -> Path:
-        """Given chunk hash and repository location, gets full path to chunk in repo.
+        """
+        Given chunk hash and repository location, gets full path to chunk in repo.
 
         Args:
             chunk_hash: Hash of chunk in bytes.
@@ -810,7 +820,8 @@ class FileHelpers:
 
     @staticmethod
     def get_file_path_from_hash(file_hash: bytes, repository_location: Path) -> Path:
-        """Get path to file manifest file in repository location.
+        """
+        Get path to file manifest file in repository location.
 
         This is constructed given file hash and repository location.
 
@@ -831,7 +842,8 @@ class FileHelpers:
 
     @staticmethod
     def discover_files(target_path: Path, exclusions: list[str]) -> list[Path]:
-        """Return a list of all files in a target path, ignores empty directories.
+        """
+        Return a list of all files in a target path, ignores empty directories.
 
         Args:
             target_path: Path to find all files in.
@@ -865,7 +877,8 @@ class FileHelpers:
         return discovered_files
 
     def clean_old_backups(self, num_to_keep: int, backup_repository_path: Path) -> None:
-        """Remove all old backups from the backup repository.
+        """
+        Remove all old backups from the backup repository.
 
         Based on number of backups to keep.
 
@@ -937,7 +950,8 @@ class FileHelpers:
         backup_repository_path: Path,
         mode: SnapshotFileTypes,
     ) -> None:
-        """Delete unused chunks for files from the backup repository.
+        """
+        Delete unused chunks for files from the backup repository.
 
         Switches type based on mode.
 
@@ -971,7 +985,8 @@ class FileHelpers:
         manifest_files_to_keep: list[datetime.datetime],
         manifest_files_list: list[Path],
     ) -> None:
-        """Delete unused backup manifest files from the backup repository.
+        """
+        Delete unused backup manifest files from the backup repository.
 
         Args:
             manifest_files_to_keep: List of manifest files to keep. Datetime list of
@@ -1000,7 +1015,8 @@ class FileHelpers:
         backup_repository_path: Path,
         keepers_datetime_list: list[datetime.datetime],
     ) -> tuple[set[bytes], set[bytes]]:
-        """Create a set of files to keep from a given backup manifest files to keep.
+        """
+        Create a set of files to keep from a given backup manifest files to keep.
 
         Args:
             backup_repository_path: Path to backup repository.
@@ -1060,7 +1076,8 @@ class FileHelpers:
         backup_repository_location: Path,
         file_hash: bytes,
     ) -> list[bytes]:
-        """Get chunks that should be kept based on given file.
+        """
+        Get chunks that should be kept based on given file.
 
         Args:
             backup_repository_location: Path to the backup repository.
@@ -1097,7 +1114,8 @@ class FileHelpers:
 
     @staticmethod
     def get_local_path_with_base(desired_path: Path, base: Path) -> str:
-        """Remove base from given path.
+        """
+        Remove base from given path.
 
         Given:
             Path: /root/example.md
@@ -1128,7 +1146,8 @@ class FileHelpers:
         file_hash: bytes,
         use_compression: bool,  # noqa: FBT001
     ) -> None:
-        """Save given file to repository location.
+        """
+        Save given file to repository location.
 
         Will not save duplicate files or duplicate chunks. All errors resolve to
         RuntimeErrors.
@@ -1211,7 +1230,8 @@ class FileHelpers:
         chunk_hash: bytes,
         use_compression: bool,  # noqa: FBT001
     ) -> None:
-        """Save chunk to backup repository.
+        """
+        Save chunk to backup repository.
 
         Space is made in this version of the chunk for encryption, but that
         functionality is not yet present.
@@ -1266,7 +1286,8 @@ class FileHelpers:
         target_path: Path,
         backup_repo_path: Path,
     ) -> None:
-        """Read file from file manifest, restores to target path.
+        """
+        Read file from file manifest, restores to target path.
 
         Args:
             file_hash: Hash of file to restore.
@@ -1328,7 +1349,8 @@ class FileHelpers:
         source_file_manifest.close()
 
     def read_chunk(self, chunk_hash: bytes, repo_path: Path) -> bytes:
-        """Read data out of a data chunk. Set for version 00 chunks.
+        """
+        Read data out of a data chunk. Set for version 00 chunks.
 
         This function does not currently handle encryption.
 
@@ -1390,7 +1412,8 @@ class FileHelpers:
 
     @staticmethod
     def zlib_compress_bytes(bytes_to_compress: bytes) -> bytes:
-        """Compress given bytes with zlib.
+        """
+        Compress given bytes with zlib.
 
         Args:
             bytes_to_compress: Bytes to compress.
@@ -1402,7 +1425,8 @@ class FileHelpers:
 
     @staticmethod
     def zlib_decompress_bytes(bytes_to_decompress: bytes) -> bytes:
-        """Decompress given bytes with zlib.
+        """
+        Decompress given bytes with zlib.
 
         Args:
             bytes_to_decompress: Bytes to decompress.
@@ -1417,7 +1441,8 @@ class FileHelpers:
 
     @staticmethod
     def get_dir_size(server_path: str) -> int:
-        """Recursively calculates dir size. Returns size in bytes.
+        """
+        Recursively calculates dir size. Returns size in bytes.
 
         Must calculate human readable based on returned data
 
