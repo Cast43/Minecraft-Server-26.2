@@ -128,20 +128,23 @@ class FileHelpers:
             bool: Returns true if file can be opened, false if not
 
         """
+        file_path = Path(path)
+        # Attempt to read the file, if there is an error we can not decode it.
         try:
-            with open(
-                path,
-                "rb",
-            ) as sample:
-                chunk = sample.read(sample_size)
-            chunk.decode(encoding)
-            if (
-                b"\x00" in chunk
-            ):  # check for empty bytes (binary files) this will also capture utf-16
-                return False
-            return True
-        except (UnicodeDecodeError, PermissionError):
+            with file_path.open("rb") as sample:
+                chunk: bytes = sample.read(sample_size)
+        except OSError:
             return False
+
+        # Attempt to decode the chunk, if we get a decode error return false.
+        try:
+            chunk.decode(encoding)
+        except UnicodeDecodeError:
+            return False
+
+        # Check the leading byte. Not sure what for exactly. Original behavior returned
+        # false if the byte was in the chunk, true if it was not.
+        return b"\x00" not in chunk
 
     def probably_can_open_file(self, path: str) -> tuple:
         if Path(path).is_dir():
