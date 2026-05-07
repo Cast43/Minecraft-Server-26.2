@@ -1,5 +1,4 @@
 import datetime
-import io
 import logging
 import mimetypes
 import os
@@ -13,6 +12,7 @@ import zlib
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
 from urllib.error import URLError
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
@@ -23,6 +23,9 @@ from app.classes.helpers.helpers import Helpers
 from app.classes.models.server_permissions import PermissionsServers
 from app.classes.shared.websocket_manager import WebSocketManager
 
+if TYPE_CHECKING:
+    import io
+
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
@@ -32,6 +35,8 @@ BLAKE3_HASH_LENGTH_BYTES = 128
 
 
 class SnapshotFileTypes(Enum):
+    """The types of files that need to be restored by the snapshot backups."""
+
     FILES = "files"
     CHUNKS = "chunks"
 
@@ -45,6 +50,7 @@ class BackupPercentageBroadcast:
     complete: bool
 
     def as_dict(self) -> dict[str, str | int | bool | None]:
+        """Output the BackupPercentageBroadcast as a dict."""
         return {"id": self.id, "percent": self.percent, "complete": self.complete}
 
 
@@ -56,17 +62,20 @@ class BackupPercentageBroadcast:
 
 
 class FileHelpers:
-    allowed_quotes = ['"', "'", "`"]
+    """File operation and backup/restore functionality."""
+
+    allowed_quotes: ClassVar[list[str]] = ['"', "'", "`"]
     BYTE_TRUE: bytes = bytes.fromhex("01")
     BYTE_FALSE: bytes = bytes.fromhex("00")
     SNAPSHOT_BACKUP_DATE_FORMAT_STRING: str = "%Y-%m-%d-%H-%M-%S"
-    UNZIP_IGNORED_NAMES: list[str] = [
+    UNZIP_IGNORED_NAMES: ClassVar[list[str]] = [
         "server.properties",
         "permissions.json",
         "allowlist.json",
     ]
 
-    def __init__(self, helper):
+    def __init__(self, helper: Helpers) -> None:
+        """Create a new filehelper."""
         self.helper: Helpers = helper
         self.add_mime_types()  # Add to account for yml, conf, properties, etc
         self.text_mime_prefixes = [
@@ -83,7 +92,12 @@ class FileHelpers:
             "text/x-log",
         ]
 
-    def add_mime_types(self):
+    def add_mime_types(self) -> None:
+        """
+        Add various mimetypes.
+
+        I'm not sure what this is doing.
+        """
         # Extend the default list
         mimetypes.add_type("text/yaml", ".yml")
         mimetypes.add_type("text/yaml", ".yaml")
@@ -102,7 +116,8 @@ class FileHelpers:
         encoding: str = "utf-8",
         sample_size: int = 4096,
     ) -> bool:
-        """Check to see if file can be unicode decoded. Check for binary files
+        """
+        Check to see if file can be unicode decoded. Check for binary files.
 
         Args:
             path (str): path to file to check
