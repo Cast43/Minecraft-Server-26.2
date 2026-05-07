@@ -17,6 +17,7 @@ from urllib.error import URLError
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import certifi
+from urllib3.util import SSLContext
 
 from app.classes.helpers.cryptography_helper import CryptoHelper
 from app.classes.helpers.helpers import Helpers
@@ -164,28 +165,24 @@ class FileHelpers:
         mime = mimetypes.guess_type(path)
         return (self.can_unicode_decode(path), mime[0])
 
-    @staticmethod
-    def ssl_get_file(  # pylint: disable=too-many-positional-arguments
-        url,
-        out_path,
-        out_file,
-        max_retries=3,
-        backoff_factor=2,
-        headers=None,
-    ):
+    def ssl_get_file(
+        self,
+        url: str,
+        out_path: str,
+        out_file: str,
+        headers: dict[str, str] | None = None,
+    ) -> bool:
         """
-        Downloads a file from a given URL using HTTPS with SSL context verification,
-        retries with exponential backoff and providing download progress feedback.
+        Download a file from a given URL.
+
+        Uses HTTPS with SSL context verification, retries with exponential backoff and
+        providing download progress feedback.
 
         Parameters
         ----------
             - url (str): The URL of the file to download. Must start with "https".
             - out_path (str): The local path where the file will be saved.
             - out_file (str): The name of the file to save the downloaded content as.
-            - max_retries (int, optional): The maximum number of retry attempts
-                in case of download failure. Defaults to 3.
-            - backoff_factor (int, optional): The factor by which the wait time
-                increases after each failed attempt. Defaults to 2.
             - headers (dict, optional):
                 A dictionary of HTTP headers to send with the request.
 
@@ -204,6 +201,11 @@ class FileHelpers:
         Ensure that the logger is properly configured to capture this information.
 
         """
+        # Download settings. These are not changed by any call site in Crafty so taking
+        # them out of function signature to reduce the number of parameters.
+        max_retries = 3
+        backoff_factor = 2
+
         if not url.lower().startswith("https"):
             logger.error("SSL File Get - Error: URL must start with https.")
             return False
@@ -219,51 +221,91 @@ class FileHelpers:
                     "Chrome/58.0.3029.110 Safari/537.3"
                 ),
             }
-        req = urllib.request.Request(url, headers=headers)
 
-        write_path = os.path.join(out_path, out_file)
+        # Prevent file:// or ftp:// links from being opened. Urllib will happily open
+        # files, and FTP given a link path.
+        if not url.startswith(("http:", "https:")):
+            return False
+
+        # Check to mitigate S310 is done just above.
+        req = urllib.request.Request(url, headers=headers)  # noqa: S310
+
+        write_path = Path(out_path, out_file)
         attempt = 0
 
-        logger.info(f"SSL File Get - Requesting remote: {url}")
-        file_path_full = os.path.join(out_path, out_file)
-        logger.info(f"SSL File Get - Download Destination: {file_path_full}")
+        logger.info("SSL File Get - Requesting remote", extra={"url": url})
+        file_path_full = Path(out_path, out_file)
+        logger.info(
+            "SSL File Get - Download Destination",
+            extra={"full file path": file_path_full},
+        )
 
         while attempt < max_retries:
             try:
-                with urllib.request.urlopen(req, context=ssl_context) as response:
-                    total_size = response.getheader("Content-Length")
-                    if total_size:
-                        total_size = int(total_size)
-                    downloaded = 0
-                    with open(write_path, "wb") as file:
-                        while True:
-                            chunk = response.read(1024 * 1024)  # 1 MB
-                            if not chunk:
-                                break
-                            file.write(chunk)
-                            downloaded += len(chunk)
-                            if total_size:
-                                progress = (downloaded / total_size) * 100
-                                logger.info(
-                                    f"SSL File Get - Download progress: {progress:.2f}%",
-                                )
-                                WebSocketManager().broadcast_page(
-                                    SERVER_DETAIL,
-                                    "download_progress",
-                                    round(progress, 1),
-                                )
-                    return True
-            except (URLError, ssl.SSLError) as e:
-                logger.warning(f"SSL File Get - Attempt {attempt + 1} failed: {e}")
-                time.sleep(backoff_factor**attempt)
-            except Exception as e:
-                logger.critical(f"SSL File Get - Unexpected error: {e}")
-                return False
-            finally:
+                self._ssl_get_file_single_shot(req, ssl_context, write_path)
+            # The noqa here is for try/except inside of a loop. Not performance critical
+            # so blocking that inspection.
+            except (  # noqa: PERF203
+                URLError,
+                ssl.SSLError,
+            ) as e:
                 attempt += 1
+                logger.warning(
+                    "SSL File Get",
+                    extra={"attempt": attempt, "failed": e},
+                )
+                time.sleep(backoff_factor**attempt)
+            # I do not think an error other than URLError or ssl.SSLError is possible
+            # here but leaving this bare Except.
+            except Exception as e:
+                logger.critical("SSL File Get - Unexpected error", extra={"error": e})
+                return False
 
         logger.error("SSL File Get - Maximum retries reached. Download failed.")
         return False
+
+    @staticmethod
+    def _ssl_get_file_single_shot(
+        req: urllib.request.Request,
+        ssl_context: SSLContext,
+        write_path: Path,
+    ) -> bool:
+        """
+        Single download attempt for ssl_file_get.
+
+        This should not be used by itself. Use ssl_get_file instead
+
+        Args:
+            req: the request to be made.
+            ssl_context: the ssl context for this download.
+            write_path: Where the file should be written to.
+        """
+        # Validation of URL is done in ssl_get_file when the req is created. Safe to
+        # disable the inspection here.
+        with urllib.request.urlopen(req, context=ssl_context) as response:  # noqa: S310
+            total_size = response.getheader("Content-Length")
+            if total_size:
+                total_size = int(total_size)
+            downloaded = 0
+            with write_path.open("wb") as file:
+                while True:
+                    chunk = response.read(1024 * 1024)  # 1 MB
+                    if not chunk:
+                        break
+                    file.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size:
+                        progress = (downloaded / total_size) * 100
+                        logger.info(
+                            "SSL File Get",
+                            extra={"Download Progress": f"{progress:.2f}%"},
+                        )
+                        WebSocketManager().broadcast_page(
+                            SERVER_DETAIL,
+                            "download_progress",
+                            round(progress, 1),
+                        )
+            return True
 
     @staticmethod
     def del_dirs(path):
