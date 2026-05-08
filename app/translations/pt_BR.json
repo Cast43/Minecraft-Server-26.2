@@ -28,7 +28,8 @@
         "permName": "Nome da Permissão",
         "perms": "Permissões",
         "server": "Servidor: ",
-        "yes": "Sim"
+        "yes": "Sim",
+        "fullAccess": "Acesso total"
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>Crafty não funciona propriamente quando JavaScript não está habilitado!",
@@ -536,6 +537,22 @@
         "allow_nsfw_profile_pictures": "Permitir fotos de perfil NSFW do Gravatar™",
         "crafty_logs_delete_after_days": "Por quanto tempo o Crafty deve manter os logs do app (dias)",
         "enable_user_self_delete": "Permitir que usuários deletem suas próprias contas",
-        "experimental": "Habilitar Recursos Experimentais"
+        "experimental": "Habilitar Recursos Experimentais",
+        "cookie_expire": "Cookies de sessão expiram após (dias)",
+        "delete_default_json": "Excluir JSON padrão ao iniciar",
+        "dir_size_poll_freq_minutes": "Com que frequência o Crafty deve verificar o tamanho dos diretórios do servidor (minutos)",
+        "disabled_language_files": "Arquivos de idioma desabilitados globalmente",
+        "history_max_age": "Por quanto tempo o Crafty deve manter as estatísticas do seu servidor (dias)",
+        "https_port": "Porta do Crafty",
+        "keywords": "Palavras-chave que o Crafty deve destacar nos terminais do seu servidor",
+        "language": "Idioma global do sistema (Para páginas públicas e reserva de tradução)",
+        "max_audit_entries": "Número máximo de entradas permitidas no registro de atividades do Crafty",
+        "max_log_lines": "Número máximo de linhas por arquivo de log",
+        "max_login_attempts": "Número máximo de tentativas de login com falha para um IP remoto antes do tempo limite ser atingido",
+        "monitoring": "Monitoramento",
+        "reset_secrets_on_next_boot": "Redefinir segredos na próxima inicialização",
+        "security": "Segurança",
+        "show_contribute_link": "Mostrar links de contribuição no painel",
+        "show_errors": "Exibir erros de depuração do servidor web"
     }
 }
