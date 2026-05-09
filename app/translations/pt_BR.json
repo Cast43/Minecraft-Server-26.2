@@ -20,7 +20,7 @@
         "created": "Criado",
         "deleteKeyConfirmation": "Deseja deletar esta Chave de API?. Esta ação não pode ser desfeita.",
         "deleteKeyConfirmationTitle": "Remover Chave de API ${keyId}?",
-        "getToken": "Pegar um Token",
+        "getToken": "Obter um Token",
         "name": "Nome",
         "nameDesc": "Como você gostaria de chamar este Token de API?",
         "no": "Não",
@@ -74,7 +74,7 @@
         "cpuUsage": "Uso do Processador",
         "crashed": "Crashou",
         "dashboard": "Painel de Controle",
-        "delay-explained": "O serviço/agente iniciou recentemente e está atrasando o início da instância do servidor de minecraft",
+        "delay-explained": "O serviço/agente iniciou recentemente e está atrasando o início da instância do servidor de Minecraft",
         "host": "Host",
         "kill": "Matar Processo",
         "killing": "Matando processo...",
@@ -98,7 +98,11 @@
         "status": "Status",
         "stop": "Parar",
         "version": "Versão",
-        "welcome": "Bem-vindo ao Crafty Controller"
+        "welcome": "Bem-vindo ao Crafty Controller",
+        "installing": "Instalando...",
+        "port": "Porta",
+        "serverIcon": "Ícone do servidor",
+        "storage": "Armazenamento"
     },
     "datatables": {
         "loadingRecords": "Carregando...",
@@ -178,7 +182,19 @@
         "noJava": "Servidor {} falhou ao iniciar com código de erro: Detectamos que o Java não está instalado. Por favor, instale o Java e então inicie o servidor.",
         "portReminder": "Detectamos que esta é a primeira vez que {} está rodando. Certifique-se de encaminhar a porta {} através do seu roteador/firewall para torná-lo acessível remotamente da internet.",
         "start-error": "Servidor {} falhou ao iniciar com código de erro: {}",
-        "terribleFailure": "Que Falha terrível!"
+        "terribleFailure": "Que Falha terrível!",
+        "agree": "Concordo",
+        "bedrockError": "Downloads do Bedrock não disponíveis. Por favor, verificar",
+        "bigBucket1": "Verificação de saúde do Big Bucket falhou. Por favor, verificar",
+        "cancel": "Cancelar",
+        "craftyStatus": "Página de status do Crafty",
+        "cronFormat": "Formato inválido de Cron detectado",
+        "experimental": "Você deve habilitar os recursos experimentais para acessar esta funcionalidade",
+        "fileError": "O tipo de arquivo deve ser uma imagem.",
+        "installerJava": "Falha ao instalar {}: Servidores Forge precisam do Java. Detectamos que o Java não está instalado. Por favor, instale o Java e em seguida instale o servidor.",
+        "migration": "O armazenamento principal do Crafty está sendo migrado para um novo local. Todas as inicializações de servidores foram suspensas durante este intervalo. Por favor, aguarde enquanto realizamos esta migração",
+        "noInternet": "O Crafty está com problemas para acessar a internet. A criação do servidor foi desativada. Por favor, verifique sua conexão com a internet e recarregue esta página.",
+        "return": "Retornar para o Painel de Controle"
     },
     "footer": {
         "allRightsReserved": "Todos os direitos reservados",
@@ -554,5 +570,8 @@
         "security": "Segurança",
         "show_contribute_link": "Mostrar links de contribuição no painel",
         "show_errors": "Exibir erros de depuração do servidor web"
+    },
+    "customLogin": {
+        "selectImage": "Selecione uma imagem"
     }
 }
