@@ -102,8 +102,7 @@ class HytaleInstaller:
                     {"id": new_id},
                     "vterm_new_line",
                     {"line": line + "<br />"},
-                    required_permission=EnumPermissionsServer.TERMINAL,
-                )
+                )  # Not limiting to just terminal since it's an install/update status
             if (
                 line.startswith(self.hytale_json.parsing_lines.url_line_start)
                 and url_line == ""

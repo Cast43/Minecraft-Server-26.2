@@ -58,7 +58,7 @@ class ModdedInstaller:
                     {"id": new_id},
                     "vterm_new_line",
                     {"line": line + "<br />"},
-                )
+                )  # Not limiting to just terminal since it's an install/update status
 
     def _parse_version(self, command: str):
         match = re.search(
