@@ -184,7 +184,15 @@ class ImportHelpers:
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
+                    server_users = PermissionsServers.get_server_user_list(new_id)
                     logger.error("Failed to download the Bedrock server zip.")
+                    ServersController.finish_import(new_id)
+                    for user in server_users:
+                        WebSocketManager().broadcast_user(
+                            user,
+                            "send_error",
+                            {"error": "Failed to download the Bedrock server zip."},
+                        )
                     return
 
                 unzip_path = self.helper.wtol_path(file_path)
