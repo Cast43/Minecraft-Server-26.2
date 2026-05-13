@@ -30,6 +30,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
+FILE_PATH = "file path"
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
 BLAKE3_HASH_LENGTH_BYTES = 128
@@ -351,14 +352,14 @@ class FileHelpers:
 
         """
         file_path = Path(path)
-        logger.debug("Deleting file", extra={"file path": file_path})
+        logger.debug("Deleting file", extra={FILE_PATH: file_path})
         try:
             # Remove the file
             file_path.unlink()
         except OSError as why:
             logger.exception(
                 "Unable to delete file",
-                extra={"file path": file_path, "error": why},
+                extra={FILE_PATH: file_path, "error": why},
             )
             return False
         return True
@@ -494,7 +495,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={"file path": path})
+                    logger.info("backing up file", extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -506,7 +507,7 @@ class FileHelpers:
                 ) as why:
                     logger.warning(
                         "Error backing up file",
-                        extra={"file path": path, "error": why},
+                        extra={FILE_PATH: path, "error": why},
                     )
 
         return True
@@ -550,7 +551,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={"file path": path})
+                    logger.info("backing up file", extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -562,7 +563,7 @@ class FileHelpers:
                 ) as why:
                     logger.warning(
                         "Error backing up file",
-                        extra={"file path": path, "error": why},
+                        extra={FILE_PATH: path, "error": why},
                     )
 
         return True
@@ -614,7 +615,6 @@ class FileHelpers:
                     # to match directories.
                     if str(os.path.join(root, l_dir)).replace("\\", "/") in ex_replace:
                         dirs.remove(l_dir)
-                ziproot = path_to_zip
                 # iterate through list of files
                 for file in files:
                     # check if file/dir is in exclusions list.
