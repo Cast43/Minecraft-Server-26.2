@@ -194,7 +194,10 @@
         "installerJava": "Falha ao instalar {}: Servidores Forge precisam do Java. Detectamos que o Java não está instalado. Por favor, instale o Java e em seguida instale o servidor.",
         "migration": "O armazenamento principal do Crafty está sendo migrado para um novo local. Todas as inicializações de servidores foram suspensas durante este intervalo. Por favor, aguarde enquanto realizamos esta migração",
         "noInternet": "O Crafty está com problemas para acessar a internet. A criação do servidor foi desativada. Por favor, verifique sua conexão com a internet e recarregue esta página.",
-        "return": "Retornar para o Painel de Controle"
+        "return": "Retornar para o Painel de Controle",
+        "duplicateId": "Tokens de requisição devem ter unicamente session_id ou token_id, não os dois.",
+        "selfHost": "Se você está auto-hospedando este repositório, por favor, verifique seu endereço ou consulte nosso guia de solução de problemas.",
+        "superError": "Você deve ser um Super Usuário para completar esta ação."
     },
     "footer": {
         "allRightsReserved": "Todos os direitos reservados",
@@ -205,7 +208,8 @@
         "forgotPassword": "Esqueci a Senha",
         "login": "Logar",
         "password": "Senha",
-        "username": "Usuário"
+        "username": "Usuário",
+        "2fa": "(Caso a MFA esteja ativa)"
     },
     "notify": {
         "activityLog": "Logs de Atividade",
@@ -215,7 +219,12 @@
         "finishedPreparing": "Terminamos de preparar seus logs de suporte. Por favor, clique em baixar para baixar",
         "logout": "Deslogar",
         "preparingLogs": " Por favor aguarde enquanto preparamos seus logs... Enviaremos uma notificação quando eles estiverem prontos. Esta ação pode demorar um tempo para grandes implementações.",
-        "supportLogs": "Logs de Suporte"
+        "supportLogs": "Logs de Suporte",
+        "accountSettings": "Configurações da conta",
+        "backup_desc": "Detectamos que a migração do backup falhou de forma parcial ou total. Por favor, verifique seus backups na guia de Backups.",
+        "restoreFailed": "Falha ao restaurar Backup. Não conseguimos excluir os arquivos da pasta do servidor.",
+        "restoreSuccess": "Arquivos do servidor restaurados com sucesso.",
+        "schedule_desc": "Detectamos que algumas ou todas as suas tarefas agendadas não foram transferidas com sucesso durante a atualização. Por favor, verifique suas tarefas agendadas na guia Agendar."
     },
     "panelConfig": {
         "adminControls": "Controles de Admin",
@@ -569,9 +578,34 @@
         "reset_secrets_on_next_boot": "Redefinir segredos na próxima inicialização",
         "security": "Segurança",
         "show_contribute_link": "Mostrar links de contribuição no painel",
-        "show_errors": "Exibir erros de depuração do servidor web"
+        "show_errors": "Exibir erros de depuração do servidor web",
+        "submit": "Enviar",
+        "virtual_terminal_lines": "Quantas linhas devemos permitir no buffer do terminal do seu servidor"
     },
     "customLogin": {
-        "selectImage": "Selecione uma imagem"
+        "selectImage": "Selecione uma imagem",
+        "apply": "Aplicar",
+        "customLoginPage": "Customizar a Tela de Login",
+        "delete": "Excluir",
+        "loginImage": "Enviar imagem de fundo para a tela de login.",
+        "loginOpacity": "Selecionar opacidade da janela de Login",
+        "pageTitle": "Página de Login customizada",
+        "preview": "Pré-visualizar",
+        "select": "Selecionar"
+    },
+    "offline": {
+        "pleaseConnect": "Por favor, conecte-se a internet para usar o Crafty."
+    },
+    "otp": {
+        "backupCodes": "Por favor, copie seus códigos de backup.",
+        "backupCodesMax": "O máximo de 6 códigos de backup foi alcançado.",
+        "no": "Não",
+        "otpReq": "O uso de MFA é obrigatório para este usuário. Você não pode remover seu único meio de acesso MFA.",
+        "renewRecovery": "Renovar Códigos de recuperação",
+        "saveWarn": "Certifique-se de salvar seus códigos de recuperação ou você pode perder acesso",
+        "verify": "Falha ao verificar MFA. Inserido código inválido."
+    },
+    "webhooks": {
+        "webhooks": "Webhooks"
     }
 }
