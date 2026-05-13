@@ -242,7 +242,7 @@ class FileHelpers:
 
         while attempt < max_retries:
             try:
-                self._ssl_get_file_single_shot(req, ssl_context, write_path)
+                return self._ssl_get_file_single_shot(req, ssl_context, write_path)
             # The noqa here is for try/except inside of a loop. Not performance critical
             # so blocking that inspection.
             except (  # noqa: PERF203
