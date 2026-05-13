@@ -687,14 +687,14 @@ class FileHelpers:
             if Path(old_dir, item).is_dir():
                 # Source item is a directory
                 FileHelpers.move_dir_exist(
-                    Path(old_dir) / item,
-                    Path(new_dir) / item,
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
             else:
                 # Source item is a file.
                 FileHelpers.move_file(
-                    Path(old_dir) / item,
-                    Path(new_dir) / item,
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
 
         # Error raised by shutil if an error is encountered. Raising the same error if
