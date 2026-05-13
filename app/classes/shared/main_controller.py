@@ -965,7 +965,7 @@ class Controller:
                     )
 
             except Exception as e:
-                logger.error(f"Unable to create required server files due to :{e}")
+                logger.exception(f"Unable to create required server files due to :{e}")
                 return False
 
         # let's re-init all servers
@@ -999,7 +999,7 @@ class Controller:
                             )
                         )
                     except Exception as e:
-                        logger.error(
+                        logger.exception(
                             f"Unable to delete server files for server with ID: "
                             f"{server_id} with error logged: {e}"
                         )
@@ -1130,7 +1130,7 @@ class Controller:
                         new_local_server_path,
                     )
                 except FileExistsError as e:
-                    logger.error(f"Failed to move server with error: {e}")
+                    logger.exception(f"Failed to move server with error: {e}")
 
             server_obj = self.servers.get_server_obj(server.get("server_id"))
 

@@ -251,7 +251,7 @@ class ServerInstance:
         try:
             self.tz = get_localzone()
         except ZoneInfoNotFoundError as e:
-            logger.error(
+            logger.exception(
                 "Could not capture time zone from system. Falling back to Europe/London"
                 f" error: {e}"
             )
@@ -477,7 +477,9 @@ class ServerInstance:
                         },
                     )
                 return False
-            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            logger.exception(
+                f"Server {self.name} failed to start with error code: {ex}"
+            )
             if user_id:
                 WebSocketManager().broadcast_user(
                     user_id,
@@ -500,7 +502,7 @@ class ServerInstance:
                     stderr=subprocess.STDOUT,
                 )
             except Exception as ex:
-                logger.error(
+                logger.exception(
                     f"Server {self.name} failed to start with error code: {ex}"
                 )
                 if user_id:
@@ -531,7 +533,9 @@ class ServerInstance:
                 env=my_env,
             )
         except Exception as ex:
-            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            logger.exception(
+                f"Server {self.name} failed to start with error code: {ex}"
+            )
             if user_id:
                 WebSocketManager().broadcast_user(
                     user_id,
@@ -620,7 +624,9 @@ class ServerInstance:
                 env=my_env,
             )
         except Exception as ex:
-            logger.error(f"Server {self.name} failed to start with error code: {ex}")
+            logger.exception(
+                f"Server {self.name} failed to start with error code: {ex}"
+            )
             if user_id:
                 WebSocketManager().broadcast_user(
                     user_id,
@@ -930,7 +936,7 @@ class ServerInstance:
             self.server_scheduler.remove_job("stats_" + str(self.server_id))
             self.server_scheduler.remove_job("save_stats_" + str(self.server_id))
         except JobLookupError as e:
-            logger.error(
+            logger.exception(
                 f"Could not remove job with id stats_{self.server_id} due"
                 + f" to error: {e}"
             )
@@ -1040,7 +1046,7 @@ class ServerInstance:
         try:
             self.server_scheduler.remove_job("stats_" + str(self.server_id))
         except JobLookupError as e:
-            logger.error(
+            logger.exception(
                 f"Could not remove job with id stats_{self.server_id} due"
                 + f" to error: {e}"
             )
@@ -1136,7 +1142,7 @@ class ServerInstance:
             Helpers.validate_traversal(expected_backup_location, backup_file)
         except ValueError as why:
             # Crash out on possible traversal.
-            logger.error(
+            logger.exception(
                 f"Possible backup traversal detected on restore request: {why}",
             )
 
@@ -1205,7 +1211,7 @@ class ServerInstance:
         try:
             backup_thread.start()
         except Exception as ex:
-            logger.error(f"Failed to start backup: {ex}")
+            logger.exception(f"Failed to start backup: {ex}")
             return False
         logger.info(f"Backup Thread started for server {self.settings['server_name']}.")
 

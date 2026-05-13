@@ -25,7 +25,7 @@ class BigBucket:
                 cache = json.load(f)
 
         except Exception as e:
-            logger.error(f"Unable to read big_bucket cache file: {e}")
+            logger.exception(f"Unable to read big_bucket cache file: {e}")
 
         return cache
 
@@ -47,7 +47,7 @@ class BigBucket:
                 logger.info("Big bucket is alive and responding as expected")
                 return True
         except Exception as e:
-            logger.error(f"Unable to connect to big bucket due to error: {e}")
+            logger.exception(f"Unable to connect to big bucket due to error: {e}")
             return False
 
         logger.error(
@@ -72,7 +72,7 @@ class BigBucket:
             ConnectionError,
             requests.exceptions.ConnectionError,
         ) as e:
-            logger.error(f"Unable to get jars from remote with error {e}")
+            logger.exception(f"Unable to get jars from remote with error {e}")
             return {}
 
     def _refresh_cache(
@@ -97,7 +97,7 @@ class BigBucket:
                 json.dump(cache_data, cache_file, indent=4)
                 logger.info("Cache file successfully refreshed manually.")
         except Exception as e:
-            logger.error(f"Failed to update cache file manually: {e}")
+            logger.exception(f"Failed to update cache file manually: {e}")
 
     def manual_refresh_cache(self):
         """
@@ -173,5 +173,5 @@ class BigBucket:
                 "url"
             ][0]
         except Exception as e:
-            logger.error(f"An error occurred while constructing fetch URL: {e}")
+            logger.exception(f"An error occurred while constructing fetch URL: {e}")
             return None

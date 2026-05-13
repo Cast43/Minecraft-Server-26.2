@@ -346,10 +346,10 @@ class ServersController(metaclass=Singleton):
         for role in roles_list:
             role_users = HelperUsers.get_users_from_role(role.role_id)
             for user_role in role_users:
-                user_ids.add(user_role.user_id.user_id)
+                user_ids.update([user_role.user_id.user_id])
 
         for user_id in HelperUsers.get_super_user_list():
-            user_ids.add(user_id)
+            user_ids.update([user_id])
         return user_ids
 
     def get_all_servers_stats(self):
@@ -370,7 +370,7 @@ class ServersController(metaclass=Singleton):
                     }
                 )
         except IndexError as ex:
-            logger.error(
+            logger.exception(
                 f"Stats collection failed with error: {ex}. Was a server just created?"
             )
         return server_data
@@ -600,7 +600,7 @@ class ServersController(metaclass=Singleton):
                 content = file.read()
                 file.close()
         except Exception as ex:
-            logger.error(ex)
+            logger.exception(ex)
             return {}
 
         return json.loads(content)
@@ -619,7 +619,7 @@ class ServersController(metaclass=Singleton):
                 content = file.read()
                 file.close()
         except Exception as ex:
-            logger.error(ex)
+            logger.exception(ex)
             return {}
 
         return json.loads(content)

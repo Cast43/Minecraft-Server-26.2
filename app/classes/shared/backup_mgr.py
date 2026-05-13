@@ -39,7 +39,7 @@ class BackupManager:
         try:
             self.tz = get_localzone()
         except ZoneInfoNotFoundError as e:
-            logger.error(
+            logger.exception(
                 "Could not capture time zone from system. Falling back to Europe/London"
                 f" error: {e}"
             )
@@ -125,7 +125,9 @@ class BackupManager:
         except ValueError as why:
             # The given name of the backup file does not match what Crafty would write.
             # This must be something we need to reject.
-            logger.error(f"Unable to parse a given backup filename with error {why}")
+            logger.exception(
+                f"Unable to parse a given backup filename with error {why}"
+            )
 
             self.broadcast_rejected_restore(backup_config, svr_obj)
             return

@@ -213,7 +213,7 @@ class PanelHandler(BaseHandler):
                 data = json.loads(server["int_ping_results"])
                 server["int_ping_results"] = data
             except Exception as e:
-                logger.error(f"Failed server data for page with error: {e}")
+                logger.exception(f"Failed server data for page with error: {e}")
 
         return page_data
 
@@ -392,7 +392,7 @@ class PanelHandler(BaseHandler):
                     logger.error("Issue with upstream Staff, using local.")
                     credits_dict: dict = json.loads(credits_default_local)
             except Exception as e:
-                logger.error("Request to credits bucket failed, using local. %s", e)
+                logger.exception("Request to credits bucket failed, using local. %s", e)
                 credits_dict: dict = json.loads(credits_default_local)
 
             timestamp = credits_dict["lastUpdate"] / 1000.0
@@ -487,7 +487,9 @@ class PanelHandler(BaseHandler):
                                 )
                             )
                         except Exception as e:
-                            logger.error(f"Failed to get server waiting to start: {e}")
+                            logger.exception(
+                                f"Failed to get server waiting to start: {e}"
+                            )
                             server["stats"]["waiting_start"] = False
 
                     if str(server["server_data"]["server_id"]) == str(server_id):
@@ -619,7 +621,7 @@ class PanelHandler(BaseHandler):
                     server_id
                 )
             except Exception as e:
-                logger.error(f"Failed to get server waiting to start: {e}")
+                logger.exception(f"Failed to get server waiting to start: {e}")
                 page_data["waiting_start"] = False
             page_data["permissions"] = {
                 "Commands": EnumPermissionsServer.COMMANDS,
