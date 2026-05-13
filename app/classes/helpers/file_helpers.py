@@ -279,6 +279,7 @@ class FileHelpers:
             req: the request to be made.
             ssl_context: the ssl context for this download.
             write_path: Where the file should be written to.
+
         """
         # Validation of URL is done in ssl_get_file when the req is created. Safe to
         # disable the inspection here.
@@ -314,6 +315,7 @@ class FileHelpers:
 
         Args:
             path: Path to delete.
+
         """
         target_path = Path(path)
         clean = True
@@ -346,6 +348,7 @@ class FileHelpers:
 
         Args:
             path: the path to the file to delete
+
         """
         file_path = Path(path)
         logger.debug("Deleting file", extra={"file path": file_path})
@@ -387,6 +390,7 @@ class FileHelpers:
 
         Raises:
             OSError: If there is an error copying directories of if files exist.
+
         """
         # pylint: disable=unexpected-keyword-arg
         shutil.copytree(src_path, dest_path, dirs_exist_ok=dirs_exist_ok)
@@ -402,6 +406,7 @@ class FileHelpers:
 
         Raises:
             OSError: If there is any error copying the file.
+
         """
         shutil.copy(src_path, dest_path)
 
@@ -416,6 +421,7 @@ class FileHelpers:
 
         Raises:
             OSError: If there is an error moving directory.
+
         """
         shutil.move(src_path, dest_path)
 
@@ -432,6 +438,7 @@ class FileHelpers:
 
         Raises:
             OSError: If there is an error copying the directory or deleting the source
+
         """
         FileHelpers.copy_dir(src_path, dest_path, dirs_exist_ok=True)
         FileHelpers.del_dirs(src_path)
@@ -447,6 +454,7 @@ class FileHelpers:
 
         Raises:
             OSError: If there is an error moving the file.
+
         """
         shutil.move(src_path, dest_path)
 
