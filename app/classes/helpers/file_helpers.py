@@ -1,4 +1,3 @@
-from isort import file
 import datetime
 import logging
 import mimetypes
@@ -373,25 +372,82 @@ class FileHelpers:
         return m_type
 
     @staticmethod
-    def copy_dir(src_path, dest_path, dirs_exist_ok=False):
+    def copy_dir(
+        src_path: str,
+        dest_path: str,
+        dirs_exist_ok: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
+        """
+        Copy a directory using shutil copytree.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+            dirs_exist_ok: Allows target dirs to exist, default False.
+
+        Raises:
+            OSError: If there is an error copying directories of if files exist.
+        """
         # pylint: disable=unexpected-keyword-arg
         shutil.copytree(src_path, dest_path, dirs_exist_ok=dirs_exist_ok)
 
     @staticmethod
-    def copy_file(src_path, dest_path):
+    def copy_file(src_path: str, dest_path: str) -> None:
+        """
+        Copy a file with shutil copy.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is any error copying the file.
+        """
         shutil.copy(src_path, dest_path)
 
     @staticmethod
-    def move_dir(src_path, dest_path):
+    def move_dir(src_path: str, dest_path: str) -> None:
+        """
+        Move a directory using shutil move.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is an error moving directory.
+        """
         shutil.move(src_path, dest_path)
 
     @staticmethod
-    def move_dir_exist(src_path, dest_path):
-        FileHelpers.copy_dir(src_path, dest_path, True)
+    def move_dir_exist(src_path: str, dest_path: str) -> None:
+        """
+        Move dir with target dirs already present.
+
+        This function also deletes the source.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is an error copying the directory or deleting the source
+        """
+        FileHelpers.copy_dir(src_path, dest_path, dirs_exist_ok=True)
         FileHelpers.del_dirs(src_path)
 
     @staticmethod
-    def move_file(src_path, dest_path):
+    def move_file(src_path: str, dest_path: str) -> None:
+        """
+        Move a file with shutil move.
+
+        Args:
+            src_path: Source path
+            dest_path: Destination path
+
+        Raises:
+            OSError: If there is an error moving the file.
+        """
         shutil.move(src_path, dest_path)
 
     @staticmethod
