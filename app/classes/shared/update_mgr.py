@@ -104,7 +104,9 @@ class UpdateManager:
                 )
         except TimeoutError as why:
             self.update_available = False
-            return logger.error("Could not capture remote URL hash with error %s", why)
+            return logger.exception(
+                "Could not capture remote URL hash with error %s", why
+            )
         remote_hash = None
         match response.status_code:
             case 200:
