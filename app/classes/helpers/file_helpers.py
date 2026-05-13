@@ -459,57 +459,111 @@ class FileHelpers:
         shutil.move(src_path, dest_path)
 
     @staticmethod
-    def make_archive(path_to_destination, path_to_zip, comment=""):
-        # create a ZipFile object
-        string_target_path = str(path_to_destination)
-        path_to_destination = string_target_path
+    def make_archive(
+        path_to_destination: Path,
+        path_to_zip: Path,
+        comment: str = "",
+    ) -> bool:
+        """
+        Make a zip archive without compression.
 
-        string_zip_path = str(path_to_zip)
+        Extremely duplicated code with make_compressed_archive. These should be
+        combined, we will need to look at the call sites.
 
-        if not path_to_destination.endswith(".zip"):
-            path_to_destination += ".zip"
+        Args:
+            path_to_destination: Where the zip should be saved to. .zip suffix not
+                required.
+            path_to_zip: The path to zip up.
+            comment: Comment to be added to zip file.
+
+        """
+        if path_to_destination.suffix != ".zip":
+            path_to_destination.with_suffix(".zip")
+
+        # Create zip file
         with ZipFile(path_to_destination, "w") as zip_file:
+            # Add comment to zip file
             zip_file.comment = bytes(
                 comment,
                 "utf-8",
             )  # comments over 65535 bytes will be truncated
-            for root, _dirs, files in os.walk(string_zip_path, topdown=True):
-                ziproot = string_zip_path
-                for file in files:
-                    try:
-                        logger.info(f"backing up: {os.path.join(root, file)}")
-                        full_path = Path(root) / file
-                        zip_file.write(full_path, full_path.relative_to(path_to_zip))
 
-                    except Exception as e:
-                        logger.warning(
-                            f"Error backing up: {os.path.join(root, file)}!"
-                            f" - Error was: {e}",
-                        )
+            for path in path_to_zip.rglob("*"):
+                # Skip directories
+                if path.is_dir():
+                    continue
+
+                try:
+                    logger.info("backing up file", extra={"file path": path})
+                    zip_file.write(path, path.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        "Error backing up file",
+                        extra={"file path": path, "error": why},
+                    )
+
         return True
 
     @staticmethod
-    def make_compressed_archive(path_to_destination, path_to_zip, comment=""):
-        # create a ZipFile object
-        path_to_destination += ".zip"
-        with ZipFile(path_to_destination, "w", ZIP_DEFLATED) as zip_file:
+    def make_compressed_archive(
+        path_to_destination: Path,
+        path_to_zip: Path,
+        comment: str = "",
+    ) -> bool:
+        """
+        Make a zip archive with compression.
+
+        Uses ZIP DEFLATED compression mode.
+
+        Args:
+            path_to_destination: Where the zip should be saved to. .zip suffix not
+                required.
+            path_to_zip: The path to zip up.
+            comment: Comment to be added to zip file.
+
+        """
+        if path_to_destination.suffix != ".zip":
+            path_to_destination.with_suffix(".zip")
+
+        # Create zip file
+        with ZipFile(
+            path_to_destination,
+            mode="w",
+            compression=ZIP_DEFLATED,
+        ) as zip_file:
+            # Add comment to zip file
             zip_file.comment = bytes(
                 comment,
                 "utf-8",
             )  # comments over 65535 bytes will be truncated
-            for root, _dirs, files in os.walk(path_to_zip, topdown=True):
-                ziproot = path_to_zip
-                for file in files:
-                    try:
-                        logger.info(f"packaging: {os.path.join(root, file)}")
-                        full_path = Path(root) / file
-                        zip_file.write(full_path, full_path.relative_to(path_to_zip))
 
-                    except Exception as e:
-                        logger.warning(
-                            f"Error packaging: {os.path.join(root, file)}!"
-                            f" - Error was: {e}",
-                        )
+            for path in path_to_zip.rglob("*"):
+                # Skip directories
+                if path.is_dir():
+                    continue
+
+                try:
+                    logger.info("backing up file", extra={"file path": path})
+                    zip_file.write(path, path.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        "Error backing up file",
+                        extra={"file path": path, "error": why},
+                    )
 
         return True
 
