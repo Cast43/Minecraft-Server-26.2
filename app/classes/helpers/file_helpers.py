@@ -478,16 +478,8 @@ class FileHelpers:
                 for file in files:
                     try:
                         logger.info(f"backing up: {os.path.join(root, file)}")
-                        if os.name == "nt":
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, ""), file),
-                            )
-                        else:
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, "/"), file),
-                            )
+                        full_path = Path(root) / file
+                        zip_file.write(full_path, full_path.relative_to(path_to_zip))
 
                     except Exception as e:
                         logger.warning(
@@ -510,16 +502,8 @@ class FileHelpers:
                 for file in files:
                     try:
                         logger.info(f"packaging: {os.path.join(root, file)}")
-                        if os.name == "nt":
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, ""), file),
-                            )
-                        else:
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, "/"), file),
-                            )
+                        full_path = Path(root) / file
+                        zip_file.write(full_path, full_path.relative_to(path_to_zip))
 
                     except Exception as e:
                         logger.warning(
@@ -589,16 +573,10 @@ class FileHelpers:
                         try:
                             logger.debug(f"backing up: {os.path.join(root, file)}")
                             # add trailing slash to zip root dir if not windows.
-                            if os.name == "nt":
-                                zip_file.write(
-                                    os.path.join(root, file),
-                                    os.path.join(root.replace(ziproot, ""), file),
-                                )
-                            else:
-                                zip_file.write(
-                                    os.path.join(root, file),
-                                    os.path.join(root.replace(ziproot, "/"), file),
-                                )
+                            full_path = Path(root) / file
+                            zip_file.write(
+                                full_path, full_path.relative_to(path_to_zip)
+                            )
 
                         except Exception as e:
                             logger.warning(
