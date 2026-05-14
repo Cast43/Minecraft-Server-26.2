@@ -603,7 +603,10 @@
         "otpReq": "O uso de MFA é obrigatório para este usuário. Você não pode remover seu único meio de acesso MFA.",
         "renewRecovery": "Renovar Códigos de recuperação",
         "saveWarn": "Certifique-se de salvar seus códigos de recuperação ou você pode perder acesso",
-        "verify": "Falha ao verificar MFA. Inserido código inválido."
+        "verify": "Falha ao verificar MFA. Inserido código inválido.",
+        "newName": "Insira um nome amigável para este método MFA",
+        "newOTP": "Adicionar nova Autenticação Multifator",
+        "otpTitle": "Métodos de MFA"
     },
     "webhooks": {
         "webhooks": "Webhooks"
