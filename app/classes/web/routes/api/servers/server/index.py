@@ -8,6 +8,43 @@ from app.classes.web.base_api_handler import BaseApiHandler
 
 logger = logging.getLogger(__name__)
 
+update_schema = {
+    "type": "object",
+    "properties": {
+        "category": {
+            "title": "Jar Category",
+            "type": "string",
+            "examples": ["Mc_java_servers", "Mc_java_proxies"],
+            "error": "enumErr",
+            "fill": True,
+        },
+        "type": {
+            "title": "Server JAR Type",
+            "type": "string",
+            "examples": ["Paper"],
+            "minLength": 1,
+            "error": "typeString",
+            "fill": True,
+        },
+        "version": {
+            "title": "Server JAR Version",
+            "type": "string",
+            "examples": ["1.18.2"],
+            "minLength": 1,
+            "error": "typeString",
+            "fill": True,
+        },
+        "update_watcher": {
+            "title": "Enable Update Notifications",
+            "type": "boolean",
+            "error": "typeBool",
+            "fill": True,
+        },
+    },
+    "additionalProperties": False,
+    "minProperties": 1,
+}
+
 # TODO: modify monitoring
 server_patch_schema = {
     "type": "object",
@@ -107,6 +144,7 @@ server_patch_schema = {
             "error": "typeBool",
             "fill": True,
         },
+        "update_watcher": {"type": "boolean", "error": "typeBool", "fill": True},
     },
     "additionalProperties": False,
     "minProperties": 1,
@@ -172,6 +210,7 @@ basic_server_patch_schema = {
             "error": "typeBool",
             "fill": True,
         },
+        "update_watcher": {"type": "boolean", "error": "typeBool", "fill": True},
     },
     "additionalProperties": False,
     "minProperties": 1,
@@ -198,11 +237,18 @@ class ApiServersServerIndexHandler(BaseApiHandler):
             )
 
         server_obj = self.controller.servers.get_server_obj(server_id)
+        srv_instance = self.controller.servers.get_server_instance_by_id(server_id)
         server = model_to_dict(server_obj)
+        status_dict = {
+            "update_available": srv_instance.update_available,
+            "updating": srv_instance.updating,
+            "backing_up": srv_instance.is_backingup,
+            "last_backup": srv_instance.last_backup_failed,
+        }
+        server["status"] = status_dict
 
         # TODO: limit some columns for specific permissions?
-
-        self.finish_json(200, {"status": "ok", "data": server})
+        return self.finish_json(200, {"status": "ok", "data": server})
 
     def patch(self, server_id: str):
         auth_data = self.authenticate_user()
@@ -379,4 +425,92 @@ class ApiServersServerIndexHandler(BaseApiHandler):
         self.finish_json(
             200,
             {"status": "ok"},
+        )
+
+
+class ApiServersServerUpdateConfig(BaseApiHandler):
+    def patch(self, server_id: str):
+        auth_data = self.authenticate_user()
+        if not auth_data:
+            return
+
+        if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
+            # if the user doesn't have access to the server, return an error
+            return self.finish_json(
+                400,
+                {
+                    "status": "error",
+                    "error": "NOT_AUTHORIZED",
+                    "error_data": self.helper.translation.translate(
+                        "validators", "insufficientPerms", auth_data[4]["lang"]
+                    ),
+                },
+            )
+
+        try:
+            data = json.loads(self.request.body)
+        except json.decoder.JSONDecodeError as e:
+            return self.finish_json(
+                400, {"status": "error", "error": "INVALID_JSON", "error_data": str(e)}
+            )
+
+        try:
+            validate(data, update_schema)
+        except ValidationError as why:
+            offending_key = ""
+            if why.schema.get("fill", None):
+                offending_key = why.path[0] if why.path else None
+            err = f"""{offending_key} {self.translator.translate(
+                "validators",
+                why.schema.get("error", "additionalProperties"),
+                self.controller.users.get_user_lang_by_id(auth_data[4]["user_id"]),
+            )} {why.schema.get("enum", "")}"""
+            return self.finish_json(
+                400,
+                {
+                    "status": "error",
+                    "error": "INVALID_JSON_SCHEMA",
+                    "error_data": f"{str(err)}",
+                },
+            )
+        big_bucket = {}
+        server_obj = self.controller.servers.get_server_obj(server_id)
+        with open(self.helper.big_bucket_minecraft_cache, "r", encoding="utf-8") as f:
+            big_bucket = json.load(f)
+        if "version" in data:
+            server_details = data.get("version").split("|")
+            try:
+                url = big_bucket["categories"][server_details[0]]["types"][
+                    server_details[1]
+                ]["versions"][server_details[2]]["url"]
+            except KeyError as why:
+                return self.finish_json(
+                    500,
+                    {
+                        "status": "error",
+                        "error": "KEY ERROR",
+                        "error_data": f"{str(why)}",
+                    },
+                )
+            server_obj.executable_update_url = url[0]
+        server_instance = self.controller.servers.get_server_instance_by_id(server_id)
+        if "update_watcher" in data:
+            server_obj.update_watcher = data.get("update_watcher")
+
+        self.controller.servers.update_server(server_obj)
+
+        self.controller.management.add_to_audit_log(
+            auth_data[4]["user_id"],
+            f"modified the server with ID {server_id}",
+            server_id,
+            self.get_remote_ip(),
+        )
+        server_instance.check_server_version()  # check for a new version after instance
+        # is updated
+        return self.finish_json(
+            200,
+            {
+                "status": "ok",
+                "data": {"executable_update_url": server_obj.executable_update_url},
+            },
         )

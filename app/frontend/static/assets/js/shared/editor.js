@@ -318,7 +318,7 @@ function loadMenuContent() {
 function load_text_size_control(menu) {
     const fontSize = localStorage.getItem("font-size") || 12;
     const sizeDiv = $("<div>").addClass("menu-item").addClass("edit-configure");
-    const inputLabel = $("<h6>").html(`<i class="fa-solid fa-text-height"></i>`);
+    const inputLabel = $("<h6>").html(`<i class="ph ph-text-t"></i>`);
 
     const input = $("<input>").attr({ type: "range", value: fontSize, min: 8, max: 32, id: "font-size" }).addClass("edit-configure");
     sizeDiv.append(inputLabel);

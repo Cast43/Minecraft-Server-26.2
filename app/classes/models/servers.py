@@ -43,7 +43,9 @@ class Servers(BaseModel):
     # created_by = ForeignKeyField(Users, backref="creator_server", null=True)
     shutdown_timeout = IntegerField(default=60)
     ignored_exits = CharField(default="0")
+    app_id = IntegerField(null=True)
     count_players = BooleanField(default=True)
+    update_watcher = BooleanField(default=False)
 
     class Meta:
         table_name = "servers"
@@ -72,6 +74,7 @@ class HelperServers:
         created_by: int,
         server_port: int = 25565,
         server_host: str = "127.0.0.1",
+        app_id: int = None,
     ) -> int:
         """Create a server in the database
 
@@ -110,6 +113,7 @@ class HelperServers:
             stop_command=server_stop,
             type=server_type,
             created_by=created_by,
+            app_id=app_id,
         ).server_id
 
     @staticmethod

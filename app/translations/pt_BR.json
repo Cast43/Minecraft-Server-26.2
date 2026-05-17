@@ -20,7 +20,7 @@
         "created": "Criado",
         "deleteKeyConfirmation": "Deseja deletar esta Chave de API?. Esta ação não pode ser desfeita.",
         "deleteKeyConfirmationTitle": "Remover Chave de API ${keyId}?",
-        "getToken": "Pegar um Token",
+        "getToken": "Obter um Token",
         "name": "Nome",
         "nameDesc": "Como você gostaria de chamar este Token de API?",
         "no": "Não",
@@ -28,10 +28,12 @@
         "permName": "Nome da Permissão",
         "perms": "Permissões",
         "server": "Servidor: ",
-        "yes": "Sim"
+        "yes": "Sim",
+        "fullAccess": "Acesso total"
     },
     "base": {
-        "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>Crafty não funciona propriamente quando JavaScript não está habilitado!"
+        "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>Crafty não funciona propriamente quando JavaScript não está habilitado!",
+        "getMFA": "Ative a autenticação multifator (MFA) para proteger melhor a sua conta. Sem a MFA, sua conta ficará mais vulnerável a acessos não autorizados."
     },
     "credits": {
         "developmentTeam": "Equipe de Desenvolvimento",
@@ -72,7 +74,7 @@
         "cpuUsage": "Uso do Processador",
         "crashed": "Crashou",
         "dashboard": "Painel de Controle",
-        "delay-explained": "O serviço/agente iniciou recentemente e está atrasando o início da instância do servidor de minecraft",
+        "delay-explained": "O serviço/agente iniciou recentemente e está atrasando o início da instância do servidor de Minecraft",
         "host": "Host",
         "kill": "Matar Processo",
         "killing": "Matando processo...",
@@ -96,7 +98,11 @@
         "status": "Status",
         "stop": "Parar",
         "version": "Versão",
-        "welcome": "Bem-vindo ao Crafty Controller"
+        "welcome": "Bem-vindo ao Crafty Controller",
+        "installing": "Instalando...",
+        "port": "Porta",
+        "serverIcon": "Ícone do servidor",
+        "storage": "Armazenamento"
     },
     "datatables": {
         "loadingRecords": "Carregando...",
@@ -174,10 +180,24 @@
         "internet": "Detectamos que a máquina rodando Crafty não possui conexão com a internet. Conexões de clientes ao serviço podem ser limitadas.",
         "no-file": "Não conseguimos encontrar o arquivo solicitado. Verifique o caminho do arquivo. O Crafty tem as permissões necessárias?",
         "noJava": "Servidor {} falhou ao iniciar com código de erro: Detectamos que o Java não está instalado. Por favor, instale o Java e então inicie o servidor.",
-        "not-downloaded": "Não conseguimos encontrar seu arquivo executável. O download foi concluído? As permissões estão definidas para executável?",
         "portReminder": "Detectamos que esta é a primeira vez que {} está rodando. Certifique-se de encaminhar a porta {} através do seu roteador/firewall para torná-lo acessível remotamente da internet.",
         "start-error": "Servidor {} falhou ao iniciar com código de erro: {}",
-        "terribleFailure": "Que Falha terrível!"
+        "terribleFailure": "Que Falha terrível!",
+        "agree": "Concordo",
+        "bedrockError": "Downloads do Bedrock não disponíveis. Por favor, verificar",
+        "bigBucket1": "Verificação de saúde do Big Bucket falhou. Por favor, verificar",
+        "cancel": "Cancelar",
+        "craftyStatus": "Página de status do Crafty",
+        "cronFormat": "Formato inválido de Cron detectado",
+        "experimental": "Você deve habilitar os recursos experimentais para acessar esta funcionalidade",
+        "fileError": "O tipo de arquivo deve ser uma imagem.",
+        "installerJava": "Falha ao instalar {}: Servidores Forge precisam do Java. Detectamos que o Java não está instalado. Por favor, instale o Java e em seguida instale o servidor.",
+        "migration": "O armazenamento principal do Crafty está sendo migrado para um novo local. Todas as inicializações de servidores foram suspensas durante este intervalo. Por favor, aguarde enquanto realizamos esta migração",
+        "noInternet": "O Crafty está com problemas para acessar a internet. A criação do servidor foi desativada. Por favor, verifique sua conexão com a internet e recarregue esta página.",
+        "return": "Retornar para o Painel de Controle",
+        "duplicateId": "Tokens de requisição devem ter unicamente session_id ou token_id, não os dois.",
+        "selfHost": "Se você está auto-hospedando este repositório, por favor, verifique seu endereço ou consulte nosso guia de solução de problemas.",
+        "superError": "Você deve ser um Super Usuário para completar esta ação."
     },
     "footer": {
         "allRightsReserved": "Todos os direitos reservados",
@@ -188,7 +208,8 @@
         "forgotPassword": "Esqueci a Senha",
         "login": "Logar",
         "password": "Senha",
-        "username": "Usuário"
+        "username": "Usuário",
+        "2fa": "(Caso a MFA esteja ativa)"
     },
     "notify": {
         "activityLog": "Logs de Atividade",
@@ -198,7 +219,12 @@
         "finishedPreparing": "Terminamos de preparar seus logs de suporte. Por favor, clique em baixar para baixar",
         "logout": "Deslogar",
         "preparingLogs": " Por favor aguarde enquanto preparamos seus logs... Enviaremos uma notificação quando eles estiverem prontos. Esta ação pode demorar um tempo para grandes implementações.",
-        "supportLogs": "Logs de Suporte"
+        "supportLogs": "Logs de Suporte",
+        "accountSettings": "Configurações da conta",
+        "backup_desc": "Detectamos que a migração do backup falhou de forma parcial ou total. Por favor, verifique seus backups na guia de Backups.",
+        "restoreFailed": "Falha ao restaurar Backup. Não conseguimos excluir os arquivos da pasta do servidor.",
+        "restoreSuccess": "Arquivos do servidor restaurados com sucesso.",
+        "schedule_desc": "Detectamos que algumas ou todas as suas tarefas agendadas não foram transferidas com sucesso durante a atualização. Por favor, verifique suas tarefas agendadas na guia Agendar."
     },
     "panelConfig": {
         "adminControls": "Controles de Admin",
@@ -531,5 +557,58 @@
         "userRolesDesc": "Cargos que este usuário possui.",
         "userSettings": "Configurações do Usuário",
         "uses": "Número de Usos Permitidos (-1==Sem Limite)"
+    },
+    "configJson": {
+        "allow_nsfw_profile_pictures": "Permitir fotos de perfil NSFW do Gravatar™",
+        "crafty_logs_delete_after_days": "Por quanto tempo o Crafty deve manter os logs do app (dias)",
+        "enable_user_self_delete": "Permitir que usuários deletem suas próprias contas",
+        "experimental": "Habilitar Recursos Experimentais",
+        "cookie_expire": "Cookies de sessão expiram após (dias)",
+        "delete_default_json": "Excluir JSON padrão ao iniciar",
+        "dir_size_poll_freq_minutes": "Com que frequência o Crafty deve verificar o tamanho dos diretórios do servidor (minutos)",
+        "disabled_language_files": "Arquivos de idioma desabilitados globalmente",
+        "history_max_age": "Por quanto tempo o Crafty deve manter as estatísticas do seu servidor (dias)",
+        "https_port": "Porta do Crafty",
+        "keywords": "Palavras-chave que o Crafty deve destacar nos terminais do seu servidor",
+        "language": "Idioma global do sistema (Para páginas públicas e reserva de tradução)",
+        "max_audit_entries": "Número máximo de entradas permitidas no registro de atividades do Crafty",
+        "max_log_lines": "Número máximo de linhas por arquivo de log",
+        "max_login_attempts": "Número máximo de tentativas de login com falha para um IP remoto antes do tempo limite ser atingido",
+        "monitoring": "Monitoramento",
+        "reset_secrets_on_next_boot": "Redefinir segredos na próxima inicialização",
+        "security": "Segurança",
+        "show_contribute_link": "Mostrar links de contribuição no painel",
+        "show_errors": "Exibir erros de depuração do servidor web",
+        "submit": "Enviar",
+        "virtual_terminal_lines": "Quantas linhas devemos permitir no buffer do terminal do seu servidor"
+    },
+    "customLogin": {
+        "selectImage": "Selecione uma imagem",
+        "apply": "Aplicar",
+        "customLoginPage": "Customizar a Tela de Login",
+        "delete": "Excluir",
+        "loginImage": "Enviar imagem de fundo para a tela de login.",
+        "loginOpacity": "Selecionar opacidade da janela de Login",
+        "pageTitle": "Página de Login customizada",
+        "preview": "Pré-visualizar",
+        "select": "Selecionar"
+    },
+    "offline": {
+        "pleaseConnect": "Por favor, conecte-se a internet para usar o Crafty."
+    },
+    "otp": {
+        "backupCodes": "Por favor, copie seus códigos de backup.",
+        "backupCodesMax": "O máximo de 6 códigos de backup foi alcançado.",
+        "no": "Não",
+        "otpReq": "O uso de MFA é obrigatório para este usuário. Você não pode remover seu único meio de acesso MFA.",
+        "renewRecovery": "Renovar Códigos de recuperação",
+        "saveWarn": "Certifique-se de salvar seus códigos de recuperação ou você pode perder acesso",
+        "verify": "Falha ao verificar MFA. Inserido código inválido.",
+        "newName": "Insira um nome amigável para este método MFA",
+        "newOTP": "Adicionar nova Autenticação Multifator",
+        "otpTitle": "Métodos de MFA"
+    },
+    "webhooks": {
+        "webhooks": "Webhooks"
     }
 }

@@ -202,7 +202,6 @@
         "no-file": "We can't seem to locate the requested file. Double check the path. Does Crafty have proper permissions?",
         "noInternet": "Crafty ha problemi ad accedere a internet. La creazione di server è stata disabilitata. Controlla la tua connessione a internet e aggiorna la pagina.",
         "noJava": "Server {} failed to start with error code: We have detected Java is not installed. Please install java then start the server.",
-        "not-downloaded": "We can't seem to find your executable file. Has it finished downloading? Are the permissions set to executable?",
         "portReminder": "We have detected this is the first time {} has been run. Make sure to forward port {} through your router/firewall to make this remotely accessible from the internet.",
         "privMsg": "e il ",
         "return": "Torna alla pagina iniziale",

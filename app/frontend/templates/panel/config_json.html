@@ -56,7 +56,7 @@
               data-target="#{{section[0]}}">
               <h3>{{translate('configJson', section[0], data['lang'])}}</h3>
               <div class="right position-absolute top-0 end-0 p-2">
-                <i class="fa-solid fa-arrow-down-wide-short"></i>
+                <i class="ph-bold ph-arrows-vertical"></i>
               </div>
             </div>
             <div class="collapse" id="{{section[0]}}">
@@ -86,8 +86,8 @@
                     <button type="button" class="btn btn-outline-default custom-picker"
                       onclick="$('option', $('#lang_select')).each(function(element) {$(this).removeAttr('selected').prop('selected', false); $('.selectpicker').selectpicker('refresh')});">{{
                       translate('panelConfig', 'enableLang', data['lang']) }}</button>
-                    <select id="lang_select" class="form-control selectpicker show-tick" data-icon-base="fas"
-                      data-tick-icon="fa-check" multiple data-style="custom-picker">
+                    <select id="lang_select" class="form-control selectpicker show-tick" data-icon-base="ph"
+                      data-tick-icon="ph-check" multiple data-style="custom-picker">
                       {% for lang in data['all_languages'] %}
                       {% if lang in item[1] %}
                       <option value="{{lang}}" selected>{{translate('language', lang, 'humanized_index', False)}}
@@ -106,8 +106,8 @@
                     <button type="button" class="btn btn-outline-default custom-picker"
                       onclick="$('option', $('#mount_select')).each(function(element) {$(this).removeAttr('selected').prop('selected', false); $('.selectpicker').selectpicker('refresh')});">{{
                       translate('panelConfig', 'noMounts', data['lang']) }}</button>
-                    <select id="mount_select" class="form-control selectpicker show-tick" data-icon-base="fas"
-                      data-tick-icon="fa-check" multiple data-style="custom-picker">
+                    <select id="mount_select" class="form-control selectpicker show-tick" data-icon-base="ph"
+                      data-tick-icon="ph-check" multiple data-style="custom-picker">
                       {% for mount in data['all_partitions'] %}
                       {% if mount in item[1] %}
                       <option selected>{{mount}}</option>
@@ -119,6 +119,50 @@
                     <textarea id="monitored_mounts" name="{{item[0]}}" class="form-control list hidden"
                       rows="{{ len(data['all_partitions']) }}" value="{{','.join(item[1])}}"
                       hidden>{{','.join(item[1])}}</textarea>
+                  </div>
+                  {% elif item[0] == 'time_range_presets' %}
+                  <div id="time-range-presets-editor">
+                    <table class="table table-sm" id="presets-table">
+                      <thead>
+                        <tr>
+                          <th>Hours</th>
+                          <th>Label</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for preset in item[1] %}
+                        <tr class="preset-row">
+                          <td><input type="number" class="form-control preset-hours" value="{{ preset['hours'] }}" min="1" step="1"></td>
+                          <td><input type="text" class="form-control preset-label" value="{{ preset['label'] }}"></td>
+                          <td><button type="button" class="btn btn-sm btn-danger remove-preset"><i class="ph-bold ph-trash"></i></button></td>
+                        </tr>
+                        {% end %}
+                      </tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="add-preset"><i class="ph-bold ph-plus"></i> Add Preset</button>
+                  </div>
+                  {% elif item[0] == 'sampling_tiers' %}
+                  <div id="sampling-tiers-editor">
+                    <table class="table table-sm" id="sampling-tiers-table">
+                      <thead>
+                        <tr>
+                          <th>Max Hours</th>
+                          <th>Sample Rate</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for tier in item[1] %}
+                        <tr class="sampling-tier-row">
+                          <td><input type="number" class="form-control tier-max-hours" value="{{ tier['max_hours'] }}" min="1" step="1"></td>
+                          <td><input type="number" class="form-control tier-sample-rate" value="{{ tier['sample_rate'] }}" min="1" step="1"></td>
+                          <td><button type="button" class="btn btn-sm btn-danger remove-tier"><i class="ph-bold ph-trash"></i></button></td>
+                        </tr>
+                        {% end %}
+                      </tbody>
+                    </table>
+                    <button type="button" class="btn btn-sm btn-success" id="add-tier"><i class="ph-bold ph-plus"></i> Add Tier</button>
                   </div>
                   {% elif isinstance(item[1], list) %}
                   <textarea id="{{item[0]}}" value="{{','.join(item[1])}}" type="text" name="{{item[0]}}"
@@ -182,12 +226,18 @@
 {% block js %}
 <script>
   function replacer(key, value) {
-    if (key == "disabled_language_files" || key == "monitored_mounts" || key == "keywords") {
+    if (key == "disabled_language_files" || key == "monitored_mounts" || key == "keywords" || key == "silent_notif_fields") {
       if (value == 0) {
         return []
       } else {
         return value
       }
+    }
+    if (key == "time_range_presets") {
+      return value;
+    }
+    if (key == "sampling_tiers") {
+      return value;
     }
     if (typeof value == "boolean") {
       return value
@@ -197,7 +247,7 @@
   }
   $("#config-form").on("submit", async function (e) {
     e.preventDefault();
-    $("#submit-status").html('<i class="fa fa-spinner fa-spin"></i>');
+    $("#submit-status").html('<i class="ph-bold ph-spinner-gap"></i>');
     const token = getCookie("_xsrf")
     let configForm = document.getElementById("config-form");
 
@@ -211,6 +261,35 @@
     formDataObject.disabled_language_files = $('#lang_select').val();
     formDataObject.monitored_mounts = $('#mount_select').val();
     formDataObject.keywords = $('#keywords').val().split(",");
+    formDataObject.silent_notif_fields = $('#silent_notif_fields').val().split(",");
+
+    // Collect time range presets
+    const presets = [];
+    $('.preset-row').each(function() {
+      const hours = parseInt($(this).find('.preset-hours').val(), 10);
+      const label = $(this).find('.preset-label').val().trim();
+      if (hours > 0 && label) {
+        presets.push({hours: hours, label: label});
+      }
+    });
+    if (presets.length > 0) {
+      presets.sort(function(a, b) { return a.hours - b.hours; });
+      formDataObject.time_range_presets = presets;
+    }
+
+    // Collect sampling tiers
+    const tiers = [];
+    $('.sampling-tier-row').each(function() {
+      const maxHours = parseInt($(this).find('.tier-max-hours').val(), 10);
+      const sampleRate = parseInt($(this).find('.tier-sample-rate').val(), 10);
+      if (maxHours > 0 && sampleRate > 0) {
+        tiers.push({max_hours: maxHours, sample_rate: sampleRate});
+      }
+    });
+    if (tiers.length > 0) {
+      tiers.sort(function(a, b) { return a.max_hours - b.max_hours; });
+      formDataObject.sampling_tiers = tiers;
+    }
 
     $('#config-form input[type="radio"]:checked').each(function () {
       if ($(this).val() == 'True') {
@@ -233,7 +312,7 @@
     });
     let responseData = await res.json();
     if (responseData.status === "ok") {
-      $("#submit-status").html('<i class="fa fa-check"></i>');
+      $("#submit-status").html('<i class="ph-bold ph-check"></i>');
     } else {
 
       bootbox.alert({
@@ -291,6 +370,38 @@
     if ($('#file').val()) {
       $('#upload-button').prop("disabled", false);
       console.log("File changed good");
+    }
+  });
+
+  // Time range presets editor
+  $('#add-preset').on('click', function() {
+    const row = '<tr class="preset-row">' +
+      '<td><input type="number" class="form-control preset-hours" value="1" min="1" step="1"></td>' +
+      '<td><input type="text" class="form-control preset-label" value=""></td>' +
+      '<td><button type="button" class="btn btn-sm btn-danger remove-preset"><i class="ph-bold ph-trash"></i></button></td>' +
+      '</tr>';
+    $('#presets-table tbody').append(row);
+  });
+
+  $(document).on('click', '.remove-preset', function() {
+    if ($('.preset-row').length > 1) {
+      $(this).closest('tr').remove();
+    }
+  });
+
+  // Sampling tiers editor
+  $('#add-tier').on('click', function() {
+    const row = '<tr class="sampling-tier-row">' +
+      '<td><input type="number" class="form-control tier-max-hours" value="1" min="1" step="1"></td>' +
+      '<td><input type="number" class="form-control tier-sample-rate" value="1" min="1" step="1"></td>' +
+      '<td><button type="button" class="btn btn-sm btn-danger remove-tier"><i class="ph-bold ph-trash"></i></button></td>' +
+      '</tr>';
+    $('#sampling-tiers-table tbody').append(row);
+  });
+
+  $(document).on('click', '.remove-tier', function() {
+    if ($('.sampling-tier-row').length > 1) {
+      $(this).closest('tr').remove();
     }
   });
 </script>

@@ -173,7 +173,6 @@
         "internet": "Wy hawwe ûntdutsen dat de masine dy't Crafty draait gjin ferbining hat mei it ynternet. Clientferbiningen mei de server kinne beheind wêze.",
         "no-file": "Wy kinne it opfrege bestân net fine. Kontrolearje it paad dûbeld. Hat Crafty juste tastimmingen?",
         "noJava": "Server {} koe net begjinne mei errorkoade: Wy hawwe ûntdutsen dat Java net ynstallearre is. Ynstallearje asjebleaft Java en start dan de server.",
-        "not-downloaded": "Wy kinne jo útfierbere bestân net fine. Is it ynladen klear? Binne de tastimmingen ynsteld op útfierber?",
         "portReminder": "Wy hawwe ûntdutsen dat dit de earste kear is dat {} útfierd is. Soargje derfoar dat jo poarte {} trochstjoere fia jo router/firewall om dit op ôfstân tagonklik te meitsjen fia it ynternet.",
         "start-error": "Server {} koe net begjinne mei errorkoade:",
         "terribleFailure": "Wat in ferskriklik mislearjen!"

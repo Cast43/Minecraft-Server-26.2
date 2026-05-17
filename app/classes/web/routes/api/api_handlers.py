@@ -21,7 +21,10 @@ from app.classes.web.routes.api.servers.index import ApiServersIndexHandler
 from app.classes.web.routes.api.servers.server.action import (
     ApiServersServerActionHandler,
 )
-from app.classes.web.routes.api.servers.server.index import ApiServersServerIndexHandler
+from app.classes.web.routes.api.servers.server.index import (
+    ApiServersServerIndexHandler,
+    ApiServersServerUpdateConfig,
+)
 from app.classes.web.routes.api.servers.server.logs import ApiServersServerLogsHandler
 from app.classes.web.routes.api.servers.server.public import (
     ApiServersServerPublicHandler,
@@ -102,7 +105,10 @@ from app.classes.web.routes.api.crafty.stats.stats import ApiCraftyHostStatsHand
 from app.classes.web.routes.api.crafty.clogs.index import ApiCraftyLogIndexHandler
 from app.classes.web.routes.api.crafty.clogs.support import ApiCraftySupportIndexHandler
 from app.classes.web.routes.api.crafty.imports.index import ApiImportFilesIndexHandler
-from app.classes.web.routes.api.crafty.exe_cache import ApiCraftyJarCacheIndexHandler
+from app.classes.web.routes.api.crafty.exe_cache import (
+    ApiCraftyJarCacheIndexHandler,
+    ApiCraftySteamCacheIndexHandler,
+)
 from app.classes.web.routes.api.crafty.antilockout.index import ApiCraftyLockoutHandler
 
 
@@ -170,7 +176,7 @@ def api_handlers(handler_args):
             handler_args,
         ),
         (
-            r"/api/v2/crafty/JarCache/?",
+            r"/api/v2/crafty/JarCache(?:/([0-9-]+))?",
             ApiCraftyJarCacheIndexHandler,
             handler_args,
         ),
@@ -312,8 +318,23 @@ def api_handlers(handler_args):
             handler_args,
         ),
         (
+            r"/api/v2/crafty/JarCache/?",
+            ApiCraftyJarCacheIndexHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/crafty/SteamCache/?",
+            ApiCraftySteamCacheIndexHandler,
+            handler_args,
+        ),
+        (
             r"/api/v2/servers/status/?",
             ApiServersServerStatusHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/servers/([a-z0-9-]+)/update/config/?",
+            ApiServersServerUpdateConfig,
             handler_args,
         ),
         (

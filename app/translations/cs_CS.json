@@ -202,7 +202,6 @@
         "no-file": "Zdá se, že nemůžeme najít požadovaný soubor. Překontrolujte cestu. Má Crafty správné oprávnění?",
         "noInternet": "Crafty se nemůže připojit k internetu. Vytváření serverů je pozastaveno. Prosím zkontrolujte připojení k internetu a potom obnovte tuto stránku.",
         "noJava": "Server {} se nepodařilo spustit s kódem chyby: Zjistili jsme, že Java není nainstalována. Nainstalujte prosím Javu a poté spusťte server.",
-        "not-downloaded": "Zdá se, že nemůžeme najít váš spustitelný soubor. Bylo jeho stahování dokončeno? Jsou oprávnění nastavena na spustitelný soubor?",
         "portReminder": "Zjistili jsme, že server {} byl spuštěn poprvé. Ujistěte se, že jste přesměrovali port {} přes váš směrovač/firewall, aby byl tento port vzdáleně přístupný z internetu.",
         "privMsg": "a ",
         "return": "vrátit se na hlavní stránku",

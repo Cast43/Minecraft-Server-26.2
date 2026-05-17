@@ -33,8 +33,7 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Attention : </strong>Crafty ne fonctionne pas correctement si JavaScript n'est pas activé !",
-        "createMFA": "Ajoutez l’authentification multifacteur à votre compte !",
-        "getMFA": "Sécurisez vos serveurs !"
+        "getMFA": "Activez l’authentification multifacteur (MFA) pour mieux protéger votre compte. Sans MFA, votre compte est plus vulnérable aux accès non autorisés."
     },
     "credits": {
         "developmentTeam": "Équipe de développement",
@@ -115,7 +114,10 @@
         "stop": "Arrêter",
         "storage": "Stockage",
         "version": "Version",
-        "welcome": "Bienvenue sur Crafty Controller"
+        "welcome": "Bienvenue sur Crafty Controller",
+        "columnSettings": "Paramètres de colonne",
+        "port": "Port",
+        "serverIcon": "Icône du serveur"
     },
     "datatables": {
         "i18n": {
@@ -203,8 +205,7 @@
         "migration": "Le stockage principal de serveurs de Crafty est en migration vers le nouvel emplacement. Tous les serveurs ont été suspendu pour l'opération. Merci de patienter pendant que nous finissons la migration",
         "no-file": "Nous n’arrivons pas à localiser le fichier demandé. Vérifiez le chemin d’accès. Crafty dispose-t-il des permissions nécessaires ?",
         "noInternet": "Crafty rencontre des difficultés pour accéder à Internet. La création de serveur a été désactivée. Veuillez vérifier votre connexion internet et actualiser cette page.",
-        "noJava": "Le démarrage du serveur {} a échoué avec le code d'erreur : Nous avons détecté que Java n'est pas installé. Merci d'installer java avant de démarrer le serveur.",
-        "not-downloaded": "Nous ne parvenons pas à trouver le fichier exécutable. Est-il fini de télécharger ? Les permissions permettent elles l'exécution ?",
+        "noJava": "Le démarrage du serveur {} a échoué avec le code d'erreur : Nous avons détecté que Java n'est pas installé. Veuillez installer java, puis démarrer le serveur.",
         "portReminder": "Nous avons détecté que c'est la première fois que {} est exécuté. Assurez-vous de transférer le port {} via votre routeur/pare-feu pour le rendre accessible à distance depuis internet.",
         "privMsg": "et le ",
         "return": "Revenir au tableau de bord",
@@ -212,7 +213,8 @@
         "start-error": "Le serveur {} n'a pas pu démarrer avec le code d'erreur : {}",
         "superError": "Vous devez être un super-utilisateur pour effectuer cette action.",
         "terribleFailure": "Quelle grave erreur !",
-        "duplicateId": "Les tokens de requête doivent spécifier soit session_id, soit token_id, mais pas les deux."
+        "duplicateId": "Les tokens de requête doivent spécifier soit session_id, soit token_id, mais pas les deux.",
+        "experimental": "Vous devez activer les fonctionnalités expérimentales pour accéder à cette ressource"
     },
     "footer": {
         "allRightsReserved": "Tous droits réservés",
@@ -237,7 +239,9 @@
         "cooldown": "Délai de réactivation en cours. Réessayez dans",
         "totpSelect": "Application d’authentification",
         "passwordRecovery": "Récupérer le mot de passe",
-        "totp": "Saisissez le code de l’application d’authentification"
+        "totp": "Saisissez le code de l’application d’authentification",
+        "signInWithPasskey": "Connectez-vous avec une clé d'accès",
+        "orSeparator": "ou"
     },
     "notify": {
         "activityLog": "Logs d'activité",
@@ -398,7 +402,7 @@
         "serverAutostartDelayDesc": "Délai avant démarrage automatique (Si activé ci-dessous)",
         "serverCrashDetection": "Détection de plantage du serveur",
         "serverExecutable": "Exécutable du serveur",
-        "serverExecutableDesc": "Le fichier exécutable du serveur",
+        "serverExecutableDesc": "Le fichier exécutable que vous appelez dans votre commande d'exécution serveur. C'est le fichier que nous allons mettre à jour.",
         "serverExecutionCommand": "Commande d'exécution du serveur",
         "serverExecutionCommandDesc": "Ce qui sera lancé dans un terminal en arrière plan",
         "serverIP": "Adresse IP du serveur",
@@ -420,7 +424,7 @@
         "stopBeforeDeleting": "Merci d'arrêter le serveur avant de le supprimer",
         "timeoutExplain1": "Durée pendant laquelle Crafty va attendre l'arrêt du serveur après exécution de la",
         "timeoutExplain2": "commande avant de forcer la fin du processus.",
-        "update": "Mettre à jour l'exécutable",
+        "update": "Mettre à jour le serveur",
         "yesDelete": "Oui, supprimer",
         "yesDeleteFiles": "Oui, supprimer les fichiers"
     },
@@ -479,7 +483,7 @@
         "renameItemQuestion": "Quel devrait être le nouveau nom ?",
         "save": "Sauvegarder",
         "size": "Taille",
-        "unsupportedLanguage": "Attention : Ce n'est pas un type de fichier supporté",
+        "unsupportedLanguage": "Ce type de fichier n'est pas reconnu. Les fonctionnalités de lecture et d'édition peuvent être altérées.",
         "unzip": "Décompresser",
         "upload": "Téléverser",
         "uploadTitle": "Téléverser les fichiers vers : ",
@@ -499,7 +503,8 @@
         "overwrite": "Remplacer les modifications sur le serveur",
         "repull": "Importer le fichier depuis le serveur (toutes les modifications locales seront perdues)",
         "serverModified": "L'état de ce fichier a changé sur le serveur depuis que vous avez chargé cette page. Veuillez choisir une option.",
-        "type": "Type"
+        "type": "Type",
+        "permissions": "Permissions"
     },
     "serverMetrics": {
         "resetZoom": "Réinitialiser le zoom",
@@ -643,8 +648,14 @@
         "sizeInGB": "Taille en GB",
         "unsupported": "Les versions de Minecraft inférieures à 1.8 ne sont pas supportées par Crafty. Vous pouvez toujours l'installer. Les résultats peuvent varier.",
         "uploadButton": "Chargement",
-        "uploadZip": "Charger le fichier ZIP pour l'importation du serveur",
-        "zipPath": "Chemin du serveur"
+        "uploadZip": "Télécharger l'archive Zip",
+        "zipPath": "Chemin du serveur",
+        "authenticate": "Cliquez ici pour terminer l'installation et authentifier votre compte Hytale.",
+        "authenticateAway": "Crafty ne stockera pas vos identifiants. Cela vous fera quitter Crafty.",
+        "experimental": "Expérimental",
+        "experimentalFeature": "Il s'agit d'une fonctionnalité expérimentale",
+        "plugins": "Crafty installera automatiquement les plugins suivants pour que les fonctionnalités statistiques de Crafty puissent fonctionner :",
+        "zipError": "Le fichier doit être un fichier zip !"
     },
     "sidebar": {
         "contribute": "Contribuer",
@@ -711,7 +722,8 @@
         "hints": "Activer les astuces ?",
         "totpIdReq": "Identifiant d'authentification multifacteur requis pour traiter la demande",
         "totpHeader": "Authentification multifacteur",
-        "selfDisable": "Vous ne pouvez pas désactiver votre propre compte"
+        "selfDisable": "Vous ne pouvez pas désactiver votre propre compte",
+        "passkeyHeader": "Clés d'accès"
     },
     "validators": {
         "2FAerror": "Le code d'authentification multifacteur doit comporter 6 chiffres (ex. : 000000) ou un code de secours de 16 caractères séparés tous les 4 par un tiret (ex. : ABCD-EFGH-IJKL-MNOP)",
@@ -823,11 +835,63 @@
         "show_contribute_link": "Afficher les liens de contribution dans le panneau",
         "show_errors": "Afficher les erreurs de débogage du serveur web",
         "submit": "Envoyer",
-        "superMFA": "Exiger des super-utilisateurs qu'ils activent l'authentification multi-facteurs (MFA)"
+        "superMFA": "Exiger des super-utilisateurs qu'ils activent l'authentification multi-facteurs (MFA)",
+        "experimental": "Activer les fonctionnalités expérimentales",
+        "time_range_presets": "Préréglages des plages de temps pour le sélecteur de date des métriques",
+        "sampling_tiers": "Niveaux d’échantillonnage des données du graphique (contrôle la densité des points de données selon la plage de temps)",
+        "sampling_fallback_divisor": "Diviseur d'échantillonnage de secours (utilisé pour les plages horaires au-delà du dernier niveau)",
+        "enable_passkey_auth": "Activer l'authentification par clé d'accès (WebAuthn)",
+        "passkey_rp_name": "Nom de la partie utilisateur de la clé d'accès (affiché dans les invites de l'authentificateur)",
+        "silent_notif_fields": "Champs utilisateur qui enregistrent les modifications silencieusement (sans notification contextuelle)"
     },
     "serverFilesEditor": {
         "saved": "Enregistré",
         "save": "Enregistrer les modifications",
         "unsavedChanges": "Êtes-vous sûr de vouloir quitter ? Vous avez des modifications non enregistrées."
+    },
+    "passkey": {
+        "title": "Authentification par clé d'accès",
+        "passkeyTitle": "Clés d'accès",
+        "addNew": "Ajouter une clés d'accès",
+        "newPasskey": "Nouvelle clés d'accès",
+        "newName": "Entrez un nom pour cette clé d'accès",
+        "registerTitle": "Nommez votre clé d'accès",
+        "defaultName": "Ma clé d'accès",
+        "name": "Nom",
+        "deviceType": "Type d'appareil",
+        "createdAt": "Créé",
+        "lastUsed": "Dernière utilisation",
+        "actions": "Actions",
+        "delete": "Supprimer",
+        "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette clé d'accès ?",
+        "yes": "Oui",
+        "no": "Non",
+        "singleDevice": "Lié à un appareil",
+        "multiDevice": "Synchronisé",
+        "backedUp": "Sauvegardé",
+        "never": "Jamais",
+        "disabled": "L'authentification par clé d'accès est désactivée. Contactez votre administrateur pour l'activer.",
+        "browserNotSupported": "Votre navigateur ne prend pas en charge les clés d'accès",
+        "cancelled": "L'opération de clé d'accès a été annulée",
+        "insecureContext": "Les clés d'accès nécessitent une connexion sécurisée. Utilisez https://localhost ou un certificat SSL fiable.",
+        "registrationFailed": "Échec de l'enregistrement de la clé d'accès",
+        "registrationSuccess": "Clé d'accès enregistrée avec succès",
+        "success": "Succès",
+        "disablePasswordAuth": "Désactiver l'authentification par mot de passe",
+        "disablePasswordAuthDesc": "Lorsque cette option est activée, vous ne pouvez vous connecter qu'à l'aide d'une clé d'accès. La connexion par mot de passe sera bloquée.",
+        "disablePasswordAuthWarning": "Avertissement : vous ne pourrez vous connecter qu'à l'aide d'une clé d'accès. Assurez-vous d'avoir enregistré une clé d'accès de secours.",
+        "requiresPasskey": "Vous devez enregistrer au moins une clé d'accès avant de désactiver l'authentification par mot de passe.",
+        "passwordAuthDisabled": "L'authentification par mot de passe est désactivée pour votre compte.",
+        "deleteFailed": "Échec de la suppression de la clé d'accès",
+        "updateFailed": "Échec de la mise à jour des paramètres",
+        "verificationFailed": "Échec de la vérification de l'enregistrement de la clé d'accès",
+        "loginFailed": "Échec de la connexion par clé d'accès",
+        "authFailed": "Échec de l'authentification"
+    },
+    "serverUpdate": {
+        "monitorUpdate": "Alerte si nouvelle version",
+        "newVersion": "Nouvelle version disponible",
+        "updateCtr": "Centre de mise à jour",
+        "upToDate": "À jour"
     }
 }

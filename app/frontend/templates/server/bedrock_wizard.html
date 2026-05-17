@@ -16,16 +16,24 @@
   <ul class="nav nav-pills tab-simple-styled " role="tablist">
     <li class="nav-item term-nav-item">
       <a class="nav-link" href="/server/step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Minecraft-Java</a>
+        <i class="ph-fill ph-file-text"></i>Minecraft-Java</a>
     </li>
     <li class="nav-item term-nav-item">
       <a class="nav-link active" href="/server/bedrock_step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Minecraft-Bedrock</a>
+        <i class="ph-fill ph-file-text"></i>Minecraft-Bedrock</a>
     </li>
     <li class="nav-item term-nav-item">
       <a class="nav-link" href="/server/hytale_step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Hytale</a>
+        <i class="ph-fill ph-file-text"></i>Hytale</a>
     </li>
+    {% if data.get("experimental") %}
+    <li class="nav-item term-nav-item">
+      <a class="nav-link" href="/server/steam_cmd_step1" role="tab" aria-selected="false">
+        <i class="ph-fill ph-file-text"></i>Steam-CMD&nbsp;<span id="steam-badge"
+          title="{{translate('serverWizard', 'experimentalFeature', data['lang'])}}" class="text-primary"><i
+            class="ph ph-flask"></i></span></a>
+    </li>
+    {% end %}
   </ul>
   <div class="d-none" id="overlay" onclick="hide(event)"></div>
   <div class="row">
@@ -53,18 +61,7 @@
                   <p class="mb-0 p-0" aria-expanded="true">{{ translate('serverWizard', 'addRole', data['lang']) }}
                     <small class="text-none"> - {{ translate('serverWizard', 'autoCreate', data['lang']) }}</small>
                   </p>
-                  <select data-container="body"
-                    data-none-selected-text="{{ translate('serverWizard', 'noneRoles', data['lang']) }}"
-                    data-none-results-text="{{ translate('serverWizard', 'noRole', data['lang']) }} {0}"
-                    class="selectpicker form-control form-control-lg select-css roles_select"
-                    data-styleBase="form-control" data-style="form-control" data-live-search="true" name="server_roles"
-                    multiple>
-                    {% for r in data['roles'] %}
-                    <option class="roles" type="checkbox" value="{{ r['role_id'] }}">
-                      &nbsp; {{ r['role_name'].capitalize() }}
-                    </option>
-                    {% end %}
-                  </select>
+                  {% include "../panel/parts/role_select.html" %}
                 </div>
                 <button onclick="eula_confirm()" type="button" class="btn btn-primary mr-2">{{ translate('serverWizard',
                   'buildServer',
@@ -74,7 +71,7 @@
               </fieldset>
               {% if not data["server_api"] and data["online"] %}
               <div class="api-alert">
-                <p><i class="fas fa-exclamation-triangle"></i>&nbsp;{{ translate('error', 'bedrockError', data['lang'])
+                <p><i class="ph-fill ph-warning"></i>&nbsp;{{ translate('error', 'bedrockError', data['lang'])
                   }}<a href="https://status.craftycontrol.com/status/craftycontrol" target="_blank"
                     rel="noopener noreferrer">&nbsp;{{ translate('error', 'craftyStatus', data['lang']) }}</a>
                   &nbsp;{{ translate('error', 'serverJars2', data['lang']) }}</p>
@@ -82,7 +79,7 @@
               {% end %}
               {% if not data["online"] %}
               <div class="api-alert">
-                <p><i class="fas fa-exclamation-triangle"></i>&nbsp;{{ translate('error', 'noInternet', data['lang']) }}
+                <p><i class="ph-fill ph-warning"></i>&nbsp;{{ translate('error', 'noInternet', data['lang']) }}
                 </p>
               </div>
               {% end %}
@@ -156,21 +153,9 @@
                   <small class="text-none"> - {{ translate('serverWizard', 'autoCreate',
                     data['lang']) }}</small>
                 </p>
-                <select data-container="body"
-                  data-none-selected-text="{{ translate('serverWizard', 'noneRoles', data['lang']) }}"
-                  data-none-results-text="{{ translate('serverWizard', 'noRole', data['lang']) }} {0}"
-                  class="selectpicker form-control form-control-lg select-css roles_select"
-                  data-styleBase="form-control" data-style="form-control" data-live-search="true" name="server_roles"
-                  multiple>
-                  {% for r in data['roles'] %}
-                  <option class="roles" type="checkbox" value="{{ r['role_id'] }}">
-                    &nbsp; {{ r['role_name'].capitalize()
-                    }}
-                  </option>
-                  {% end %}
-                </select>
+                {% include "../panel/parts/role_select.html" %}
               </div>
-              <div class="modal fade" id="dir_select" tabindex="-1" role="dialog" aria-labelledby="dir_select"
+              <div class="modal fade" id="dir_upload_select" tabindex="-1" role="dialog" aria-labelledby="dir_select"
                 aria-hidden="true">
                 <div class="modal-dialog" role="document">
                   <div class="modal-content">
@@ -186,8 +171,8 @@
                         <input type="radio" class="root-input" id="main-tree-input-upload" name="root_path" value=""
                           checked>
                         <span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path="">
-                          <i class="far fa-folder"></i>
-                          <i class="far fa-folder-open"></i>
+                          <i class="ph-fill ph-folder"></i>
+                          <i class="ph-fill ph-folder-open"></i>
                           {{ translate('serverFiles', 'files', data['lang']) }}
                         </span>
                         </input>
@@ -249,6 +234,13 @@
   }
 </script>
 <script>
+  $("#steam_link").mouseenter(function () {
+    $('[data-toggle="popover"]').popover();
+    $('.missing').popover("show");
+  })
+  $("#steam_link").mouseleave(function () {
+    $('.missing').popover("hide");
+  });
   $(".tree-reset").on("click", function () {
     location.href = "/server/bedrock_step1";
   });
@@ -259,7 +251,7 @@
   function wait_msg(importing) {
     bootbox.alert({
       title: importing ? `${$("#creation-wrapper").attr("data-importing")}` : `${$("#creation-wrapper").attr("data-downloading")}`,
-      message: `<i class="fas fa-cloud-download"></i> ${$("#creation-wrapper").attr("data-bePatient")}`,
+      message: `<i class="ph-fill ph-cloud-arrow-down"></i> ${$("#creation-wrapper").attr("data-bePatient")}`,
       className: "waitMsg",
     });
   }

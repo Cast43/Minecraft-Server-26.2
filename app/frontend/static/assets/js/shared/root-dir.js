@@ -59,8 +59,8 @@ function createTreeItem(dpath, filename, isDir) {
         span.dataset.name = filename;
         span.onclick = getDirView;
 
-        span.appendChild(createIcon('far fa-folder text-info'));
-        span.appendChild(createIcon('far fa-folder-open text-info'));
+        span.appendChild(createIcon('ph ph-folder text-info'));
+        span.appendChild(createIcon('ph ph-folder-open text-info'));
         span.appendChild(document.createTextNode(' ' + filename));  // createTextNode prevents HTML insertion
 
         div.appendChild(input);
@@ -238,7 +238,7 @@ if (rootUploadButton) {
             this.classList.add('clicked')
         }
         bootbox.dialog({
-            message: `<i class='fa fa-spin fa-cog'></i>&nbsp; ${$("#lower_half").attr("data-loading")}`,
+            message: `<i class='ph-fill ph-gear ph-spin'></i>&nbsp; ${$("#lower_half").attr("data-loading")}`,
             closeButton: false
         });
         setTimeout(function () {

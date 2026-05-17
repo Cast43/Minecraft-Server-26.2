@@ -6,7 +6,7 @@
 {% block title %}Crafty Controller - {{ translate('serverDetails', 'serverDetails', data['lang']) }}{% end %}
 
 {% block content %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.10/css/bootstrap-select.min.css">
+<link rel="stylesheet" href="/static/assets/css/vendors/bootstrap-select-1.13.18.css">
 <link rel="stylesheet" href="/static/assets/css/partial/crafty-webhooks.css">
 <div class="content-wrapper">
 
@@ -44,7 +44,7 @@
               <form class="forms-sample" method="post" id="webhook_form"
                 action="/panel/edit_webhook?id={{ data['server_stats']['server_id']['server_id'] }}&sch_id={{ data['webhook']['id'] }}">
               {% end %}
-              <select class="form-select form-control form-control-lg select-css" id="webhook_type" name="webhook_type">
+              <select class="form-select form-control form-control-lg select-css show-tick" id="webhook_type" name="webhook_type">
               {% if data['new_webhook'] == False %}
                 <option value="{{data['webhook']['webhook_type']}}">{{data['webhook']['webhook_type']}}</option>
               {% end %}
@@ -73,7 +73,7 @@
                 </div>
                 <div class="form-group">
                   <label for="trigger">{{ translate('webhooks', 'trigger', data['lang']) }}</label>
-                  <select class="form-control selectpicker show-tick" name="trigger" id="trigger-select" data-icon-base="fas" data-tick-icon="fa-check" multiple data-style="custom-picker">
+                  <select class="form-control selectpicker show-tick" name="trigger" id="trigger-select" data-icon-base="ph" data-tick-icon="ph-check" multiple data-style="custom-picker">
                   {% for trigger in data['triggers'] %}
                   {% if trigger in data["webhook"]["trigger"] %}
                   <option value="{{trigger}}" selected>{{translate('webhooks', trigger , data['lang'])}}</option>
@@ -101,11 +101,11 @@
                     <label for="enabled" class="custom-control-label">{{ translate('webhooks', 'enabled', data['lang']) }}</label>
                   </div>
                 </div>
-                  <button type="submit" class="btn btn-success mr-2"><i class="fas fa-save"></i> {{
+                  <button type="submit" class="btn btn-success mr-2"><i class="ph-fill ph-floppy-disk"></i> {{
                     translate('serverConfig', 'save', data['lang']) }}</button>
                   <button type="reset"
                     onclick="location.href=`/panel/server_detail?id={{ data['server_stats']['server_id']['server_id'] }}&subpage=webhooks`"
-                    class="btn btn-light"><i class="fas fa-times"></i> {{ translate('serverConfig', 'cancel',
+                    class="btn btn-light"><i class="ph-bold ph-x"></i> {{ translate('serverConfig', 'cancel',
                     data['lang']) }}</button>
                 </form>
             </div>

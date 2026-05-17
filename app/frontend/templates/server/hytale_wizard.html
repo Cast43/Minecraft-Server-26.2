@@ -16,16 +16,24 @@
   <ul class="nav nav-pills tab-simple-styled " role="tablist">
     <li class="nav-item term-nav-item">
       <a class="nav-link" href="/server/step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Minecraft-Java</a>
+        <i class="ph-fill ph-file-text"></i>Minecraft-Java</a>
     </li>
     <li class="nav-item term-nav-item">
       <a class="nav-link" href="/server/bedrock_step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Minecraft-Bedrock</a>
+        <i class="ph-fill ph-file-text"></i>Minecraft-Bedrock</a>
     </li>
     <li class="nav-item term-nav-item">
       <a class="nav-link active" href="/server/hytale_step1" role="tab" aria-selected="false">
-        <i class="fas fa-file-signature"></i>Hytale</a>
+        <i class="ph-fill ph-file-text"></i>Hytale</a>
     </li>
+    {% if data.get("experimental") %}
+    <li class="nav-item term-nav-item">
+      <a class="nav-link" href="/server/steam_cmd_step1" role="tab" aria-selected="false">
+        <i class="ph-fill ph-file-text"></i>Steam-CMD&nbsp;<span id="steam-badge"
+          title="{{translate('serverWizard', 'experimentalFeature', data['lang'])}}" class="text-primary"><i
+            class="ph ph-flask"></i></span></a>
+    </li>
+    {% end %}
   </ul>
   <div class="d-none" id="overlay" onclick="hide(event)"></div>
   <div class="row">
@@ -103,7 +111,7 @@
                   }}</button>
                 <br />
                 <br />
-                <small class="text-warning"><i class="fa-solid fa-circle-exclamation"></i>&nbsp;{{
+                <small class="text-warning"><i class="ph-fill ph-warning-circle"></i>&nbsp;{{
                   translate("serverWizard", "plugins", data["lang"]) }}&nbsp;<a
                     href="https://github.com/nitrado/hytale-plugin-query" target="_blank">Nitrado Query</a>,&nbsp;<a
                     href="https://github.com/nitrado/hytale-plugin-webserver" target="_blank">Nitrado
@@ -111,7 +119,7 @@
               </fieldset>
               {% if not data["server_api"] and data["online"] %}
               <div class="api-alert">
-                <p><i class="fas fa-exclamation-triangle"></i>&nbsp;{{
+                <p><i class="ph-fill ph-warning"></i>&nbsp;{{
                   translate('error', 'bigBucket1', data['lang']) }}<a
                     href="https://status.craftycontrol.com/status/craftycontrol" target="_blank" rel="noopener">&nbsp;{{
                     translate('error',
@@ -123,7 +131,7 @@
               {% end %}
               {% if not data["online"] %}
               <div class="api-alert">
-                <p><i class="fas fa-exclamation-triangle"></i>&nbsp;{{ translate('error', 'noInternet', data['lang']) }}
+                <p><i class="ph-fill ph-warning"></i>&nbsp;{{ translate('error', 'noInternet', data['lang']) }}
                 </p>
               </div>
               {% end %}
@@ -248,8 +256,8 @@
                         <input type="radio" class="root-input" id="main-tree-input-upload" name="root_path" value=""
                           checked>
                         <span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path="">
-                          <i class="far fa-folder"></i>
-                          <i class="far fa-folder-open"></i>
+                          <i class="ph-fill ph-folder"></i>
+                          <i class="ph-fill ph-folder-open"></i>
                           {{ translate('serverFiles', 'files', data['lang']) }}
                         </span>
                         </input>
@@ -321,7 +329,7 @@
   function wait_msg(importing) {
     bootbox.alert({
       title: importing ? `${$("#creation-wrapper").attr("data-importing")}` : `${$("#creation-wrapper").attr("data-downloading")}`,
-      message: `<i class="fas fa-cloud-download"></i> ${$("#creation-wrapper").attr("data-bePatient")}`,
+      message: `<i class="ph-fill ph-cloud-arrow-down"></i> ${$("#creation-wrapper").attr("data-bePatient")}`,
       className: "waitMsg",
     });
   }

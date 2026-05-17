@@ -173,7 +173,6 @@
         "internet": "Otkrili smo da uređaj koji pokreće Crafty nije povezan s internetom. Povezivanje klijenta s poslužiteljem može biti ograničeno.",
         "no-file": "Ne možemo pronaći traženu datoteku. Provjerite putanju datoteke. Ima li Crafty odgovarajuća dopuštenja?",
         "noJava": "Poslužitelj {} se nije uspio pokrenuti s kodom pogreške: Otkrili smo da Java nije instalirana. Molimo instalirajte Javu, a zatim ponovno pokrenite poslužitelj.",
-        "not-downloaded": "Ne možemo pronaći Vašu izvršnu datoteku. Je li preuzimanje dovršeno? Ima li datoteka potrebna dopuštenja?",
         "portReminder": "Otkrili smo da je ovo prvi put da je {} pokrenut. Provjerite je li port {} proslijeđen putem usmjerivača/vatrozida, kako biste mu omogućili daljinski pristup s interneta.",
         "start-error": "Poslužitelj {} nije usješno pokrenut s kodom pogreške: {}",
         "terribleFailure": "Kakav užasan neuspjeh!"

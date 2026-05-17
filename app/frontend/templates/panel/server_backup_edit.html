@@ -54,7 +54,7 @@
                 style="height: 15px; display: none;">
               </div>
               {% if data['backing_up'] %}
-              <p>Backing up <i class="fas fa-spin fa-spinner"></i> <span
+              <p>Backing up <i class="ph ph-spinner-gap ph-spin"></i> <span
                   id="total_files">{{data['server_stats']['world_size']}}</span></p>
               {% end %}
 
@@ -85,9 +85,9 @@
                   <label for="backup_name">{{ translate('serverBackups', 'name', data['lang']) }}
                     {% if data["backup_config"].get("default", None) %}
                     &nbsp;&nbsp; <span class="badge-pill badge-outline-warning">{{ translate('serverBackups', 'default',
-                      data['lang']) }}</span><small><button class="badge-pill badge-outline-info backup-explain"
+                      data['lang']) }}</span><small><button class="backup-explain transparent-button"
                         data-explain="{{ translate('serverBackups', 'defaultExplain', data['lang'])}}"><i
-                          class="fa-solid fa-question"></i></button></small>
+                          class="ph-duotone ph-question text-secondary"></i></button></small>
                     {% end %}
                   </label>
                   {% if data["backup_config"].get("backup_id", None) %}
@@ -194,8 +194,8 @@
                         <div class="tree-ctx-item overflow-scroll mh-75" id="main-tree-div" data-path="">
                           <input type="checkbox" id="main-tree-input" name="root_path" value="" disabled>
                           <span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path="">
-                            <i class="far fa-folder"></i>
-                            <i class="far fa-folder-open"></i>
+                            <i class="ph-fill ph-folder"></i>
+                            <i class="ph-fill ph-folder-open"></i>
                             {{ translate('serverFiles', 'files', data['lang']) }}
                           </span>
                           </input>
@@ -203,9 +203,9 @@
                       </div>
                       <div class="modal-footer">
                         <button type="button" id="modal-cancel" class="btn btn-secondary" data-dismiss="modal"><i
-                            class="fa-solid fa-xmark"></i></button>
+                            class="ph-bold ph-x"></i></button>
                         <button type="button" id="modal-okay" data-dismiss="modal" class="btn btn-primary"><i
-                            class="fa-solid fa-thumbs-up"></i></button>
+                            class="ph-bold ph-thumbs-up"></i></button>
                       </div>
                     </div>
                   </div>
@@ -237,7 +237,7 @@
                       <td>
                         {% if data["backup_config"]["backup_type"] != "snapshot" %}
                         <button class="btn btn-primary download" data-file="{{backup['path']}}">
-                          <i class="fas fa-download" aria-hidden="true"></i>
+                          <i class="ph-bold ph-download-simple" aria-hidden="true"></i>
                           {{ translate('serverBackups', 'download', data['lang']) }}
                         </button>
                         <br>
@@ -246,12 +246,12 @@
                         <button data-file="{{ backup['path'] }}"
                           data-backup_location="{{ data['backup_config']['backup_location'] }}"
                           class="btn btn-danger del_button">
-                          <i class="fas fa-trash" aria-hidden="true"></i>
+                          <i class="ph-fill ph-trash-simple" aria-hidden="true"></i>
                           {{ translate('serverBackups', 'delete', data['lang']) }}
                         </button>
                         <button data-file="{{ backup['path'] }}" data-type="{{data['backup_config']['backup_type']}}"
                           class="btn btn-warning restore_button">
-                          <i class="fas fa-undo-alt" aria-hidden="true"></i>
+                          <i class="ph-fill ph-arrow-counter-clockwise" aria-hidden="true"></i>
                           {{ translate('serverBackups', 'restore', data['lang']) }}
                         </button>
                       </td>
@@ -270,7 +270,8 @@
             <br>
             <br>
             <div class="card-header header-sm d-flex justify-content-between align-items-center">
-              <h4 class="card-title"><i class="fas fa-server"></i> {{ translate('serverBackups', 'excludedBackups',
+              <h4 class="card-title"><i class="ph-fill ph-hard-drives"></i> {{ translate('serverBackups',
+                'excludedBackups',
                 data['lang']) }} <small class="text-muted ml-1"></small> </h4>
             </div>
             <br>
@@ -354,7 +355,7 @@
     const token = getCookie("_xsrf")
     let contents = JSON.stringify({ "filename": filename, "inPlace": Boolean(parseInt(in_place)) })
     var dialog = bootbox.dialog({
-      message: "<i class='fa fa-spin fa-spinner'></i> {{ translate('serverBackups', 'restoring', data['lang']) }}",
+      message: "<i class='ph ph-spinner-gap ph-spin'></i> {{ translate('serverBackups', 'restoring', data['lang']) }}",
       closeButton: false
     });
     let res = await fetch(`/api/v2/servers/${serverId}/backups/backup/${backup_id}/`, {
@@ -552,10 +553,10 @@
         message: "{{ translate('serverBackups', 'confirmDelete', data['lang']) }}",
         buttons: {
           cancel: {
-            label: '<i class="fas fa-times"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
+            label: '<i class="ph-bold ph-x"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
           },
           confirm: {
-            label: '<i class="fas fa-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
+            label: '<i class="ph-bold ph-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
           }
         },
         callback: function (result) {
@@ -599,10 +600,10 @@
     `,
           buttons: {
             cancel: {
-              label: '<i class="fas fa-times"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
+              label: '<i class="ph-bold ph-x"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
       },
             confirm: {
-              label: '<i class="fas fa-check"></i> {{ translate("serverBackups", "restore", data['lang']) }}',
+              label: '<i class="ph-bold ph-check"></i> {{ translate("serverBackups", "restore", data['lang']) }}',
               className: 'btn-outline-danger',
               callback: function () {
                 var selectedOption = $('input[name="restoreOption"]:checked').val();
@@ -626,7 +627,7 @@
 
   document.getElementById("modal-cancel").addEventListener("click", function () {
     document.getElementById("root_files_button").classList.remove('clicked');
-    document.getElementById("main-tree-div").innerHTML = '<input type="checkbox" id="main-tree-input" name="root_path" value="" disabled><span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path=""><i class="far fa-folder"></i><i class="far fa-folder-open"></i>{{ translate("serverFiles", "files", data["lang"]) }}</span></input>'
+    document.getElementById("main-tree-div").innerHTML = '<input type="checkbox" id="main-tree-input" name="root_path" value="" disabled><span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path=""><i class="ph-fill ph-folder"></i><i class="ph-fill ph-folder-open"></i>{{ translate("serverFiles", "files", data["lang"]) }}</span></input>'
   })
 
   document.getElementById("root_files_button").addEventListener("click", function () {
@@ -641,7 +642,7 @@
       console.log($("#root_files_button").data('server_path'))
       const token = getCookie("_xsrf");
       var dialog = bootbox.dialog({
-        message: '<p class="text-center mb-0"><i class="fa fa-spin fa-cog"></i> Please wait while we gather your files...</p>',
+        message: '<p class="text-center mb-0"><i class="ph-fill ph-gear ph-spin"></i> Please wait while we gather your files...</p>',
         closeButton: false
       });
 
@@ -722,8 +723,7 @@
                             \n<div id="${dpath}" data-path="${dpath}" data-name="${filename}" class="tree-caret tree-ctx-item tree-folder">
                             <input type="checkbox" class="checkBoxClass excluded" value="${dpath}" ${checked}>
                             <span id="${dpath}span" class="files-tree-title" data-path="${dpath}" data-name="${filename}" onclick="getDirView(event)">
-                            <i class="text-info far fa-folder"></i>
-                            <i class="text-info far fa-folder-open"></i>
+                            <i class="text-info ph-fill ph-folder"></i>
                             <strong>${filename}</strong>
                             </span>
                             </input></div><li>`
@@ -733,7 +733,7 @@
                         data-path="${dpath}"
                         data-name="${filename}"
                         onclick=""><input type='checkbox' class="checkBoxClass excluded" name='root_path' value="${dpath}" ${checked}><span style="margin-right: 6px;">
-                        <i class="far fa-file"></i></span></input>${filename}</li>`
+                        <i class="ph-fill ph-file"></i></span></input>${filename}</li>`
       }
     });
     text += `</ul>`;

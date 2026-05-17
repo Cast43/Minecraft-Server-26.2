@@ -19,6 +19,7 @@ from app.classes.models.management import HelpersManagement
 from app.classes.models.server_permissions import PermissionsServers
 from app.classes.models.users import HelperUsers
 from app.classes.shared.console import Console
+from app.classes.shared.server import ServerInstance
 from app.classes.shared.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -181,6 +182,28 @@ class BackupManager:
                     ),
                 )
 
+    @staticmethod
+    def validate_backup_location(
+        server_inst: ServerInstance, backup_config: dict
+    ) -> bool:
+        """Check backup location is not within backup target.
+
+        Args:
+            server_inst (ServerInstance): server object the backup is called on
+            backup_config (dict): target backup config
+
+        Returns:
+             backup_valid (bool): true is backup location is valid
+        """
+        server_path = Path(server_inst.server_path).resolve()
+        backup_target = Path(backup_config["backup_location"]).resolve()
+        # Preventing server path from being a parent of backup path
+        if server_path in backup_target.parents:
+            return False
+        if server_path == backup_target:
+            return False
+        return True
+
     def backup_starter(self, backup_config, server) -> tuple:
         """Notify users of backup starting, and start the backup.
 
@@ -203,6 +226,16 @@ class BackupManager:
             )
         time.sleep(3)
         size = False
+        if not self.validate_backup_location(server, backup_config):
+            self.fail_backup(
+                ValueError(
+                    "Recursive backup target: backup location can not be within "
+                    "directory that is being backed up"
+                ),
+                backup_config,
+                server,
+            )
+            return (False, "error")
         # Start the backup
         if backup_config.get("backup_type", "zip_vault") == "zip_vault":
             backup_file_name = self.zip_vault(backup_config, server)
@@ -237,7 +270,6 @@ class BackupManager:
         backup_location = os.path.join(
             backup_config["backup_location"], backup_config["backup_id"]
         )
-
         # Check if the backup location even exists.
         if not backup_location:
             Console.critical("No backup path found. Canceling")
@@ -246,14 +278,11 @@ class BackupManager:
         self.helper.ensure_dir_exists(backup_location)
 
         try:
-            backup_filename = (
-                f"{backup_location}/"
-                f"""{
+            backup_filename = f"{backup_location}/" f"""{
                     datetime.datetime.now()
                     .astimezone(self.tz)
                     .strftime("%Y-%m-%d_%H-%M-%S")
                 }"""
-            )
             logger.info(
                 f"Creating backup of server {server.name}"
                 f" (ID#{server.server_id}, path={server.server_path}) "

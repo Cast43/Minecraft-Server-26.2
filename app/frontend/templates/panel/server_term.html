@@ -60,7 +60,7 @@
             {% if data['permissions']['Commands'] in data['user_permissions'] %}
             {% if data['importing'] and data['server_stats']['running']%}
             <div id="update_control_buttons" class="mt-4 flex-wrap d-flex justify-content-between justify-content-md-center align-items-center px-5 px-md-0">
-              <button onclick="" id="start-btn" class="btn btn-warning m-1 flex-grow-1 term-btn disabled"><i class="fa fa-spinner fa-spin"></i>&nbsp;{{translate('serverTerm', 'installing', data['lang'])
+              <button onclick="" id="start-btn" class="btn btn-warning m-1 flex-grow-1 term-btn disabled"><i class="ph ph-spinner-gap ph-spin"></i>&nbsp;{{translate('serverTerm', 'installing', data['lang'])
                 }}</button>
               <button onclick="" id="restart-btn" class="btn btn-outline-primary m-1 flex-grow-1 term-btn disabled">{% raw translate('serverTerm', 'restart',
                 data['lang']) %}</button>
@@ -69,7 +69,7 @@
             </div>
             {% elif data['server_stats']['updating']%}
             <div id="update_control_buttons" class="mt-4 flex-wrap d-flex justify-content-between justify-content-md-center align-items-center px-5 px-md-0">
-              <button onclick="" id="start-btn" class="btn btn-warning m-1 flex-grow-1 term-btn disabled"><i class="fa fa-spinner fa-spin"></i>&nbsp;{{
+              <button onclick="" id="start-btn" class="btn btn-warning m-1 flex-grow-1 term-btn disabled"><i class="ph ph-spinner-gap ph-spin"></i>&nbsp;{{
                 translate('serverTerm', 'updating', data['lang']) }}</button>
               <button onclick="" id="restart-btn" class="btn btn-outline-primary m-1 flex-grow-1 term-btn disabled">{% raw translate('serverTerm', 'restart',
                 data['lang']) %}</button>
@@ -87,7 +87,7 @@
             </div>
             {% elif data['importing'] %}
             <div id="control_buttons" class="mt-4 flex-wrap d-flex justify-content-between justify-content-md-center align-items-center px-5 px-md-0">
-              <button onclick="" id="start-btn" class="btn btn-secondary m-1 flex-grow-1 term-btn disabled"><i class="fa fa-spinner fa-spin"></i> {{
+              <button onclick="" id="start-btn" class="btn btn-secondary m-1 flex-grow-1 term-btn disabled"><i class="ph ph-spinner-gap ph-spin"></i> {{
                 translate('serverTerm', 'importing',
                 data['lang']) }}</button>
               <button onclick="" id="restart-btn" class="btn btn-outline-primary m-1 flex-grow-1 term-btn disabled">{% raw translate('serverTerm', 'restart',

@@ -46,6 +46,9 @@ class Users(BaseModel):
     theme = CharField(default="default")
     cleared_notifs = CharField(default="default")
     disable_password_auth = BooleanField(default=False)
+    dashboard_columns = CharField(
+        default="server,actions,cpuUsage,memUsage,size,players,status"
+    )
 
     class Meta:
         table_name = "users"
@@ -150,6 +153,15 @@ class HelperUsers:
     def get_managed_users(exec_user_id):
         user_query = Users.select().where(Users.manager == exec_user_id)
         return user_query
+
+    @staticmethod
+    def get_managed_users_ids(exec_user_id) -> t.List[int]:
+        return [
+            user.user_id
+            for user in Users.select(Users.user_id)
+            .where(Users.username != "system" and Users.manager == exec_user_id)
+            .execute()
+        ]
 
     @staticmethod
     def get_managed_roles(exec_user_id):

@@ -16,11 +16,11 @@
                         <strong> {{ player['name'] }}</strong>
                     </td>
                     {% if player['status'] == 'Online' %}
-                    <td class="no-scroll col-5"><span class="text-success"><i class="fas fa-signal"></i> {{
+                    <td class="no-scroll col-5"><span class="text-success"><i class="ph ph-cell-signal-full"></i> {{
                             player['status'] }}</span></td>
                     {% elif player['status'] == 'Offline' %}
-                    <td class="no-scroll col-4"><span class="text-warning"><i
-                                class="fa-regular fa-circle-xmark"></i><span class="d-md-none ">&nbsp;{{
+                    <td class="no-scroll col-4"><span class="text-warning"><i class="ph ph-x-circle"></i><span
+                                class="d-md-none ">&nbsp;{{
                                 player['status'] }}</span><span class="d-none d-md-inline"> Last connection :<br> {{
                                 player['last_seen'] }}</span></span></td>
                     {% end %}

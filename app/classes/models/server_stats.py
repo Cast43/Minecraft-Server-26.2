@@ -8,7 +8,6 @@ from app.classes.helpers.helpers import Helpers
 from app.classes.shared.main_models import DatabaseShortcuts
 from app.classes.shared.migration import MigrationManager
 
-
 try:
     from peewee import (
         SqliteDatabase,
@@ -106,7 +105,6 @@ class HelperServerStats:
             logger.warning(
                 f"Error try to look for the db_stats files for server : {ex}"
             )
-            return None
 
     def select_database(self):
         try:
@@ -127,7 +125,6 @@ class HelperServerStats:
             logger.warning(
                 f"Error try to look for the db_stats files for server : {ex}"
             )
-            return None
 
     def get_all_servers_stats(self):
         self.database.connect(reuse_if_open=True)
@@ -166,6 +163,113 @@ class HelperServerStats:
         self.database.close()
         return server_stats
 
+    def get_history_stats_adaptive(
+        self, server_id, num_hours, sampling_tiers=None, sampling_fallback_divisor=12
+    ):
+        """
+        Get server stats with adaptive sampling based on time range.
+
+        Sampling uses configurable tiers from config.json when provided,
+        otherwise falls back to built-in defaults (1/2/6/hours÷12).
+        """
+        self.database.connect(reuse_if_open=True)
+        max_age = datetime.datetime.now() - timedelta(hours=num_hours)
+
+        # Determine sample rate
+        sample_rate = self._calculate_sample_rate(
+            num_hours, sampling_tiers, sampling_fallback_divisor
+        )
+
+        query_stats = (
+            ServerStats.select()
+            .where(ServerStats.created > max_age)
+            .where(ServerStats.server_id == server_id)
+            .order_by(ServerStats.created.asc())
+            .execute(self.database)
+        )
+
+        # Apply sampling
+        server_stats = []
+        for idx, stat in enumerate(query_stats):
+            if idx % sample_rate == 0:
+                server_stats.append(DatabaseShortcuts.get_data_obj(stat))
+
+        self.database.close()
+        return server_stats
+
+    def get_history_stats_by_date_range(
+        self,
+        server_id,
+        start_time,
+        end_time,
+        sampling_tiers=None,
+        sampling_fallback_divisor=12,
+    ):
+        """
+        Get server stats for a custom date range with adaptive sampling
+
+        Args:
+            server_id: Server ID to query
+            start_time: datetime object for range start
+            end_time: datetime object for range end
+
+        Returns:
+            List of stat dictionaries with adaptive sampling applied
+        """
+        self.database.connect(reuse_if_open=True)
+
+        # Calculate hours for adaptive sampling
+        time_delta = end_time - start_time
+        num_hours = time_delta.total_seconds() / 3600
+
+        # Determine sample rate based on time span
+        sample_rate = self._calculate_sample_rate(
+            num_hours, sampling_tiers, sampling_fallback_divisor
+        )
+
+        query_stats = (
+            ServerStats.select()
+            .where(ServerStats.created >= start_time)
+            .where(ServerStats.created <= end_time)
+            .where(ServerStats.server_id == server_id)
+            .order_by(ServerStats.created.asc())
+            .execute(self.database)
+        )
+
+        # Apply sampling
+        server_stats = []
+        for idx, stat in enumerate(query_stats):
+            if idx % sample_rate == 0:
+                server_stats.append(DatabaseShortcuts.get_data_obj(stat))
+
+        self.database.close()
+        return server_stats
+
+    def _calculate_sample_rate(
+        self, num_hours, sampling_tiers=None, sampling_fallback_divisor=12
+    ):
+        """Calculate appropriate sample rate for time range using config tiers"""
+        if num_hours <= 0:
+            return 1  # Safety: treat invalid input as minimum
+
+        if sampling_tiers:
+            # Tiers must be sorted by max_hours ascending
+            sorted_tiers = sorted(sampling_tiers, key=lambda t: t["max_hours"])
+            for tier in sorted_tiers:
+                if num_hours <= tier["max_hours"]:
+                    return max(1, tier["sample_rate"])
+            # Beyond all tiers: use fallback divisor
+            return max(1, int(num_hours // sampling_fallback_divisor))
+
+        # Legacy fallback if no tiers provided
+        if num_hours <= 6:
+            return 1
+        if num_hours <= 24:
+            return 2
+        if num_hours <= 72:
+            return 6
+        return max(1, int(num_hours // 12))
+
     def insert_server_stats(self, server_stats):
         self.database.connect(reuse_if_open=True)
         server_id = server_stats.get("id", 0)
@@ -180,7 +284,7 @@ class HelperServerStats:
                 ServerStats.started: server_stats.get("started", ""),
                 ServerStats.running: server_stats.get("running", False),
                 ServerStats.cpu: server_stats.get("cpu", 0),
-                ServerStats.mem: server_stats.get("mem", 0),
+                ServerStats.mem: server_stats.get("mem_raw", 0),
                 ServerStats.mem_percent: server_stats.get("mem_percent", 0),
                 ServerStats.world_name: server_stats.get("world_name", ""),
                 ServerStats.world_size: server_stats.get("world_size", ""),
@@ -222,6 +326,22 @@ class HelperServerStats:
             return DatabaseShortcuts.get_data_obj(latest)
         except IndexError:
             return {}
+
+    def get_earliest_server_stats(self):
+        self.database.connect(reuse_if_open=True)
+        try:
+            earliest = (
+                ServerStats.select()
+                .where(ServerStats.server_id == self.server_id)
+                .order_by(ServerStats.created.asc())
+                .limit(1)
+                .get(self.database)
+            )
+            self.database.close()
+            return earliest
+        except DoesNotExist:
+            # No metrics exist for this server yet
+            self.database.close()
 
     def get_server_stats(self):
         self.database.connect(reuse_if_open=True)

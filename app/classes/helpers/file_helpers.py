@@ -1,5 +1,4 @@
 import datetime
-import hashlib
 import io
 import logging
 import mimetypes
@@ -12,7 +11,6 @@ import urllib.request
 import zipfile
 import zlib
 from pathlib import Path
-from typing import BinaryIO
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import certifi
@@ -25,7 +23,7 @@ from app.classes.shared.websocket_manager import WebSocketManager
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
-
+SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
 
 
@@ -173,6 +171,11 @@ class FileHelpers:
                                 logger.info(
                                     f"SSL File Get - Download progress: {progress:.2f}%"
                                 )
+                                WebSocketManager().broadcast_page(
+                                    SERVER_DETAIL,
+                                    "download_progress",
+                                    round(progress, 1),
+                                )
                     return True
             except (urllib.error.URLError, ssl.SSLError) as e:
                 logger.warning(f"SSL File Get - Attempt {attempt+1} failed: {e}")
@@ -226,29 +229,6 @@ class FileHelpers:
     def check_mime_types(self, file_path):
         m_type, _value = mimetypes.guess_type(file_path)
         return m_type
-
-    @staticmethod
-    def calculate_file_hash_sha256(file_path: str) -> str:
-        """
-        Takes one parameter of file path.
-        It will generate a SHA256 hash for the path and return it.
-        """
-        sha256_hash = hashlib.sha256()
-        file_path_resolved = pathlib.Path(file_path).resolve()
-        with open(file_path_resolved, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
-                sha256_hash.update(byte_block)
-        return sha256_hash.hexdigest()
-
-    @staticmethod
-    def calculate_buffer_hash(buffer: BinaryIO) -> str:
-        """
-        Takes one argument of a stream buffer. Will return a
-        sha256 hash of the buffer
-        """
-        sha256_hash = hashlib.sha256()
-        sha256_hash.update(buffer)
-        return sha256_hash.hexdigest()
 
     @staticmethod
     def copy_dir(src_path, dest_path, dirs_exist_ok=False):
@@ -353,7 +333,10 @@ class FileHelpers:
     ):
         # create a ZipFile object
         path_to_destination += ".zip"
-        ex_replace = [p.replace("\\", "/") for p in excluded_dirs]
+        ex_replace = [
+            Path(self.get_absolute_path(path_to_zip, p)).as_posix()
+            for p in excluded_dirs
+        ]
         total_bytes = 0
         dir_bytes = FileHelpers.get_dir_size(path_to_zip)
         results = {
@@ -361,7 +344,7 @@ class FileHelpers:
             "total_files": self.helper.human_readable_file_size(dir_bytes),
         }
         WebSocketManager().broadcast_page_params(
-            "/panel/server_detail",
+            SERVER_DETAIL,
             {"id": str(server_id)},
             "backup_status",
             results,
@@ -432,7 +415,7 @@ class FileHelpers:
                     }
                     # send status results to page.
                     WebSocketManager().broadcast_page_params(
-                        "/panel/server_detail",
+                        SERVER_DETAIL,
                         {"id": str(server_id)},
                         "backup_status",
                         results,
@@ -596,6 +579,9 @@ class FileHelpers:
                 files_list = zip_ref.namelist()
                 for idx, file in enumerate(files_list):
                     info = zip_ref.getinfo(file)
+                    # Skip directory entries
+                    if info.is_dir():
+                        continue
                     target = Path(destination_path, file).resolve()
                     try:
                         self.helper.validate_traversal(destination_path, target)
@@ -610,7 +596,7 @@ class FileHelpers:
                             file, base_include_path
                         )
                         try:
-                            zip_ref.extract(file, destination_path)
+                            zip_ref.extract(info, destination_path)
                         except FileNotFoundError:
                             logger.error(
                                 "Could not extract file: %s to %s from archive %s",

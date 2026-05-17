@@ -89,7 +89,13 @@ new_server_schema = {
             "title": "Server monitoring type",
             "type": "string",
             "default": "minecraft_java",
-            "enum": ["minecraft_java", "minecraft_bedrock", "hytale", "none"],
+            "enum": [
+                "minecraft_java",
+                "minecraft_bedrock",
+                "hytale",
+                "steam_cmd",
+                "none",
+            ],
             "error": "enumErr",
             "fill": True,
             # TODO: SteamCMD, RakNet, etc.
@@ -174,7 +180,13 @@ new_server_schema = {
             "title": "Server creation type",
             "type": "string",
             "default": "minecraft_java",
-            "enum": ["minecraft_java", "minecraft_bedrock", "hytale", "custom"],
+            "enum": [
+                "minecraft_java",
+                "minecraft_bedrock",
+                "hytale",
+                "steam_cmd",
+                "custom",
+            ],
             "error": "enumErr",
             "fill": True,
         },
@@ -625,6 +637,58 @@ new_server_schema = {
                 },
             ],
         },
+        "steam_cmd_create_data": {
+            "title": "SteamCMD creation data",
+            "type": "object",
+            "required": ["create_type"],
+            "properties": {
+                "create_type": {
+                    "title": "Creation type",
+                    "type": "string",
+                    "default": "download_exe",
+                    "enum": ["download_exe"],
+                },
+                "download_exe_create_data": {
+                    "title": "Import server data",
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "app_id": {
+                            "title": "Steam Server App ID",
+                            "type": "integer",
+                        },
+                        "agree_to_eula": {
+                            "title": "Agree to the EULA",
+                            "type": "boolean",
+                            "enum": [True],
+                        },
+                    },
+                },
+            },
+            "allOf": [
+                {
+                    "$comment": "If..then section",
+                    "allOf": [
+                        {
+                            "if": {
+                                "properties": {"create_type": {"const": "download_exe"}}
+                            },
+                            "then": {
+                                "required": [
+                                    "download_exe_create_data",
+                                ]
+                            },
+                        },
+                    ],
+                },
+                {
+                    "title": "Only one creation data",
+                    "oneOf": [
+                        {"required": ["download_exe_create_data"]},
+                    ],
+                },
+            ],
+        },
         "custom_create_data": {
             "title": "Custom creation data",
             "type": "object",
@@ -784,6 +848,10 @@ new_server_schema = {
                     "then": {"required": ["minecraft_bedrock_create_data"]},
                 },
                 {
+                    "if": {"properties": {"create_type": {"const": "steam_cmd"}}},
+                    "then": {"required": ["steam_cmd_create_data"]},
+                },
+                {
                     "if": {"properties": {"create_type": {"const": "hytale"}}},
                     "then": {"required": ["hytale_create_data"]},
                 },
@@ -819,6 +887,7 @@ new_server_schema = {
             "oneOf": [
                 {"required": ["minecraft_java_create_data"]},
                 {"required": ["minecraft_bedrock_create_data"]},
+                {"required": ["steam_cmd_create_data"]},
                 {"required": ["hytale_create_data"]},
                 {"required": ["custom_create_data"]},
             ],
@@ -828,6 +897,7 @@ new_server_schema = {
             "oneOf": [
                 {"required": ["minecraft_java_monitoring_data"]},
                 {"required": ["minecraft_bedrock_monitoring_data"]},
+                {"required": ["steam_cmd_monitoring_data"]},
                 {"required": ["hytale_monitoring_data"]},
                 {"properties": {"monitoring_type": {"const": "none"}}},
             ],

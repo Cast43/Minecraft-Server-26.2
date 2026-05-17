@@ -139,6 +139,11 @@ class UsersController:
                 "error": "typeString",
                 "fill": True,
             },
+            "dashboard_columns": {
+                "type": "string",
+                "error": "typeString",
+                "fill": True,
+            },
             "disable_password_auth": {
                 "type": "boolean",
                 "examples": [False],
@@ -194,6 +199,10 @@ class UsersController:
     @staticmethod
     def get_managed_users(exec_user_id):
         return HelperUsers.get_managed_users(exec_user_id)
+
+    @staticmethod
+    def get_managed_users_ids(exec_user_id) -> list[int]:
+        return HelperUsers.get_managed_users_ids(exec_user_id)
 
     @staticmethod
     def get_managed_roles(exec_user_id):
@@ -427,14 +436,12 @@ class UsersController:
             theme="anti-lockout",
         )
 
-        Console.yellow(
-            f"""
+        Console.yellow(f"""
             Anti-lockout recovery account enabled!
             {'/' * 74}
             Username: anti-lockout-user
             Password: {lockout_pass}
-            {'/' * 74}"""
-        )
+            {'/' * 74}""")
         self.scheduler.add_job(
             self.stop_anti_lockout,
             "date",

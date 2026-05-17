@@ -1,7 +1,7 @@
 <ul class="navbar-nav ml-auto">
   <li class="nav-item dropdown notif-li">
     <a class="nav-link count-indicator dropdown-toggle" id="notifDropdown" href="#" aria-expanded="false">
-      <i class="fas fa-broadcast-tower
+      <i class="ph-fill ph-cell-tower
         {% if data.get('update_available') %}
             text-danger
         {% end %}
@@ -17,7 +17,7 @@
     <a class="nav-link dropdown-toggle" id="UserDropdown" href="#" data-toggle="dropdown" aria-expanded="false">
       <img class="img-xs rounded-circle profile-picture" onerror="pfpError(this)" src="{{ data['user_data']['pfp'] }}"
         alt="Profile"><span class="badge mfa-warn-badge d-none mfa-warn"><i
-          class="fa-solid fa-triangle-exclamation text-warning"></i></span> </a>
+          class="ph-bold ph-warning text-warning"></i></span> </a>
     <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown">
       <div class="dropdown-header text-center">
         <img class="img-md rounded-circle profile-picture" onerror="pfpError(this)" src="{{ data['user_data']['pfp'] }}"
@@ -34,13 +34,13 @@
       </div>
       <div id="mfa-container" class="d-none mfa-warn-text mfa-warn card-header header-sm justify-content-center">
         <a id="mfa-link" class="small mfa-dark" href="/panel/edit_user_otp?id={{data['user_data']['user_id']}}"
-          target="_blank"><i class="fa-solid fa-triangle-exclamation"></i>{{translate("base",
+          target="_blank"><i class="ph-fill ph-warning"></i>{{translate("base",
           "getMFA", data['lang'])}}
         </a>
       </div>
       <br />
       <a class="dropdown-item" href="/panel/edit_user?id={{data['user_data']['user_id']}}"><i
-          class="fa-solid fa-user-gear dropdown-item-icon text-primary"></i>{{
+          class="ph-bold ph-gear dropdown-item-icon text-primary"></i>{{
         translate('notify', 'accountSettings',
         data['lang']) }}</a>
       {% if data['support_perm'] %}
@@ -118,7 +118,7 @@
     // Clear button
     const iconWrapper = document.createElement("p");
     const icon = document.createElement("i");
-    icon.className = "clear-button fa-regular fa-x";
+    icon.className = "clear-button ph ph-x";
     icon.dataset.id = value.id;
     iconWrapper.appendChild(icon);
 
@@ -163,7 +163,7 @@
       $("#notif-count").show()
       $("#notif-count").text(data.length).html();
     } else {
-      $("#announcements").text(`<li><p class='my-3 text-center'><i class="fa fa-bell-slash" aria-hidden="true"></i></p></li>`).html();
+      $("#announcements").text(`<li><p class='my-3 text-center'><i class="ph-fill ph-bell-slash" aria-hidden="true"></i></p></li>`).html();
       $("#notif-count").hide()
     }
     $(".clear-button").on("click", function (event) {
@@ -177,7 +177,7 @@
         localStorage.setItem("notif-count", notif_count);
         $("#notif-count").text(notif_count).html();
       } else {
-        $("#announcements").html(`<li><p class='my-3 text-center'><i class="fa fa-bell-slash" aria-hidden="true"></i></p></li>`)
+        $("#announcements").html(`<li><p class='my-3 text-center'><i class="ph-fill ph-bell-slash" aria-hidden="true"></i></p></li>`)
         $("#notif-count").html("");
       }
 

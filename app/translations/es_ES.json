@@ -33,8 +33,7 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Aviso: </strong>¡Crafty no funciona correctamente cuando JavaScript no está habilitado!",
-        "getMFA": "Asegura tus servidores!",
-        "createMFA": "Añade autentificación en dos factores a tu cuenta!"
+        "getMFA": "Asegura tus servidores!"
     },
     "credits": {
         "developmentTeam": "Equipo de desarrollo",
@@ -204,7 +203,6 @@
         "no-file": "No se puede encontrar el archivo solicitado. Verifique la dirección. ¿Quizas Crafty no tiene los permisos adecuados?",
         "noInternet": "Crafty tiene problemas para acceder a Internet. La creación del servidor ha sido deshabilitada. Verifique su conexión a Internet y actualice esta página.Crafty tiene problemas para acceder a Internet. La creación del servidor ha sido deshabilitada. Verifique su conexión a Internet y actualice esta página.",
         "noJava": "Servidor {} no pudo iniciarse: Detectamos que Java no está instalado, Por favor instale java e inicie el servidor.",
-        "not-downloaded": "No podemos encontrar el archivo ejecutable. ¿Ha terminado de descargarse? ¿Están los permisos puestos como ejecutable?",
         "portReminder": "Detectamos que es la primera vez que se inicia {}. Asegúrese de configurar el puerto {} a través de su router/firewall para hacer el servidor accesible por Internet.",
         "privMsg": "y el ",
         "return": "Volver al panel de control",

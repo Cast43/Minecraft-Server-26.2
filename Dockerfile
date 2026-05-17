@@ -31,6 +31,11 @@ RUN touch /var/mail/ubuntu \
         openjdk-21-jre-headless \
         openjdk-25-jre-headless \
         tzdata \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+         apt-get -y --no-install-recommends install lib32gcc-s1; \
+       else \
+         echo "Skipping SteamCMD 32-bit deps on $TARGETARCH (no native support)."; \
+       fi \
     && apt-get autoremove \
     && apt-get clean
 
@@ -52,7 +57,9 @@ RUN mv ./app/config ./app/config_original \
     && chmod +x ./docker_launcher.sh
 
 # Expose Web Interface port & Server port range
+EXPOSE 5520-5550
 EXPOSE 8000
+EXPOSE 8123
 EXPOSE 8443
 EXPOSE 19132
 EXPOSE 25500-25600

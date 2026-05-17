@@ -6,7 +6,7 @@ import datetime
 import base64
 import typing as t
 
-from app.classes.remote_stats.mc_ping import ping
+from app.classes.remote_stats.ping import ping
 from app.classes.models.management import HostStats
 from app.classes.models.servers import HelperServers
 from app.classes.shared.null_writer import NullWriter
@@ -159,9 +159,11 @@ class Stats:
 
         # this is a faster way of getting data for a process
         with p.oneshot():
+            memory_bytes = p.memory_info()[0]
             process_stats = {
                 "cpu_usage": real_cpu,
-                "memory_usage": Helpers.human_readable_file_size(p.memory_info()[0]),
+                "memory_usage": Helpers.human_readable_file_size(memory_bytes),
+                "memory_usage_raw": memory_bytes,
                 "mem_percentage": round(p.memory_percent(), 0),
             }
         return process_stats

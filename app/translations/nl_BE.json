@@ -33,7 +33,6 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Waarschuwing: </strong>Crafty werkt niet goed als JavaScript niet is ingeschakeld!",
-        "createMFA": "Voeg multi-factorauthenticatie toe aan je account!",
         "getMFA": "Beveilig je servers!"
     },
     "credits": {
@@ -204,7 +203,6 @@
         "no-file": "We kunnen het gevraagde bestand niet vinden. Controleer het pad. Heeft Crafty de juiste permissies?",
         "noInternet": "Crafty heeft problemen met het verbinden met het internet. Het maken van servers is uitgeschakeld. Controleer uw internetverbinding en vernieuw deze pagina.",
         "noJava": "Server {} is niet gestart met foutcode: We hebben vastgesteld dat Java niet geïnstalleerd is. Installeer java en start dan de server.",
-        "not-downloaded": "We kunnen uw uitvoerbare bestand niet vinden. Is het klaar met downloaden? Zijn de rechten ingesteld op uitvoerbaar?",
         "portReminder": "We hebben ontdekt dat dit de eerste keer is dat {} wordt uitgevoerd. Zorg ervoor dat u poort {} doorstuurt via uw router/firewall om deze op afstand toegankelijk te maken vanaf het internet.",
         "privMsg": "en de ",
         "return": "Terug naar Dashboard",

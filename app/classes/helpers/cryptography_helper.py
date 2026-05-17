@@ -1,7 +1,8 @@
 import base64
 import binascii
-from hashlib import blake2b
+from hashlib import blake2b, sha256
 from pathlib import Path
+from typing import BinaryIO
 
 
 class CryptoHelper:
@@ -11,6 +12,33 @@ class CryptoHelper:
 
     def say_hello_world(self):
         print(self.test)
+
+    @staticmethod
+    def calculate_buffer_hash(buffer: BinaryIO) -> str:
+        """
+        Takes one argument of a stream buffer. Will return a
+        sha256 hash of the buffer
+        """
+        sha256_hash = sha256()
+        sha256_hash.update(buffer)
+        return sha256_hash.hexdigest()
+
+    @staticmethod
+    def calculate_file_hash_sha256(file_path: str) -> str:
+        """
+        Takes one parameter of file path.
+        It will generate a SHA256 hash for the path and return it.
+        """
+        sha256_hash = sha256()
+        file_path_resolved = Path(file_path).resolve()
+        try:
+            with open(file_path_resolved, "rb") as f:
+                for byte_block in iter(lambda: f.read(4096), b""):
+                    sha256_hash.update(byte_block)
+            return sha256_hash.hexdigest()
+        except OSError:
+            # If file is not found we'll return an empty string
+            return ""
 
     @staticmethod
     def blake2b_hash_bytes(bytes_to_hash: bytes) -> bytes:

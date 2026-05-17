@@ -9,6 +9,7 @@ services:
     environment:
       - TZ=Etc/UTC
     ports:
+      - "5520-5550:5520-5550/udp" # Hytale
       - "8000:8000" # HTTP
       - "8443:8443" # HTTPS
       - "8123:8123" # DYNMAP

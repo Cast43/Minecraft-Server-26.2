@@ -32,8 +32,7 @@
         "yes": "Ja"
     },
     "base": {
-        "doesNotWorkWithoutJavascript": "<strong>Warnung: </strong>Crafty funktioniert nicht richtig, wenn JavaScript nicht aktiviert ist!",
-        "createMFA": "Füge eine Zwei-Faktor-Authentifizierung zu deinem Konto hinzu!"
+        "doesNotWorkWithoutJavascript": "<strong>Warnung: </strong>Crafty funktioniert nicht richtig, wenn JavaScript nicht aktiviert ist!"
     },
     "credits": {
         "developmentTeam": "Entwicklungsteam",
@@ -203,7 +202,6 @@
         "no-file": "Crafty kann die Datei nicht öffnen. Bitte den angegebenen Pfad überprüfen. Hat Crafty die nötigen Berechtigungen?",
         "noInternet": "Crafty hat Schwierigkeiten, auf das Internet zuzugreifen. Die Erstellung von Servern wurde deaktiviert. Bitte überprüfen Sie Ihre Internetverbindung und aktualisieren Sie diese Seite.",
         "noJava": "Server {} konnte nicht gestartet werden mit Fehlercode: Wir haben festgestellt, dass Java nicht installiert ist. Bitte installieren Sie Java und starten Sie dann den Server neu.",
-        "not-downloaded": "Crafty kann die auszuführende Datei nicht finden. Ist der Download abgeschlossen? Sind die Berechtigungen für Crafty korrekt?",
         "portReminder": "Wir haben festgestellt, dass dies das erste Mal ist, dass {} ausgeführt wurde. Stellen Sie sicher, dass Sie Port {} durch Ihren Router/Firewall weiterleiten, um den Fernzugriff aus dem Internet zu ermöglichen.",
         "privMsg": "und der/die/das ",
         "return": "Zurück zum Dashboard",

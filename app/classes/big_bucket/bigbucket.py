@@ -122,6 +122,8 @@ class BigBucket:
         This method checks if the cache file is older than a specified number of days
         before deciding to refresh.
         """
+
+        cache_log_message = "Automatic cache refresh initiated on %s due to old cache."
         cache_file_path = self.helper.big_bucket_minecraft_cache
 
         # Determine if the cache is old and needs refreshing
@@ -131,7 +133,10 @@ class BigBucket:
         # cache_old = True
 
         if self._check_bucket_alive() and cache_old:
-            logger.info("Automatic cache refresh initiated due to old cache.")
+            logger.info(
+                cache_log_message,
+                cache_file_path,
+            )
             self._refresh_cache(cache_file_path)
 
         cache_file_path = self.helper.big_bucket_hytale_cache
@@ -143,8 +148,20 @@ class BigBucket:
         # cache_old = True
 
         if self._check_bucket_alive() and cache_old:
-            logger.info("Automatic cache refresh initiated due to old cache.")
+            logger.info(cache_log_message, cache_file_path)
             self._refresh_cache(cache_file_path, "hytale.json")
+
+        cache_file_path = self.helper.big_bucket_steamapps_cache
+
+        # Determine if the cache is old and needs refreshing
+        cache_old = self.helper.is_file_older_than_x_days(cache_file_path)
+
+        # debug override
+        # cache_old = True
+
+        if self._check_bucket_alive() and cache_old:
+            logger.info(cache_log_message, cache_file_path)
+            self._refresh_cache(cache_file_path, "steamcmd.json")
 
     def get_fetch_url(self, jar, server, version) -> str | None:
         """

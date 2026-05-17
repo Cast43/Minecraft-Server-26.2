@@ -57,7 +57,7 @@
 
     <li class="nav-item">
       <a class="nav-link" href="/panel/dashboard">
-        <i class="fa-solid fa-diagram-project"></i>&nbsp;
+        <i class="ph-fill ph-tree-view"></i>&nbsp;
         <span class="menu-title">{{ translate('sidebar', 'dashboard', data['lang']) }}</span>
       </a>
     </li>
@@ -65,7 +65,7 @@
     <li class="nav-item">
       <a class="nav-link" data-toggle="collapse" href="#page-layouts" aria-expanded="false"
         aria-controls="page-layouts">
-        <i class="fas fa-server"></i> &nbsp;
+        <i class="ph-fill ph-hard-drives"></i> &nbsp;
         <span class="menu-title">{{ translate('sidebar', 'servers', data['lang']) }}</span>
         <i class="menu-arrow"></i>
       </a>
@@ -73,13 +73,13 @@
         <ul class="nav flex-column sub-menu" id="sidebar-servers">
           {% if data['crafty_permissions']['Server_Creation'] in data['user_crafty_permissions'] %}
           <li class="nav-item">
-            <a class="nav-link" href="/server/step1"><i class="fas fa-plus-circle"></i> &nbsp; {{ translate('sidebar',
+            <a class="nav-link" href="/server/step1"><i class="ph-fill ph-plus-circle"></i> &nbsp; {{ translate('sidebar',
               'newServer', data['lang']) }}</a>
           </li>
           {% end %}
           {% for s in data['menu_servers'] %}
           <li class="nav-item">
-            <a class="nav-link" href="/panel/server_detail?id={{s['server_id']}}"><i class="fas fa-server"></i> &nbsp;
+            <a class="nav-link" href="/panel/server_detail?id={{s['server_id']}}"><i class="ph-fill ph-hard-drives"></i> &nbsp;
               {{s['server_name']}}</a>
           </li>
           {% end %}
@@ -90,28 +90,28 @@
 
     <li class="nav-item">
       <a class="nav-link" href="https://docs.craftycontrol.com" target="_blank">
-        <i class="fas fa-book"></i> &nbsp;
+        <i class="ph-fill ph-notebook"></i> &nbsp;
         <span class="menu-title">{{ translate('sidebar', 'documentation', data['lang']) }}</span>
       </a>
     </li>
 
     <li class="nav-item">
       <a class="nav-link" href="/panel/wiki">
-        <i class="fa fa-info-circle"></i> &nbsp;
+        <i class="ph-fill ph-info"></i> &nbsp;
         <span class="menu-title">{{ translate('sidebar', 'inApp', data['lang']) }}</span>
       </a>
     </li>
 
     <li class="nav-item">
       <a class="nav-link" href="https://discord.gg/9VJPhCE" target="_blank">
-        <i class="fab fa-discord"></i> &nbsp;
+        <i class="ph-fill ph-discord-logo"></i> &nbsp;
         <span class="menu-title">Discord</span>
       </a>
     </li>
 
     <li class="nav-item">
       <a class="nav-link" href="/panel/credits">
-        <i class="fas fa-heart"></i> &nbsp;
+        <i class="ph-fill ph-heart"></i> &nbsp;
         <span class="menu-title">{{ translate('sidebar', 'credits', data['lang']) }}</span>
       </a>
     </li>
@@ -119,14 +119,14 @@
     {% if data['show_contribute'] %}
     <li class="nav-item">
       <a class="nav-link" href="/panel/contribute">
-        <i class="fas fa-donate"></i> &nbsp;
+        <i class="ph-fill ph-currency-dollar"></i> &nbsp;
         <span class="menu-title">{{ translate('sidebar', 'contribute', data['lang']) }}</span>
       </a>
     </li>
     {% end %}
     <li class="nav-item">
       <a class="nav-link panel-settings" href="/panel/panel_config">
-        <i class="fas fa-cogs"></i>&nbsp;
+        <i class="ph-fill ph-gear"></i>&nbsp;
         <span class="menu-title">{{ translate('sidebar', 'panelSettings', data['lang']) }}</span>
       </a>
     </li>

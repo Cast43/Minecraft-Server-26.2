@@ -424,8 +424,32 @@ noscript.noscript-warning {
     font-weight: 400;
 }
 
-*:lang(th-TH) :not(.fa, .fas, .fab, .fa-solid) {
+*:lang(th-TH) :not(.ph, .ph-bold, .ph-fill, .ph-light, .ph-thin, .ph-duotone) {
     font-family: "Sarabun", "Atikinson Hyperlegible Next", sans-serif;
+}
+
+.ph,
+.ph-bold,
+.ph-fill,
+.ph-light,
+.ph-thin,
+.ph-duotone {
+    font-size: 16px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.ph-spin::before {
+    display: inline-block;
+    animation: spin 2s infinite linear;
 }
 
 /**************************************************************/
@@ -522,6 +546,19 @@ div.form-group.reset-secret {
 
 .hidden-input {
     margin-left: -40px;
+}
+
+.transparent-button {
+    background-color: transparent;
+    /* Makes the background transparent */
+    border: none;
+    /* Removes the default button border */
+    cursor: pointer;
+    /* Keeps the cursor as a hand pointer on hover */
+    padding: 0;
+    /* Removes default padding if desired */
+    outline: none;
+    /* Removes the outline when the button is clicked or focused */
 }
 
 /**************************************************************/
