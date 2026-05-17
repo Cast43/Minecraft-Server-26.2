@@ -6,7 +6,6 @@ from pathlib import PurePosixPath, Path
 
 from app.classes.models.server_permissions import (
     PermissionsServers,
-    EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
 
