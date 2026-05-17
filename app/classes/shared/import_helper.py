@@ -1,22 +1,22 @@
 import os
 import uuid
-import json
 import time
-import shlex
 import pathlib
 import logging
 import threading
-import subprocess
-from pathlib import PurePosixPath, Path
+from pathlib import Path
 
 from app.classes.big_bucket.bigbucket import BigBucket
-from app.classes.big_bucket.hytale import HytaleJSON
-from app.classes.controllers.server_perms_controller import PermissionsServers
+from app.classes.controllers.server_perms_controller import (
+    PermissionsServers,
+)
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.websocket_manager import WebSocketManager
 from app.classes.steamcmd.steamcmd import SteamCMD
+from app.classes.installers.modded import ModdedInstaller
+from app.classes.installers.hytale import HytaleInstaller
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,12 @@ class ImportHelpers:
         self.file_helper: FileHelpers = file_helper
         self.helper: Helpers = helper
         self.big_bucket = BigBucket(helper)
+        self.modded_installer = ModdedInstaller(
+            self.helper, ServersController, WebSocketManager
+        )
+        self.hytale_installer = HytaleInstaller(
+            self.helper, self.file_helper, WebSocketManager
+        )
 
     def import_zipped_server(
         self,
@@ -106,14 +112,14 @@ class ImportHelpers:
 
     def download_steam_server(self, app_id, server_id, server_dir, server_exe):
         download_thread = threading.Thread(
-            target=self.create_steam_server,
+            target=self._create_steam_server,
             daemon=True,
             args=(app_id, server_id, server_dir, server_exe),
             name=f"{server_id}_download",
         )
         download_thread.start()
 
-    def create_steam_server(self, app_id, server_id, server_dir, server_exe):
+    def _create_steam_server(self, app_id, server_id, server_dir, server_exe):
         if not server_exe:
             server_exe = "game.exe"  # replace with actual exe eventually
 
@@ -151,19 +157,17 @@ class ImportHelpers:
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
 
-    def download_bedrock_server(self, path, new_id):
+    def download_threaded_bedrock_server(self, path, new_id):
         bedrock_url = Helpers.get_latest_bedrock_url()
         download_thread = threading.Thread(
-            target=self.download_threaded_bedrock_server,
+            target=self._download_bedrock_server,
             daemon=True,
             args=(path, new_id, bedrock_url),
             name=f"{new_id}_download",
         )
         download_thread.start()
 
-    def download_threaded_bedrock_server(
-        self, path, new_id, bedrock_url, server_update=False
-    ):
+    def _download_bedrock_server(self, path, new_id, bedrock_url, server_update=False):
         """
         Downloads the latest Bedrock server, unzips it, sets necessary permissions.
 
@@ -180,7 +184,15 @@ class ImportHelpers:
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
+                    server_users = PermissionsServers.get_server_user_list(new_id)
                     logger.error("Failed to download the Bedrock server zip.")
+                    ServersController.finish_import(new_id)
+                    for user in server_users:
+                        WebSocketManager().broadcast_user(
+                            user,
+                            "send_error",
+                            {"error": "Failed to download the Bedrock server zip."},
+                        )
                     return
 
                 unzip_path = self.helper.wtol_path(file_path)
@@ -211,135 +223,102 @@ class ImportHelpers:
 
     def download_install_threaded_hytale(self, path, new_id):
         download_thread = threading.Thread(
-            target=self.download_install_hytale,
+            target=self._download_install_hytale,
             daemon=True,
             args=(path, new_id),
             name=f"{new_id}_download",
         )
         download_thread.start()
 
-    def download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
+    def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
         server_users = PermissionsServers.get_server_user_list(new_id)
 
         bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        try:
-            hytale_json = HytaleJSON(bb_cache)
-            unix_exe = PurePosixPath(hytale_json.linux_installer_url).name
-            windows_exe = PurePosixPath(hytale_json.windows_installer_url).name
-        except KeyError:
-            logger.error("Failed to create Hytale server with keyerror")
-            ServersController.finish_import(new_id)
-            return
-        install_command = (
-            f"./{unix_exe} "
-            f"{hytale_json.commands.download_path_command} {HYTALE_0UTPUT_NAME}"
-        )
-        if self.helper.is_os_windows():
-            install_command = (
-                f"{server_path}/{windows_exe} "
-                f"{hytale_json.commands.download_path_command} {HYTALE_0UTPUT_NAME}"
-            )
-            self.file_helper.ssl_get_file(
-                hytale_json.windows_installer_url, server_path, windows_exe
-            )
-        else:
-            self.file_helper.ssl_get_file(
-                hytale_json.linux_installer_url, server_path, unix_exe
-            )
-            os.chmod(Path(server_path, unix_exe), 0o2760)  # set executable permissions
-            install_command = shlex.split(install_command)
-        process = subprocess.Popen(
-            install_command,
-            cwd=server_path,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        url_line = ""
-        while process.poll() is None:
-            line = process.stdout.readline().strip()
-            if not line:
-                continue
+        self.hytale_installer.install(bb_cache, server_path, new_id)
 
-            line = line.strip()
-            # TODO: Do not send data to clients who do not have permission to view
-            # this server's console
-            if len(WebSocketManager().clients) > 0:
-                WebSocketManager().broadcast_page_params(
-                    "/panel/server_detail",
-                    {"id": new_id},
-                    "vterm_new_line",
-                    {"line": line + "<br />"},
-                )
-            if (
-                line.startswith(hytale_json.parsing_lines.url_line_start)
-                and url_line == ""
-            ):
-                url_line = line
-                with open(
-                    Path(server_path, "hytale_install_auth_url.txt"),
-                    "w",
-                    encoding="utf-8",
-                ) as auth_file:
-                    auth_file.write(url_line)
-                for user in server_users:
-                    WebSocketManager().broadcast_user(
-                        user,
-                        "hytale_auth",
-                        {"link": line, "server_id": new_id},
-                    )
-
-        # Unzip downloaded archive.
-        self.file_helper.unzip_file(
-            Path(server_path, HYTALE_0UTPUT_NAME),
-            server_path,
-        )
-        self.install_or_update_monitoring_plugins(new_id, server_path)
         ServersController.finish_import(new_id)
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
 
-    def install_or_update_monitoring_plugins(
-        self, server_id: uuid.UUID, server_path: str | Path
-    ):
-        bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        try:
-            hytale_json = HytaleJSON(bb_cache)
-        except KeyError:
-            logger.error("Failed to download hytale plugins with keyerror")
-            return
-        logger.info("Installing Nitrado Webserver Plugin to server %s", server_id)
-        # make sure our mods dir exists before doing anything
-        # Download webserver plugin required for query plugin
-        self.helper.ensure_dir_exists(Path(server_path, "mods"))
-        self.file_helper.ssl_get_file(
-            hytale_json.plugins.webserver_plugin_url,
-            Path(server_path, "mods"),
-            "nitrado-webserver.jar",
+    def download_threaded_exe(self, jar, server, version, path, server_id):
+        update_thread = threading.Thread(
+            name=f"server_download-{server_id}-{server}-{version}",
+            target=self._download_exe,
+            daemon=True,
+            args=(jar, server, version, path, server_id),
         )
-        # Download query plugin
-        logger.info("Installing Nitrado Query Plugin to server %s", server_id)
-        self.file_helper.ssl_get_file(
-            hytale_json.plugins.query_plugin_url,
-            Path(server_path, "mods"),
-            "nitrado-query.jar",
-        )
-        self.modify_permissions_json(server_path)
+        update_thread.start()
 
-    def modify_permissions_json(self, server_path: str | Path):
-        # Make sure we do not overwrite user data
-        if not Helpers.check_file_exists(str(Path(server_path, "permissions.json"))):
-            with open(
-                Path(server_path, "permissions.json"), "w", encoding="utf-8"
-            ) as perms_file:
-                decoded = {
-                    "groups": {
-                        "ANONYMOUS": [
-                            "nitrado.query.web.read.server",
-                            "nitrado.query.web.read.universe",
-                            "nitrado.query.web.read.players",
-                        ]
-                    }
-                }
-                perms_file.write(json.dumps(decoded, indent=4))
+    def _download_exe(self, jar, server, version, path, server_id):
+        """
+        Downloads a server JAR file and performs post-download actions including
+        notifying users and setting import status.
+
+        This method waits for the server registration to complete, retrieves the
+        download URL for the specified server JAR file.
+
+        Upon successful download, it either runs the installer for
+        Forge servers or simply finishes the import process for other types. It
+        notifies server users about the completion of the download.
+
+        Parameters:
+            - jar (str): The category of the JAR file to download.
+            - server (str): The type of server software (e.g., 'forge', 'paper').
+            - version (str): The version of the server software.
+            - path (str): The local filesystem path where the JAR file will be saved.
+            - server_id (str): The unique identifier for the server being updated or
+                imported, used for notifying users and setting the import status.
+
+        Returns:
+            - bool: True if the JAR file was successfully downloaded and saved;
+                False otherwise.
+
+        The method ensures that the server is properly registered before proceeding
+        with the download and handles exceptions by logging errors and reverting
+        the import status if necessary.
+        """
+        # delaying download for server register to finish
+        time.sleep(3)
+
+        fetch_url = self.big_bucket.get_fetch_url(jar, server, version)
+        if not fetch_url:
+            return False
+
+        server_users = PermissionsServers.get_server_user_list(server_id)
+
+        # Make sure the server is registered before updating its stats
+        while True:
+            try:
+                ServersController.set_import(server_id)
+                for user in server_users:
+                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+                break
+            except Exception as ex:
+                logger.debug(f"Server not registered yet. Delaying download - {ex}")
+
+        # Initiate Download
+        jar_dir = os.path.dirname(path)
+        jar_name = os.path.basename(path)
+        logger.info(fetch_url)
+        success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
+
+        ServersController.finish_import(server_id)
+        # Post-download actions
+        if success:
+            match server:
+                case "forge-installer" | "neoforge-installer":
+                    server_obj = ServersController.get_server_obj(server_id)
+                    # If this is the newer Forge version, run the installer
+                    self.modded_installer.install(jar_dir, server_id, server_obj)
+
+            # Notify users
+            for user in server_users:
+                WebSocketManager().broadcast_user(
+                    user, "notification", "Executable download finished"
+                )
+                time.sleep(3)  # Delay for user notification
+                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        else:
+            logger.error(f"Unable to save jar to {path} due to download failure.")
+
+        return success

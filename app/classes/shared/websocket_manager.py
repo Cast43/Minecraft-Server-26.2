@@ -1,9 +1,13 @@
 import json
 import logging
+from peewee import DoesNotExist
 
 from app.classes.shared.singleton import Singleton
 from app.classes.shared.console import Console
 from app.classes.models.users import HelperUsers
+from app.classes.models.server_permissions import (
+    PermissionsServers,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,8 +92,31 @@ class WebSocketManager(metaclass=Singleton):
 
         self.broadcast_with_fn(filter_fn, event_type, data)
 
-    def broadcast_page_params(self, page: str, params: dict, event_type: str, data):
+    def broadcast_page_params(
+        self, page: str, params: dict, event_type: str, data, **kwargs
+    ):
+        """Broadcast websocket message to clients on specific page.
+        Accepts Kwargs for required permission to send websocket to client
+
+        Args:
+            page (str): url of page, e.g. "/panel/server_detail"
+            params (dict): sever object properties like the server id
+            event_type (str): the event type the client side is
+            looking for e.g. "vterm_new_line"
+            data (_type_): information client is expecting to be sent with websocket
+        """
+
         def filter_fn(client):
+            kwarg_perms = kwargs.get("required_permission")
+            try:
+                user_perms = PermissionsServers.get_user_id_permissions_list(
+                    client.get_user_id(), params.get("server_id", "")
+                )
+            except DoesNotExist:
+                user_perms = []
+            if (kwarg_perms) and kwarg_perms not in user_perms:
+                # Only send data to users with proper permission
+                return False
             if client.page != page:
                 return False
             for key, param in params.items():
