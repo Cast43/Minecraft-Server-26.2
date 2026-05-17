@@ -1,7 +1,7 @@
 # Changelog
 ## --- [4.10.5] - 2026/TBD
 ### New features
-TBD
+- Add API method to list backup files ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1014))
 ### Bug fixes
 TBD
 ### Tweaks
