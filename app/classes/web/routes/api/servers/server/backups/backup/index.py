@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+from pathlib import Path
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 from app.classes.models.server_permissions import EnumPermissionsServer
@@ -364,7 +365,7 @@ class ApiServersServerBackupsBackupFilesIndexHandler(BaseApiHandler):
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
         if EnumPermissionsServer.BACKUP not in server_permissions:
-            # if the user doesn't have Schedule permission, return an error
+            # if the user doesn't have backup permission, return an error
             return self.finish_json(
                 400,
                 {
@@ -427,3 +428,47 @@ class ApiServersServerBackupsBackupFilesIndexHandler(BaseApiHandler):
         )
 
         return self.finish_json(200, {"status": "ok"})
+
+    def get(self, server_id: str, backup_id: str):
+        auth_data = self.authenticate_user()
+        backup_conf = self.controller.management.get_backup_config(backup_id)
+        if backup_conf["server_id"]["server_id"] != server_id:
+            return self.finish_json(
+                400,
+                {
+                    "status": "error",
+                    "error": "ID_MISMATCH",
+                    "error_data": ID_MISMATCH,
+                },
+            )
+        if not auth_data:
+            return
+        mask = self.controller.server_perms.get_lowest_api_perm_mask(
+            self.controller.server_perms.get_user_permissions_mask(
+                auth_data[4]["user_id"], server_id
+            ),
+            auth_data[5],
+        )
+        server_permissions = self.controller.server_perms.get_permissions(mask)
+        if EnumPermissionsServer.BACKUP not in server_permissions:
+            # if the user doesn't have backup permission, return an error
+            return self.finish_json(
+                400,
+                {
+                    "status": "error",
+                    "error": "NOT_AUTHORIZED",
+                    "error_data": GENERAL_AUTH_ERROR,
+                },
+            )
+        backup_list = list(
+            map(
+                str,
+                Path(backup_conf["backup_location"], backup_conf["backup_id"]).glob(
+                    "*.zip"
+                ),
+            )
+        )
+        return self.finish_json(
+            200,
+            {"total": len(backup_list), "backups": backup_list},
+        )
