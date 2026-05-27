@@ -43,7 +43,7 @@
             <div class="col-md-12 col-sm-12 overflow-x-auto">
               <div class="card">
                 <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                  <h4 class="card-title"><i class="fa-regular fa-bell"></i> {{ translate('serverBackups', 'backups',
+                  <h4 class="card-title"><i class="ph-fill ph-bell"></i> {{ translate('serverBackups', 'backups',
                     data['lang']) }} </h4>
                   {% if data['user_data']['hints'] %}
                   <span class="too_small" title="{{ translate('serverSchedules', 'cannotSee', data['lang']) }}" ,
@@ -51,8 +51,8 @@
                     data-placement="bottom"></span>
                   {% end %}
                   <div><a class="btn btn-info"
-                      href="/panel/add_backup?id={{ data['server_stats']['server_id']['server_id'] }}"><i
-                        class="fas fa-plus-circle"></i> {{ translate('serverBackups', 'newBackup', data['lang']) }}</a>
+                      href="/panel/add_backup?id={{ data['server_stats']['server_id']['server_id'] }}"><i class="ph ph-plus-circle"></i>
+                       {{ translate('serverBackups', 'newBackup', data['lang']) }}</a>
                   </div>
                 </div>
                 <div class="card-body">
@@ -88,7 +88,7 @@
                             <span class="badge-pill badge-outline-warning">{{ translate('serverBackups', 'default',
                               data['lang']) }}</span><small><button class="badge-pill badge-outline-info backup-explain"
                                 data-explain="{{ translate('serverBackups', 'defaultExplain', data['lang'])}}"><i
-                                  class="fa-solid fa-question"></i></button></small>
+                                  class="ph-bold ph-question"></i></button></small>
                             {% end %}
                           </td>
                           <td>
@@ -108,18 +108,18 @@
                             <button
                               onclick="window.location.href=`/panel/edit_backup?id={{ data['server_stats']['server_id']['server_id'] }}&backup_id={{backup.backup_id}}`"
                               class="btn btn-info">
-                              <i class="fas fa-pencil-alt"></i>
+                              <i class="ph-fill ph-pencil-simple"></i>
                             </button>
                             {% if not backup.default %}
                             <button data-backup={{ backup.backup_id }} data-backupname={{ backup.backup_name }}
                               class="btn btn-danger del_button">
-                              <i class="fas fa-trash" aria-hidden="true"></i>
+                              <i class="ph-fill ph-trash-simple" aria-hidden="true"></i>
                             </button>
                             {% end %}
                             <button data-backup={{ backup.backup_id }} data-toggle="tooltip"
                               title="{{ translate('serverBackups', 'run', data['lang']) }}"
                               class="btn btn-outline-warning run-backup backup_now_button">
-                              <i class="fa-solid fa-forward"></i>
+                              <i class="ph-fill ph-fast-forward"></i>
                             </button>
                           </td>
                         </tr>
@@ -154,25 +154,25 @@
                             <span class="badge-pill badge-outline-warning">{{ translate('serverBackups', 'default',
                               data['lang']) }}</span><small><button class="badge-pill badge-outline-info backup-explain"
                                 data-explain="{{ translate('serverBackups', 'defaultExplain', data['lang'])}}"><i
-                                  class="fa-solid fa-question"></i></button></small>
+                                  class="ph-bold ph-question"></i></button></small>
                             {% end %}
                           </td>
                           <td id="backup_edit" class="action">
                             <button
                               onclick="window.location.href=`/panel/edit_backup?id={{ data['server_stats']['server_id']['server_id'] }}&backup_id={{backup.backup_id}}`"
                               class="btn btn-info">
-                              <i class="fas fa-pencil-alt"></i>
+                              <i class="ph-fill ph-pencil-simple"></i>
                             </button>
                             {% if not backup.default %}
                             <button data-backup={{ backup.backup_id }} data-backupname={{ backup.backup_name }}
                               class="btn btn-danger del_button">
-                              <i class="fas fa-trash" aria-hidden="true"></i>
+                              <i class="ph-fill ph-trash-simple" aria-hidden="true"></i>
                             </button>
                             {% end %}
                             <button data-backup={{ backup.backup_id }} data-toggle="tooltip"
                               title="{{ translate('serverBackups', 'run', data['lang']) }}"
                               class="btn btn-outline-warning test-socket backup_now_button">
-                              <i class="fa-solid fa-forward"></i>
+                              <i class="ph-fill ph-fast-forward"></i>
                             </button>
                           </td>
                         </tr>
@@ -332,10 +332,10 @@
         message: "{{ translate('serverBackups', 'confirmDelete', data['lang']) }}",
         buttons: {
           cancel: {
-            label: '<i class="fas fa-times"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
+            label: '<i class="ph-bold ph-x"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
           },
           confirm: {
-            label: '<i class="fas fa-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
+            label: '<i class="ph-bold ph-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
           }
         },
         callback: function (result) {
@@ -357,7 +357,7 @@
 
   document.getElementById("modal-cancel").addEventListener("click", function () {
     document.getElementById("root_files_button").classList.remove('clicked');
-    document.getElementById("main-tree-div").innerHTML = '<input type="checkbox" id="main-tree-input" name="root_path" value="" disabled><span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path=""><i class="far fa-folder"></i><i class="far fa-folder-open"></i>{{ translate("serverFiles", "files", data["lang"]) }}</span></input>'
+    document.getElementById("main-tree-div").innerHTML = '<input type="checkbox" id="main-tree-input" name="root_path" value="" disabled><span id="main-tree" class="files-tree-title tree-caret-down root-dir" data-path=""><i class="ph-fill ph-folder"></i><i class="ph-fill ph-folder-open"></i>{{ translate("serverFiles", "files", data["lang"]) }}</span></input>'
   })
 
   document.getElementById("root_files_button").addEventListener("click", function () {
@@ -372,7 +372,7 @@
       console.log($("#root_files_button").data('server_path'))
       const token = getCookie("_xsrf");
       var dialog = bootbox.dialog({
-        message: '<p class="text-center mb-0"><i class="fa fa-spin fa-cog"></i> Please wait while we gather your files...</p>',
+        message: '<p class="text-center mb-0"><i class="ph-fill ph-gear ph-spin"></i> Please wait while we gather your files...</p>',
         closeButton: false
       });
 
@@ -447,8 +447,8 @@
                             \n<div id="${dpath}" data-path="${dpath}" data-name="${filename}" class="tree-caret tree-ctx-item tree-folder">
                             <input type="checkbox" class="checkBoxClass excluded" value="${dpath}" ${checked}>
                             <span id="${dpath}span" class="files-tree-title" data-path="${dpath}" data-name="${filename}" onclick="getDirView(event)">
-                            <i class="text-info far fa-folder"></i>
-                            <i class="text-info far fa-folder-open"></i>
+                            <i class="text-info ph-fill ph-folder"></i>
+                            <i class="text-info ph-fill ph-folder-open"></i>
                             <strong>${filename}</strong>
                             </span>
                             </input></div><li>`
@@ -458,7 +458,7 @@
                         data-path="${dpath}"
                         data-name="${filename}"
                         onclick=""><input type='checkbox' class="checkBoxClass excluded" name='root_path' value="${dpath}" ${checked}><span style="margin-right: 6px;">
-                        <i class="far fa-file"></i></span></input>${filename}</li>`
+                        <i class="ph-fill ph-file"></i></span></input>${filename}</li>`
       }
     });
     text += `</ul>`;

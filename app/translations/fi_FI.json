@@ -174,7 +174,6 @@
         "internet": "Olemme havainneet, että Crafty -koneella ei ole Internet -yhteyttä. Asiakasyhteydet palvelimelle voivat olla rajalliset.",
         "no-file": "Emme löydä pyydettyä tiedostoa. Tarkista polku uudelleen. Onko Craftylla asianmukaiset käyttöoikeudet?",
         "noJava": "Palvelimen {} käynnistys epäonnistui virhekoodilla: Olemme havainneet, että Javaa ei ole asennettu. Asenna Java ja käynnistä palvelin.",
-        "not-downloaded": "Emme löydä suoritettavaa tiedostoa. Onko lataus päättynyt? Onko tiedoston oikeudet asetettu suoritettaviksi?",
         "portReminder": "Olemme havainneet, että tämä on ensimmäinen kerta, kun {} on käynnistetty. Varmista, että välität porttia {} reitittimesi/palomuurisi kautta, jotta se on käytössä internetistä.",
         "start-error": "Palvelin {} ei käynnistynyt virhekoodilla: {}",
         "terribleFailure": "Mikä kauhea epäonnistuminen!"

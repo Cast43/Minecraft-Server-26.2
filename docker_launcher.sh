@@ -9,6 +9,17 @@ repair_permissions () {
     find . -type d ! -perm g+s -print0 | xargs -0 -r chmod g+s
 }
 
+# Notify SteamCMD platform availability based on architecture
+case "$(uname -m)" in
+  x86_64|amd64)
+    printf "\033[36mWrapper | \033[32m🚂✅ SteamCMD dependencies are available in this image!\033[0m\n"
+    ;;
+  *)
+    printf "\033[36mWrapper | \033[33m⚠️ SteamCMD is only available on amd64/x86_64 images.\033[0m\n"
+    printf "\033[36mWrapper | \033[33m    Detected architecture: %s. SteamCMD features are disabled.\033[0m\n" "$(uname -m)"
+    ;;
+esac
+
 # Check if config exists taking one from image if needed.
 if [ ! "$(ls -A --ignore=.gitkeep ./app/config)" ]; then
     printf "\033[36mWrapper | \033[33m🏗️  Config not found, pulling defaults...\033[0m\n"

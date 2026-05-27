@@ -206,7 +206,6 @@
         "privMsg": "i ",
         "return": "Vrati se na nadzornu ploču",
         "start-error": "Server {} nije mogao da se pokrene sa greškom: {}",
-        "not-downloaded": "Čini se da ne možemo pronaći vaš izvršni fajl. Da li je preuzimanje završeno? Da li su dozvole postavljene kao izvršne?",
         "selfHost": "Ako hostujete ovaj repo sami, molimo proverite svoju adresu ili konsultujte naš vodič za rešavanje problema.",
         "terribleFailure": "Kakav strašan neuspeh!",
         "superError": "Morate biti superkorisnik da biste izvršili ovu radnju.",

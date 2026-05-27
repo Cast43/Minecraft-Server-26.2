@@ -47,6 +47,7 @@ logger = logging.getLogger(__name__)
 
 PLAIN_TEXT = "text/plain"
 BAT_TEXT = "application/x-bat"
+ERROR_LOG_HIGHLIGHT = r'<span class="mc-log-error">\1</span>'
 
 MASTER_CONFIG = {
     "https_port": 8443,
@@ -75,6 +76,23 @@ MASTER_CONFIG = {
     "base_url": "localhost:8443",
     "enable_passkey_auth": False,
     "passkey_rp_name": "Crafty Controller",
+    "experimental": False,
+    "silent_notif_fields": ["dashboard_columns", "server_order"],
+    "time_range_presets": [
+        {"hours": 1, "label": "Last Hour"},
+        {"hours": 3, "label": "Last 3 Hours"},
+        {"hours": 6, "label": "Last 6 Hours"},
+        {"hours": 12, "label": "Last 12 Hours"},
+        {"hours": 24, "label": "Last 24 Hours"},
+        {"hours": 48, "label": "Last 2 Days"},
+        {"hours": 168, "label": "Last 7 Days"},
+    ],
+    "sampling_tiers": [
+        {"max_hours": 6, "sample_rate": 1},
+        {"max_hours": 24, "sample_rate": 2},
+        {"max_hours": 72, "sample_rate": 6},
+    ],
+    "sampling_fallback_divisor": 12,
 }
 
 CONFIG_CATEGORIES = {
@@ -87,6 +105,7 @@ CONFIG_CATEGORIES = {
         "big_bucket_repo",
         "enable_user_self_delete",
         "base_url",
+        "experimental",
     ],
     "security": [
         "allow_nsfw_profile_pictures",
@@ -106,11 +125,15 @@ CONFIG_CATEGORIES = {
         "virtual_terminal_lines",
         "keywords",
         "general_user_log_access",
+        "silent_notif_fields",
     ],
     "monitoring": [
         "monitored_mounts",
         "dir_size_poll_freq_minutes",
         "stats_update_frequency_seconds",
+        "time_range_presets",
+        "sampling_tiers",
+        "sampling_fallback_divisor",
     ],
     "miscellaneous": ["delete_default_json"],
 }
@@ -146,8 +169,16 @@ class Helpers:
         self.db_path = os.path.join(
             self.root_dir, "app", "config", "db", "crafty.sqlite"
         )
-        self.big_bucket_cache = os.path.join(self.config_dir, "bigbucket.json")
+
+        self.big_bucket_steamapps_cache = os.path.join(
+            self.config_dir, "steamapps.json"
+        )
+        self.big_bucket_minecraft_cache = os.path.join(
+            self.config_dir, "bigbucket.json"
+        )
+        self.big_bucket_hytale_cache = os.path.join(self.config_dir, "hytale.json")
         self.credits_cache = os.path.join(self.config_dir, "credits.json")
+
         self.passhasher = PasswordHasher()
         self.exiting = False
 
@@ -312,26 +343,47 @@ class Helpers:
                     raise
             return java_paths
 
-        # If we get here we're linux so we will use 'update-alternatives'
-        # (If distro does not have update-alternatives then manual input.)
+        # If we get here we're linux so we will use one of the following
+        # * Debian: 'update-alternatives'
+        # * Arch: 'archlinux-java'
+        # * Unknown: <manual input>
 
         # Sometimes u-a will be in /sbin on some distros (which is annoying.)
         ua_path = "/usr/bin/update-alternatives"
         if not os.path.exists(ua_path):
             logger.warning("update-alternatives not found! Trying /sbin")
             ua_path = "/usr/sbin/update-alternatives"
+        if os.path.exists(ua_path):
+            # Debian Linux
+            try:
+                paths = subprocess.check_output(
+                    [ua_path, "--list", "java"], encoding="utf8"
+                )
 
-        try:
-            paths = subprocess.check_output(
-                [ua_path, "--list", "java"], encoding="utf8"
-            )
+                if re.match("^(/[^/ ]*)+/?$", paths):
+                    return paths.split("\n")
+            except Exception as e:
+                logger.error(f"Java Detect Error: {e}")
+            return []  # handle all execution paths
 
-            if re.match("^(/[^/ ]*)+/?$", paths):
-                return paths.split("\n")
+        logger.warning("sbin/update-alternatives not found! Trying archlinux-java")
+        ua_path = "/usr/bin/archlinux-java"
+        if not os.path.exists(ua_path):
+            logger.warning("archlinux-java not found! Trying /sbin")
+            ua_path = "/usr/sbin/archlinux-java"
+        if os.path.exists(ua_path):
+            # Arch Linux
+            try:
+                paths = subprocess.check_output([ua_path, "status"], encoding="utf8")
 
-        except Exception as e:
-            logger.error(f"Java Detect Error: {e}")
-            return []
+                if matched := re.findall("(\\bjava-\\d+-[\\w/]+\\b)", paths):
+                    return [
+                        os.path.join(os.path.sep, "usr", "lib", "jvm", m, "bin", "java")
+                        for m in matched
+                    ]
+            except Exception as e:
+                logger.error(f"Java Detect Error: {e}")
+        return []  # handle all execution paths
 
     @staticmethod
     def float_to_string(gbs: float):
@@ -344,7 +396,7 @@ class Helpers:
             with open(path, "r", encoding="utf-8"):
                 logger.info(f"{path} is readable")
             return True
-        except PermissionError:
+        except (PermissionError, FileNotFoundError):
             return False
 
     @staticmethod
@@ -424,10 +476,8 @@ class Helpers:
         try:
             ip = get("https://api.ipify.org", timeout=1).content.decode("utf8")
         except Exception as e:
-            logger.info(
-                f"Unable to connect to api.ipify.org, \
-                        falling back to google.com: {e}"
-            )
+            logger.info(f"Unable to connect to api.ipify.org, \
+                        falling back to google.com: {e}")
             ip = "google.com"
         a_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         a_socket.settimeout(20.0)
@@ -815,7 +865,8 @@ class Helpers:
         replacements = [
             (r"(\[.+?/INFO\])", r'<span class="mc-log-info">\1</span>'),
             (r"(\[.+?/WARN\])", r'<span class="mc-log-warn">\1</span>'),
-            (r"(\[.+?/ERROR\])", r'<span class="mc-log-error">\1</span>'),
+            (r"(\[.+?/ERROR\])", ERROR_LOG_HIGHLIGHT),
+            (r"(\[.+?/SEVERE\])", ERROR_LOG_HIGHLIGHT),
             (r"(\[.+?/FATAL\])", r'<span class="mc-log-fatal">\1</span>'),
             (
                 r"(\w+?\[/\d+?\.\d+?\.\d+?\.\d+?\:\d+?\])",
@@ -824,7 +875,8 @@ class Helpers:
             (r"\[(\d\d:\d\d:\d\d)\]", r'<span class="mc-log-time">[\1]</span>'),
             (r"(\[.+? INFO\])", r'<span class="mc-log-info">\1</span>'),
             (r"(\[.+? WARN\])", r'<span class="mc-log-warn">\1</span>'),
-            (r"(\[.+? ERROR\])", r'<span class="mc-log-error">\1</span>'),
+            (r"(\[.+? ERROR\])", ERROR_LOG_HIGHLIGHT),
+            (r"(\[.+? SEVERE\])", ERROR_LOG_HIGHLIGHT),
             (r"(\[.+? FATAL\])", r'<span class="mc-log-fatal">\1</span>'),
         ]
 
@@ -1338,8 +1390,8 @@ class Helpers:
                     + """\n<div id="{dpath}" data-path="{dpath}" data-name="{filename}" class="tree-caret tree-ctx-item tree-folder">"""  # pylint: disable=line-too-long
                     + """<input type="radio" name="root_path" value="{dpath}">"""
                     + """<span id="{dpath}span" class="files-tree-title" data-path="{dpath}" data-name="{filename}" onclick="getDirView(event)">"""  # pylint: disable=line-too-long
-                    + """  <i class="text-info far fa-folder"></i>"""
-                    + """  <i class="text-info far fa-folder-open"></i>"""
+                    + """  <i class="text-info ph ph-folder"></i>"""
+                    + """  <i class="text-info ph ph-folder-open"></i>"""
                     + """  {filename}"""
                     + """  </span>"""
                     + """</input></div><li>"""
@@ -1363,8 +1415,8 @@ class Helpers:
                     + """\n<div id="{dpath}" data-path="{dpath}" data-name="{filename}" class="tree-caret tree-ctx-item tree-folder">"""  # pylint: disable=line-too-long
                     + """<input type="radio" name="root_path" value="{dpath}">"""
                     + """<span id="{dpath}span" class="files-tree-title" data-path="{dpath}" data-name="{filename}" onclick="getDirView(event)">"""  # pylint: disable=line-too-long
-                    + """  <i class="text-info far fa-folder"></i>"""
-                    + """  <i class="text-info far fa-folder-open"></i>"""
+                    + """  <i class="text-info ph ph-folder"></i>"""
+                    + """  <i class="text-info ph ph-folder-open"></i>"""
                     + """  {filename}"""
                     + """  </span>"""
                     + """</input></div><li>"""

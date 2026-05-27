@@ -19,6 +19,7 @@ from app.classes.models.management import HelpersManagement
 from app.classes.models.server_permissions import PermissionsServers
 from app.classes.models.users import HelperUsers
 from app.classes.shared.console import Console
+from app.classes.shared.server import ServerInstance
 from app.classes.shared.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ class BackupManager:
         try:
             self.tz = get_localzone()
         except ZoneInfoNotFoundError as e:
-            logger.error(
+            logger.exception(
                 "Could not capture time zone from system. Falling back to Europe/London"
                 f" error: {e}"
             )
@@ -124,7 +125,9 @@ class BackupManager:
         except ValueError as why:
             # The given name of the backup file does not match what Crafty would write.
             # This must be something we need to reject.
-            logger.error(f"Unable to parse a given backup filename with error {why}")
+            logger.exception(
+                f"Unable to parse a given backup filename with error {why}"
+            )
 
             self.broadcast_rejected_restore(backup_config, svr_obj)
             return
@@ -181,6 +184,28 @@ class BackupManager:
                     ),
                 )
 
+    @staticmethod
+    def validate_backup_location(
+        server_inst: ServerInstance, backup_config: dict
+    ) -> bool:
+        """Check backup location is not within backup target.
+
+        Args:
+            server_inst (ServerInstance): server object the backup is called on
+            backup_config (dict): target backup config
+
+        Returns:
+             backup_valid (bool): true is backup location is valid
+        """
+        server_path = Path(server_inst.settings["path"]).resolve()
+        backup_target = Path(backup_config["backup_location"]).resolve()
+        # Preventing server path from being a parent of backup path
+        if server_path in backup_target.parents:
+            return False
+        if server_path == backup_target:
+            return False
+        return True
+
     def backup_starter(self, backup_config, server) -> tuple:
         """Notify users of backup starting, and start the backup.
 
@@ -203,6 +228,16 @@ class BackupManager:
             )
         time.sleep(3)
         size = False
+        if not self.validate_backup_location(server, backup_config):
+            self.fail_backup(
+                ValueError(
+                    "Recursive backup target: backup location can not be within "
+                    "directory that is being backed up"
+                ),
+                backup_config,
+                server,
+            )
+            return (False, "error")
         # Start the backup
         if backup_config.get("backup_type", "zip_vault") == "zip_vault":
             backup_file_name = self.zip_vault(backup_config, server)
@@ -237,7 +272,6 @@ class BackupManager:
         backup_location = os.path.join(
             backup_config["backup_location"], backup_config["backup_id"]
         )
-
         # Check if the backup location even exists.
         if not backup_location:
             Console.critical("No backup path found. Canceling")
@@ -246,23 +280,20 @@ class BackupManager:
         self.helper.ensure_dir_exists(backup_location)
 
         try:
-            backup_filename = (
-                f"{backup_location}/"
-                f"""{
+            backup_filename = f"{backup_location}/" f"""{
                     datetime.datetime.now()
                     .astimezone(self.tz)
                     .strftime("%Y-%m-%d_%H-%M-%S")
                 }"""
-            )
             logger.info(
                 f"Creating backup of server {server.name}"
-                f" (ID#{server.server_id}, path={server.server_path}) "
+                f" (ID#{server.server_id}, path={server.settings['path']}) "
                 f"at '{backup_filename}'"
             )
             excluded_dirs = HelpersManagement.get_excluded_backup_dirs(
                 backup_config["backup_id"]
             )
-            server_dir = Helpers.get_os_understandable_path(server.server_path)
+            server_dir = Helpers.get_os_understandable_path(server.settings["path"])
 
             self.file_helper.make_backup(
                 Helpers.get_os_understandable_path(backup_filename),
@@ -426,7 +457,7 @@ class BackupManager:
 
         # Create backup variables.
         use_compression = backup_config["compress"]
-        source_path = Path(server.server_path)
+        source_path = Path(server.settings["path"])
         backup_repository_path = (
             Path(backup_config["backup_location"]) / "snapshot_backups"
         )

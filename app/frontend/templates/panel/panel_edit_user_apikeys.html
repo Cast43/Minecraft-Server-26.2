@@ -34,24 +34,24 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user?id={{ data['user']['user_id'] }}&subpage=config"
                                 role="tab" aria-selected="false">
-                                <i class="fas fa-cogs"></i>{{ translate('apiKeys', 'config', data['lang']) }}</a>
+                                <i class="ph-fill ph-gear"></i>{{ translate('apiKeys', 'config', data['lang']) }}</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link active" href="/panel/edit_user_apikeys?id={{ data['user']['user_id'] }}"
                                 role="tab" aria-selected="true">
-                                <i class="fas fa-key"></i>{{ translate('apiKeys', 'apiKeys', data['lang']) }}</a>
+                                <i class="ph-fill ph-key"></i>{{ translate('apiKeys', 'apiKeys', data['lang']) }}</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user_otp?id={{ data['user']['user_id'] }}" role="tab"
                                 aria-selected="false">
-                                <i class="fa-solid fa-shield-halved"></i>{{ translate('userConfig', 'totpHeader',
+                                <i class="ph-fill ph-shield"></i>{{ translate('userConfig', 'totpHeader',
                                 data['lang']) }}</a>
                         </li>
                         {% if data.get('passkey_enabled', False) %}
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user_passkey?id={{ data['user']['user_id'] }}"
                                 role="tab" aria-selected="false">
-                                <i class="fa-solid fa-fingerprint"></i>{{ translate('userConfig', 'passkeyHeader',
+                                <i class="ph-fill ph-fingerprint-simple"></i>{{ translate('userConfig', 'passkeyHeader',
                                 data['lang']) }}</a>
                         </li>
                         {% end %}
@@ -61,7 +61,7 @@
                         <div class="col-md-7 col-sm-12">
                             <div class="card">
                                 <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                                    <h4 class="card-title"><i class="fas fa-key"></i>{{ translate('apiKeys', 'apiKeys',
+                                    <h4 class="card-title"><i class="ph-fill ph-key"></i>{{ translate('apiKeys', 'apiKeys',
                                         data['lang']) }}</h4>
                                 </div>
                                 <div class="card-body">
@@ -87,12 +87,12 @@
                                                         <td>
                                                             {% if apikey.full_access %}
                                                             <span class="text-success">
-                                                                <i class="fas fa-check-square"></i> {{
+                                                                <i class="ph-fill ph-check-square"></i> {{
                                                                 translate('apiKeys', 'yes', data['lang']) }}
                                                             </span>
                                                             {% else %}
                                                             <span class="text-danger">
-                                                                <i class="far fa-times-square"></i> {{
+                                                                <i class="ph-fill ph-x-square"></i> {{
                                                                 translate('apiKeys', 'no', data['lang']) }}
                                                             </span>
                                                             {% end %}
@@ -123,7 +123,7 @@
                         <div class="col-md-5 col-sm-12">
                             <div class="card">
                                 <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                                    <h4 class="card-title"><i class="fas fa-plus"></i> {{ translate('apiKeys',
+                                    <h4 class="card-title"><i class="ph-bold ph-plus"></i> {{ translate('apiKeys',
                                         'createNew', data['lang']) }}</h4>
                                 </div>
                                 <div class="card-body">
@@ -185,10 +185,10 @@
 
                                         <br />
 
-                                        <button type="submit" class="btn btn-success mr-2"><i class="fas fa-plus"></i>
+                                        <button type="submit" class="btn btn-success mr-2"><i class="ph-bold ph-plus"></i>
                                             Create
                                         </button>
-                                        <button type="reset" class="btn btn-light"><i class="fas fa-undo-alt"></i> {{
+                                        <button type="reset" class="btn btn-light"><i class="ph-fill ph-arrow-counter-clockwise"></i> {{
                                             translate('panelConfig', 'cancel', data['lang']) }}
                                         </button>
                                     </form>

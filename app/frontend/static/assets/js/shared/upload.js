@@ -53,7 +53,7 @@ async function uploadFile(type, file = null, path = null, file_num = 0, fileId =
     }
     const token = getCookie("_xsrf");
     if (type !== "server_upload") {
-        document.getElementById("upload_input").innerHTML = '<div class="progress" style="width: 100%;"><div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">&nbsp;<i class="fa-solid fa-spinner"></i></div></div>';
+        document.getElementById("upload_input").innerHTML = '<div class="progress" style="width: 100%;"><div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">&nbsp;<i class="ph-bold ph-spinner-gap"></i></div></div>';
     }
 
     let url = '';
@@ -163,7 +163,7 @@ async function uploadFile(type, file = null, path = null, file_num = 0, fileId =
 
         $(`#upload-progress-bar-${fileId}`).removeClass("progress-bar-striped");
         $(`#upload-progress-bar-${fileId}`).addClass("bg-success");
-        $(`#upload-progress-bar-${fileId}`).html('<i style="color: black;" class="fas fa-box-check"></i>');
+        $(`#upload-progress-bar-${fileId}`).html('<i style="color: black;" class="ph ph-box-check"></i>');
         removeProgressItem(fileId);
 
         if (activeUploads == 1) {

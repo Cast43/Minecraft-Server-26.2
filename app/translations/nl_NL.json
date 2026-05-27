@@ -33,8 +33,7 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Warning: </strong>Crafty werkt niet naar behoren als JavaScript niet ingeschakeld is!",
-        "getMFA": "Beveilig je servers!",
-        "createMFA": "Voeg Multifactorauthenticatie toe aan je account!"
+        "getMFA": "Schakel Multi-factor authenticatie (MFA) in om je account beter te beschermen. Zonder MFA is je account vatbaarder voor ongeauthoriseerde toegang."
     },
     "credits": {
         "developmentTeam": "Ontwikkelingsteam",
@@ -101,7 +100,10 @@
         "welcome": "Welkom bij Crafty Controller",
         "cloneConfirm": "Weet je zeker dat je deze server wilt dupliceren? Dit proces kan even duren.",
         "storage": "Opslag",
-        "installing": "Installeren..."
+        "installing": "Installeren...",
+        "columnSettings": "Kolominstellingen",
+        "port": "Poort",
+        "serverIcon": "Servericoon"
     },
     "datatables": {
         "loadingRecords": "Laden...",
@@ -178,8 +180,7 @@
         "hereIsTheError": "Hier is de error",
         "internet": "We hebben gedetecteerd dat de serverhost geen internetverbinding heeft. Client connecties zijn mogelijk gelimiteerd.",
         "no-file": "We kunnen het opgevraagde bestand niet vinden. Check het pad nog eens. Heeft Crafty de juiste toestemmingen?",
-        "noJava": "Server {} kon niet starten met error: We hebben gedetecteerd dat Java niet geïnstalleerd is. Installeer Java en start vervolgens de server.",
-        "not-downloaded": "We kunnen je executable-bestand niet vinden. Is het klaar met downloaden? Zijn de toestemmingen gezet op 'uitvoerbaar'?",
+        "noJava": "Server {} kon niet starten met errorcode: We hebben gedetecteerd dat Java niet geïnstalleerd is. Installeer Java en start vervolgens de server.",
         "portReminder": "We zien dat dit de eerste keer is dat {} uitgevoerd wordt. Zorg dat poort {} door je router/firewall gestuurd wordt om er via het openbare internet bij te kunnen komen.",
         "start-error": "Server {} kon niet starten, error code: {}",
         "terribleFailure": "Een verschrikkelijke fout!",
@@ -198,7 +199,8 @@
         "noInternet": "Crafty heeft moeite om het internet te bereiken. Server Creatie is uitgeschakeld. Controleer je internetverbinding en ververs deze pagina.",
         "return": "Terugkeren naar Dashboard",
         "superError": "Je moet supergebruiker zijn om deze actie te voltooien.",
-        "duplicateId": "Verzoektokens moeten alleen session_id of token_id specificeren, niet beide."
+        "duplicateId": "Verzoektokens moeten alleen session_id of token_id specificeren, niet beide.",
+        "experimental": "Je moet experimentele instellingen inschakelen om toegang te krijgen tot deze bron"
     },
     "footer": {
         "allRightsReserved": "Alle rechten voorbehouden",
@@ -223,7 +225,9 @@
         "totp": "Voer Authenticatiecode In",
         "backupCodeTitle": "Back-upcode",
         "backupCode": "Voeg Back-upcode In",
-        "accountDisabled": "Je gebruikersaccount is uitgeschakeld door een administrator. Neem contact op met je systeembeheerder voor meer info."
+        "accountDisabled": "Je gebruikersaccount is uitgeschakeld door een administrator. Neem contact op met je systeembeheerder voor meer info.",
+        "signInWithPasskey": "Inloggen met Passkey",
+        "orSeparator": "of"
     },
     "notify": {
         "activityLog": "Activiteit-logboeken",
@@ -374,7 +378,7 @@
         "serverAutostartDelayDesc": "Vertraging voor automatisch starten (Als dit hieronder aanstaat)",
         "serverCrashDetection": "Server crashdetectie",
         "serverExecutable": "Executable van de Server",
-        "serverExecutableDesc": "Het uitvoerbare bestand van de server",
+        "serverExecutableDesc": "Het uitvoerbare bestand dat je aanroept in jouw Server Exeuctiecommando. Dit is het bestand dat we zullen bijwerken.",
         "serverExecutionCommand": "Servercommando",
         "serverExecutionCommandDesc": "Wat uitgevoerd wordt in een verborgen terminal om de server te starten",
         "serverIP": "Server IP",
@@ -390,7 +394,7 @@
         "serverStopCommand": "Server stopcommando",
         "serverStopCommandDesc": "Commando om de server te stoppen",
         "stopBeforeDeleting": "Stop de server voordat je deze verwijderd",
-        "update": "Uitvoerbestand Bijwerken",
+        "update": "Server Bijwerken",
         "yesDelete": "Ja, verwijder",
         "yesDeleteFiles": "Ja, verwijder bestanden",
         "countPlayers": "Server opnemen in totale spelersaantal",
@@ -460,7 +464,7 @@
         "rename": "Hernoemen",
         "renameItemQuestion": "Hoe wil je dit noemen?",
         "save": "Opslaan",
-        "unsupportedLanguage": "Waarschuwing: dit bestandstype wordt niet ondersteund",
+        "unsupportedLanguage": "Dit is geen herkend bestandstype. Functionaliteit voor lezen en bijwerken kan slechter zijn.",
         "unzip": "Uitpakken",
         "upload": "Uploaden",
         "uploadTitle": "Bestanden uploaden naar: ",
@@ -481,7 +485,8 @@
         "overwrite": "Overschrijf veranderingen op de server",
         "repull": "Actuele bestand van server laden (Alle lokale wijzigingen zullen verloren gaan)",
         "serverModified": "De staat van dit bestand is veranderd op de server sinds je deze pagina hebt geladen. Gelieve een optie te kiezen.",
-        "type": "Type"
+        "type": "Type",
+        "permissions": "Permissies"
     },
     "serverPlayerManagement": {
         "bannedPlayers": "Verbannen spelers",
@@ -621,7 +626,13 @@
         "serverSelect": "Server Selecteren",
         "serverUpload": "Gezipte Server Uploaden",
         "uploadButton": "Uploaden",
-        "uploadZip": "Upload Zip-bestand voor Serverimport"
+        "uploadZip": "Upload Zip-Archief",
+        "authenticate": "Klik hier om installatie af te ronden en te authenticeren met jouw Hytale-account.",
+        "authenticateAway": "Crafty slaat uw inloggegevens niet op. U wordt doorgestuurd naar een andere website buiten Crafty.",
+        "experimental": "Experimenteel",
+        "experimentalFeature": "Dit is experimentele functionaliteit",
+        "plugins": "Crafty zal de volgende plugins automatisch installeren zodat de statistieksfunctionaliteit in Crafty correct werkt:",
+        "zipError": "Bestand moet van type .zip zijn!"
     },
     "sidebar": {
         "contribute": "Meehelpen",
@@ -678,7 +689,8 @@
         "hints": "Aanzetten Hints?",
         "totpIdReq": "MFA ID Benodigd voor verzoek",
         "totpHeader": "Multifactorauthenticatie",
-        "selfDisable": "Je kan niet je eigen account uitschakelen"
+        "selfDisable": "Je kan niet je eigen account uitschakelen",
+        "passkeyHeader": "Passkeys"
     },
     "customLogin": {
         "apply": "Toepassen",
@@ -823,11 +835,63 @@
         "logs": "Registratie",
         "monitoring": "Toezicht",
         "miscellaneous": "Overig",
-        "superMFA": "Supergebruikers moeten MFA aanzetten"
+        "superMFA": "Supergebruikers moeten MFA aanzetten",
+        "experimental": "Experimentele Functies Inschakelen",
+        "time_range_presets": "Vooraf ingestelde waardes voor tijdsbereiken voor datumkiezer",
+        "sampling_tiers": "Grafiekgegevens-samplingniveaus (bepaalt de dichtheid van datapunten per tijdsbereik)",
+        "sampling_fallback_divisor": "Fallback-samplingdeler (gebruikt voor tijdsbereiken buiten het laatste niveau)",
+        "enable_passkey_auth": "Passkey-authenticatie (WebAuthn) inschakelen",
+        "passkey_rp_name": "Passkey-vertrouwende partijnaam (weergegeven in prompts van de authenticator)",
+        "silent_notif_fields": "Gebruikersvelden dat stilletjes wijzigingen bijhouden in het logboek (geen notificatie-popup)"
     },
     "serverFilesEditor": {
         "saved": "Opgeslagen",
         "save": "Wijzigingen Opslaan",
         "unsavedChanges": "Weet je zeker dat je weg wilt gaan? Je hebt niet-opgeslagen wijzigingen."
+    },
+    "passkey": {
+        "title": "Passkey-Authenticatie",
+        "passkeyTitle": "Passkeys",
+        "addNew": "Passkey Toevoegen",
+        "newPasskey": "Nieuwe Passkey",
+        "newName": "Voeg een naam toe voor deze passkey",
+        "registerTitle": "Geef je Passkey een naam",
+        "defaultName": "Mijn Passkey",
+        "name": "Naam",
+        "deviceType": "Apparaattype",
+        "createdAt": "Aangemaakt",
+        "lastUsed": "Laatst Gebruikt",
+        "actions": "Acties",
+        "delete": "Verwijderen",
+        "deleteConfirm": "Weet je zeker dat je deze passkey wilt verwijderen?",
+        "yes": "Ja",
+        "no": "Nee",
+        "singleDevice": "Apparaatgebonden",
+        "multiDevice": "Gesynchroniseerd",
+        "backedUp": "Back-up gemaakt",
+        "never": "Nooit",
+        "disabled": "Passkey-authenticatie is uitgeschakeld. Neem contact op met jouw administrator om dit in te schakelen.",
+        "browserNotSupported": "Je browser heeft geen ondersteuning voor passkeys",
+        "cancelled": "Passkey-bewerking was geannuleerd",
+        "insecureContext": "Passkeys vereist voor een veilige verbinding. Gebruik https://localhost of een vertrouwt SSL-certificaat.",
+        "registrationFailed": "Passkeyregistratie mislukt",
+        "registrationSuccess": "Passkey succesvol geregistreerd",
+        "success": "Succes",
+        "disablePasswordAuth": "Wachtwoordauthenticatie uitschakelen",
+        "disablePasswordAuthDesc": "Wanneer ingeschakeld, kan je alleen inloggen met een Passkey. Inloggen met een wachtwoord wordt geblokkeerd.",
+        "disablePasswordAuthWarning": "Waarschuwing: Je kan alleen inloggen met een passkey. Zorg dat je een backup-passkey geregistreerd hebt.",
+        "requiresPasskey": "Je moet minimaal één passkey registreren voordat wachtwoordauthenticatie uitgeschakeld kan worden.",
+        "passwordAuthDisabled": "Wachtwoordauthenticatie is uitgeschakeld voor dit account.",
+        "deleteFailed": "Passkey verwijderen mislukt",
+        "updateFailed": "Instelling updaten mislukt",
+        "verificationFailed": "Verificatie van passkeyregistratie mislukt",
+        "loginFailed": "Login met passkey mislukt",
+        "authFailed": "Authenticatie mislukt"
+    },
+    "serverUpdate": {
+        "monitorUpdate": "Melding Bij Nieuwe Versie",
+        "newVersion": "Nieuwe Versie Beschikbaar",
+        "updateCtr": "Updatecentrum",
+        "upToDate": "Up-to-date"
     }
 }

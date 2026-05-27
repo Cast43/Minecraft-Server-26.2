@@ -24,7 +24,7 @@
 
   <div class="card">
     <div class="card-header header-sm">
-      <h4><i class="fa-solid fa-code-merge"></i> &nbsp;{{ translate('credits', 'developmentTeam', data['lang'])}}</h4>
+      <h4><i class="ph-bold ph-git-merge"></i> &nbsp;{{ translate('credits', 'developmentTeam', data['lang'])}}</h4>
     </div>
     <div class="card-body">
       <div class="row">
@@ -90,7 +90,7 @@
 
   <div class="card">
     <div class="card-header header-sm">
-      <h4><i class="fa fa-book"></i> &nbsp;{{ translate('credits', 'supportTeam', data['lang']) }}</h4>
+      <h4><i class="ph-fill ph-notepad"></i> &nbsp;{{ translate('credits', 'supportTeam', data['lang']) }}</h4>
     </div>
     <div class="card-body">
       <div class="row">
@@ -156,7 +156,7 @@
 
   <div class="card">
     <div class="card-header header-sm">
-      <h4><i class="fa-solid fa-thumbtack"></i> &nbsp;{{ translate('credits', 'retiredStaff', data['lang']) }}</h4>
+      <h4><i class="ph-fill ph-push-pin"></i> &nbsp;{{ translate('credits', 'retiredStaff', data['lang']) }}</h4>
     </div>
     <div class="card-body">
       <div class="row">
@@ -225,9 +225,9 @@
     <div class="col-lg-6 grid-margin stretch-card">
       <div class="card">
         <div class="card-header header-sm d-flex justify-content-between align-items-center">
-          <h4 class="card-title"><i class="fab fa-patreon"></i> {{ translate('credits', 'patreonSupporter',
+          <h4 class="card-title"><i class="ph-fill ph-patreon-logo"></i> {{ translate('credits', 'patreonSupporter',
             data['lang'])
-            }} <i class="fa fa-coffee"></i></h4>
+            }} <i class="ph-fill ph-coffee"></i></h4>
         </div>
         <div class="card-body">
           <p class="card-description"> {{ translate('credits', 'hugeDesc', data['lang']) }}
@@ -258,11 +258,11 @@
                     }}</span>
                   {% end %}
                   {% if pat["source"] == "Patreon" %}
-                  <span class="badge badge-pill badge-info"><i class="fab fa-patreon"></i> Patreon</span>
+                  <span class="badge badge-pill badge-info"><i class="ph-fill ph-patreon-logo"></i> Patreon</span>
                   {% elif pat["source"] == "Ko-fi" %}
-                  <span class="badge badge-pill badge-primary"><i class="fa fa-coffee"></i> Ko-fi</span>
+                  <span class="badge badge-pill badge-primary"><i class="ph-fill ph-coffee"></i> Ko-fi</span>
                   {% else %}
-                  <span class="badge badge-pill badge-dark"><i class="fa fa-question"></i> {{ translate('credits',
+                  <span class="badge badge-pill badge-dark"><i class="ph ph-question"></i> {{ translate('credits',
                     'patreonOther',
                     data['lang'])
                     }}</span>
@@ -280,7 +280,7 @@
     <div class="col-lg-6 grid-margin stretch-card">
       <div class="card">
         <div class="card-header header-sm d-flex justify-content-between align-items-center">
-          <h4 class="card-title"><i class="fa fa-language"></i> {{ translate('credits', 'translationTitle',
+          <h4 class="card-title"><i class="ph-fill ph-translate"></i> {{ translate('credits', 'translationTitle',
             data['lang']) }}</h4>
         </div>
         <div class="card-body">

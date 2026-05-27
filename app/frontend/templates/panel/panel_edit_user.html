@@ -44,24 +44,24 @@ data['lang']) }}{% end %}
               <a class="nav-link active"
                 href="/panel/{{ 'add_user' if data['new_user'] else 'edit_user' }}?id={{ data['user']['user_id'] }}&subpage=config"
                 role="tab" aria-selected="true">
-                <i class="fas fa-cogs"></i> {{ translate('userConfig', 'config', data['lang']) }}</a>
+                <i class="ph-fill ph-gear"></i> {{ translate('userConfig', 'config', data['lang']) }}</a>
             </li>
             {% if not data['new_user'] %}
             <li class="nav-item">
               <a class="nav-link" href="/panel/edit_user_apikeys?id={{ data['user']['user_id'] }}" role="tab"
                 aria-selected="false">
-                <i class="fas fa-key"></i>{{ translate('userConfig', 'apiKey', data['lang']) }}</a>
+                <i class="ph-fill ph-key"></i>{{ translate('userConfig', 'apiKey', data['lang']) }}</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/panel/edit_user_otp?id={{ data['user']['user_id'] }}"
                   role="tab" aria-selected="false">
-                  <i class="fa-solid fa-shield-halved"></i>{{ translate('userConfig', 'totpHeader', data['lang']) }}</a>
+                  <i class="ph-fill ph-shield"></i>{{ translate('userConfig', 'totpHeader', data['lang']) }}</a>
             </li>
             {% if data.get('passkey_enabled', False) %}
             <li class="nav-item">
               <a class="nav-link" href="/panel/edit_user_passkey?id={{ data['user']['user_id'] }}"
                   role="tab" aria-selected="false">
-                  <i class="fa-solid fa-fingerprint"></i>{{ translate('userConfig', 'passkeyHeader', data['lang']) }}</a>
+                  <i class="ph-fill ph-fingerprint-simple"></i>{{ translate('userConfig', 'passkeyHeader', data['lang']) }}</a>
             </li>
             {% end %}
             {% end %}
@@ -79,14 +79,14 @@ data['lang']) }}{% end %}
 
                   <div class="card">
                     <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                      <h4 class="card-title"><i class="fas fa-user"></i> {{ translate('userConfig', 'userSettings',
+                      <h4 class="card-title"><i class="ph-fill ph-user"></i> {{ translate('userConfig', 'userSettings',
                         data['lang']) }}</h4>
 
                       <span data-translate1="{{translate('userConfig', 'password', data['lang'])}}"
                         data-translate2="{{translate('userConfig', 'repeat', data['lang'])}}"
                         data-toggle="tooltip" title="{{ translate('userConfig', 'password', data['lang'])}}"
                         class="edit_password clickable" data-id="{{data['user']['user_id']}}"><i
-                          class="fa-solid fa-lock"></i></span>
+                          class="ph-bold ph-lock"></i></span>
                     </div>
                     <div class="card-body">
                       {% if data['new_user'] %}
@@ -186,7 +186,7 @@ data['lang']) }}{% end %}
 
                   <div class="card">
                     <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                      <h4 class="card-title"><i class="fas fa-user-tag"></i> {{ translate('userConfig', 'userRoles',
+                      <h4 class="card-title"><i class="ph-fill ph-identification-badge"></i> {{ translate('userConfig', 'userRoles',
                         data['lang']) }} <small class="text-muted ml-1"> - {{ translate('userConfig', 'userRolesDesc',
                           data['lang']) }}</small></h4>
                     </div>
@@ -237,7 +237,7 @@ data['lang']) }}{% end %}
                   {% if data['superuser'] %}
                   <div class="card">
                     <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                      <h4 class="card-title"><i class="fas fa-user-lock"></i> {{ translate('userConfig', 'craftyPerms',
+                      <h4 class="card-title"><i class="ph-fill ph-lock"></i> {{ translate('userConfig', 'craftyPerms',
                         data['lang']) }} <small class="text-muted ml-1"> - {{ translate('userConfig', 'craftyPermDesc',
                           data['lang']) }}</small></h4>
                     </div>
@@ -312,17 +312,17 @@ data['lang']) }}{% end %}
 
                   </div>
 
-                  <button type="submit" class="btn btn-success mr-2"><i class="fas fa-save"></i> {{
+                  <button type="submit" class="btn btn-success mr-2"><i class="ph-fill ph-floppy-disk"></i> {{
                     translate('panelConfig', 'save', data['lang']) }}</button>
-                  <button type="reset" onclick="location.href='/panel/panel_config'" class="btn btn-light"><i
-                      class="fas fa-undo-alt"></i> {{ translate('panelConfig', 'cancel', data['lang']) }}</button>
+                  <button type="reset" onclick="location.href='/panel/panel_config'" class="btn btn-light"><i class="ph ph-arrow-counter-clockwise"></i>
+                     {{ translate('panelConfig', 'cancel', data['lang']) }}</button>
                 </form>
             </div>
 
             <div class="col-md-6 col-sm-12">
               <div class="card">
                 <div class="card-body">
-                  <h4 class="card-title"><i class="fas fa-user-cog"></i> {{ translate('userConfig', 'configArea',
+                  <h4 class="card-title"><i class="ph-fill ph-gear"></i> {{ translate('userConfig', 'configArea',
                     data['lang']) }}</h4>
                   <p class="card-description"> {{ translate('userConfig', 'configAreaDesc', data['lang']) }}</p>
                   <blockquote class="blockquote">
@@ -345,21 +345,21 @@ data['lang']) }}{% end %}
                 <button data-translate="{{translate('userConfig', 'userName', data['lang'])}}"
                 data-toggle="tooltip" title="{{ translate('userConfig', 'userName', data['lang'])}}"
                 id="username_{{data['user']['user_id']}}" data-name="{{data['user']['username']}}"
-                data-id="{{data['user']['user_id']}}"class="btn btn-outline-info edit_user"><i class="fa-solid fa-user-gear"></i>{{translate('userConfig', 'changeUser', data['lang'])}}</button>
+                data-id="{{data['user']['user_id']}}"class="btn btn-outline-info edit_user"><i class="ph-fill ph-gear"></i>{{translate('userConfig', 'changeUser', data['lang'])}}</button>
                 <button data-translate1="{{translate('userConfig', 'password', data['lang'])}}"
                 data-translate2="{{translate('userConfig', 'repeat', data['lang'])}}"
                 data-toggle="tooltip" title="{{ translate('userConfig', 'password', data['lang'])}}"
-                data-id="{{data['user']['user_id']}}"class="btn btn-outline-warning edit_password"><i class="fa-solid fa-user-lock"></i>{{translate('userConfig', 'changePass', data['lang'])}}</button><br><br>
+                data-id="{{data['user']['user_id']}}"class="btn btn-outline-warning edit_password"><i class="ph-fill ph-lock"></i>{{translate('userConfig', 'changePass', data['lang'])}}</button><br><br>
                 {% if data['new_user'] %}
-                <a class="btn btn-sm btn-danger disabled"><i class="fas fa-trash"></i>{{ translate('userConfig',
+                <a class="btn btn-sm btn-danger disabled"><i class="ph-fill ph-trash-simple"></i>{{ translate('userConfig',
                   'deleteUserB', data['lang']) }}</a><br />
                 <small>{{ translate('userConfig', 'notExist', data['lang']) }}</small>
                 {% elif data['user']['superuser'] %}
-                <a class="btn btn-sm btn-danger disabled"><i class="fas fa-trash"></i> {{ translate('userConfig',
+                <a class="btn btn-sm btn-danger disabled"><i class="ph-fill ph-trash-simple"></i> {{ translate('userConfig',
                   'deleteUserB', data['lang']) }}</a><br />
                 <small>{{ translate('userConfig', 'delSuper', data['lang']) }}</small>
                 {% else %}
-                <button class="btn btn-sm btn-danger delete-user"><i class="fas fa-trash"></i> {{
+                <button class="btn btn-sm btn-danger delete-user"><i class="ph-fill ph-trash-simple"></i> {{
                   translate('userConfig', 'deleteUserB', data['lang']) }}</a>
                   {% end %}</button>
 
@@ -552,11 +552,11 @@ data['lang']) }}{% end %}
       message: "{{ translate('userConfig', 'confirmDelete', data['lang']) }}",
       buttons: {
         cancel: {
-          label: '<i class="fas fa-times"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
+          label: '<i class="ph-bold ph-x"></i> {{ translate("serverBackups", "cancel", data['lang']) }}'
             },
         confirm: {
           className: 'btn-outline-danger',
-          label: '<i class="fas fa-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
+          label: '<i class="ph-bold ph-check"></i> {{ translate("serverBackups", "confirm", data['lang']) }}'
             }
       },
       callback: async function (result) {
@@ -591,11 +591,11 @@ data['lang']) }}{% end %}
         message: "{{ translate('panelConfig', 'superConfirm', data['lang']) }}",
         buttons: {
           cancel: {
-            label: '<i class="fa fa-times"></i> {{ translate('panelConfig', 'cancel', data['lang']) }}'
+            label: '<i class="ph-bold ph-x"></i> {{ translate('panelConfig', 'cancel', data['lang']) }}'
           },
           confirm: {
             className: 'btn-outline-warning',
-            label: '<i class="fa fa-check"></i> {{ translate('serverBackups', 'confirm', data['lang']) }}'
+            label: '<i class="ph-bold ph-check"></i> {{ translate('serverBackups', 'confirm', data['lang']) }}'
           }
         },
         callback: function (result) {

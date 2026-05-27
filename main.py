@@ -146,7 +146,7 @@ def tasks_starter():
     tasks_manager.start_scheduler()
 
     # refresh our cache and schedule for every 12 hoursour cache refresh
-    # for big bucket.com
+    # for bigbucket.com & SteamApps
     tasks_manager.big_bucket_cache_refresher()
 
 

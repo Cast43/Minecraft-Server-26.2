@@ -33,7 +33,6 @@
     },
     "base": {
         "getMFA": "Tedd biztonságossá szervered!",
-        "createMFA": "Adj hozzá többlépcsős hitelesítést a fiókodhoz!",
         "doesNotWorkWithoutJavascript": "<strong>Figyelem: </strong>Crafty nem fog működni ha a JavaScript ki van kapcsolva!"
     },
     "credits": {
@@ -188,7 +187,6 @@
         "bigBucket2": "a legtöbb friss információért.",
         "cancel": "Mégsem",
         "bedrockError": "Bedrock letöltés nem elérhető. Kérlek ellenőrizd",
-        "not-downloaded": "Nem találtuk az indítható fájlt. Letöltött már? A jogok be vannak állítva, hogy letölthető legyen?",
         "contact": "Kapcsolatfelvétek a Crafty Supporttal Discordon",
         "craftyStatus": "Crafty státusz oldal",
         "cronFormat": "Érvénytelen Cron formátum érzékelve",

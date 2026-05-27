@@ -32,24 +32,24 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user?id={{ data['user']['user_id'] }}&subpage=config"
                                 role="tab" aria-selected="false">
-                                <i class="fas fa-cogs"></i>{{ translate('userConfig', 'config', data['lang']) }}</a>
+                                <i class="ph-fill ph-gear"></i>{{ translate('userConfig', 'config', data['lang']) }}</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user_apikeys?id={{ data['user']['user_id'] }}"
                                 role="tab" aria-selected="false">
-                                <i class="fas fa-key"></i>{{ translate('apiKeys', 'apiKeys', data['lang']) }}</a>
+                                <i class="ph-fill ph-key"></i>{{ translate('apiKeys', 'apiKeys', data['lang']) }}</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/panel/edit_user_otp?id={{ data['user']['user_id'] }}"
                                 role="tab" aria-selected="false">
-                                <i class="fa-solid fa-shield-halved"></i>{{ translate('userConfig', 'totpHeader',
+                                <i class="ph-fill ph-shield"></i>{{ translate('userConfig', 'totpHeader',
                                 data['lang']) }}</a>
                         </li>
                         {% if data['passkey_enabled'] %}
                         <li class="nav-item">
                             <a class="nav-link active" href="/panel/edit_user_passkey?id={{ data['user']['user_id'] }}"
                                 role="tab" aria-selected="true">
-                                <i class="fa-solid fa-fingerprint"></i>{{ translate('userConfig', 'passkeyHeader',
+                                <i class="ph-fill ph-fingerprint-simple"></i>{{ translate('userConfig', 'passkeyHeader',
                                 data['lang']) }}</a>
                         </li>
                         {% end %}
@@ -59,14 +59,14 @@
                         <div class="col-md-12 col-sm-12">
                             <div class="card">
                                 <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                                    <h4 class="card-title"><i class="fas fa-fingerprint"></i>&nbsp;{{ translate('passkey',
+                                    <h4 class="card-title"><i class="ph-fill ph-fingerprint-simple"></i>&nbsp;{{ translate('passkey',
                                         'passkeyTitle',
                                         data['lang']) }}</h4>
                                     <div>
                                         <button class="btn btn-primary" id="createPasskeyButton"
                                             data-new-name="{{ translate('passkey', 'newName', data['lang']) }}"
                                             data-register-title="{{ translate('passkey', 'registerTitle', data['lang']) }}">
-                                            <i class="fas fa-plus-circle"></i>
+                                            <i class="ph-fill ph-plus-circle"></i>
                                             &nbsp;{{ translate('passkey', 'newPasskey', data['lang']) }}
                                         </button>
                                     </div>
@@ -91,7 +91,7 @@
                                                             <span>
                                                                 {{ passkey['name'] }}
                                                                 {% if passkey['backed_up'] %}
-                                                                <i class="fas fa-cloud" title="{{ translate('passkey', 'backedUp', data['lang']) }}"></i>
+                                                                <i class="ph-fill ph-cloud" title="{{ translate('passkey', 'backedUp', data['lang']) }}"></i>
                                                                 {% end %}
                                                             </span>
                                                         </td>
@@ -124,7 +124,7 @@
                         <div class="col-md-12 col-sm-12">
                             <div class="card">
                                 <div class="card-header header-sm">
-                                    <h4 class="card-title"><i class="fas fa-lock"></i>&nbsp;{{ translate('passkey',
+                                    <h4 class="card-title"><i class="ph-fill ph-lock"></i>&nbsp;{{ translate('passkey',
                                         'disablePasswordAuth',
                                         data['lang']) }}</h4>
                                 </div>
@@ -133,7 +133,7 @@
                                         <p class="text-muted">{{ translate('passkey', 'disablePasswordAuthDesc', data['lang']) }}</p>
                                         {% if not data['has_passkeys'] %}
                                         <div class="alert alert-warning">
-                                            <i class="fas fa-exclamation-triangle"></i>&nbsp;
+                                            <i class="ph-fill ph-warning"></i>&nbsp;
                                             {{ translate('passkey', 'requiresPasskey', data['lang']) }}
                                         </div>
                                         {% end %}
@@ -147,7 +147,7 @@
                                         </div>
                                         {% if data['has_passkeys'] %}
                                         <small class="text-warning mt-2 d-block">
-                                            <i class="fas fa-exclamation-triangle"></i>&nbsp;
+                                            <i class="ph-fill ph-warning"></i>&nbsp;
                                             {{ translate('passkey', 'disablePasswordAuthWarning', data['lang']) }}
                                         </small>
                                         {% end %}

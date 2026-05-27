@@ -33,8 +33,7 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Uwaga: </strong>Crafty nie działa gdy JavaScript jest wyłączone!",
-        "getMFA": "Zabezpiecz swoje serwery!",
-        "createMFA": "Dodaj logowanie wieloskładnikowe do swojego konta!"
+        "getMFA": "Zabezpiecz swoje serwery!"
     },
     "credits": {
         "developmentTeam": "Drużyna Deweloperów",
@@ -204,7 +203,6 @@
         "no-file": "Nie możemy znaleść żądanego pliku. Sprawdź ścieżkę. Czy Crafty ma odpowiednie uprawnienia?",
         "noInternet": "Crafty ma problem połączenia się z internetem. Tworzenie serwerów zostało wyłączone. Sprawdź swoje połączenie z intenetem i spróbuj ponownie.",
         "noJava": "Serwer {} nie mógł się odpalić z powodu: Zauważyliśmy że Java nie jest zainstalowana. Proszę zainstaluj Javę, a następnie włącz serwer.",
-        "not-downloaded": "Nie możemy znaleść twojego pliku serwera. Czy skończył się pobierać? Czy permisje są ustawione na wykonywanle?",
         "portReminder": "Zauważyliśmy że to jest pierwszy raz {} kiedy był włączony. Upewnij się że otworzyłeś port {} na swoim routerze/firewallu aby korzystać z tego poza domem.",
         "privMsg": "i także ",
         "return": "Powrót do panelu",

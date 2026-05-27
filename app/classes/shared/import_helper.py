@@ -1,16 +1,26 @@
 import os
+import uuid
 import time
 import pathlib
 import logging
 import threading
+from pathlib import Path
 
-from app.classes.controllers.server_perms_controller import PermissionsServers
+from app.classes.big_bucket.bigbucket import BigBucket
+from app.classes.controllers.server_perms_controller import (
+    PermissionsServers,
+)
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.websocket_manager import WebSocketManager
+from app.classes.steamcmd.steamcmd import SteamCMD
+from app.classes.installers.modded import ModdedInstaller
+from app.classes.installers.hytale import HytaleInstaller
 
 logger = logging.getLogger(__name__)
+
+HYTALE_0UTPUT_NAME = "hytale.zip"
 
 
 class ImportHelpers:
@@ -19,6 +29,13 @@ class ImportHelpers:
     def __init__(self, helper, file_helper):
         self.file_helper: FileHelpers = file_helper
         self.helper: Helpers = helper
+        self.big_bucket = BigBucket(helper)
+        self.modded_installer = ModdedInstaller(
+            self.helper, ServersController, WebSocketManager
+        )
+        self.hytale_installer = HytaleInstaller(
+            self.helper, self.file_helper, WebSocketManager
+        )
 
     def import_zipped_server(
         self,
@@ -27,6 +44,7 @@ class ImportHelpers:
         base_include_path,
         port,
         new_id,
+        server_type,
         full_exe_path=None,
     ):
         import_thread = threading.Thread(
@@ -38,6 +56,7 @@ class ImportHelpers:
                 base_include_path,
                 port,
                 new_id,
+                server_type,
                 full_exe_path,
             ),
             name=f"{new_id}_import",
@@ -51,6 +70,7 @@ class ImportHelpers:
         base_include_path,
         port,
         new_id,
+        server_type,
         full_exe_path,
     ):
         self.file_helper.unzip_file(
@@ -61,6 +81,7 @@ class ImportHelpers:
             base_include_path=base_include_path,
         )
 
+        time.sleep(2)
         if (
             not self.helper.is_os_windows() and full_exe_path
         ):  # we only expect full jar path for bedrock
@@ -73,7 +94,7 @@ class ImportHelpers:
         for item in os.listdir(new_server_dir):
             if str(item) == "server.properties":
                 has_properties = True
-        if not has_properties:
+        if not has_properties and "minecraft" in server_type:
             logger.info(
                 f"No server.properties found on zip file import. "
                 f"Creating one with port selection of {str(port)}"
@@ -89,19 +110,64 @@ class ImportHelpers:
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
 
-    def download_bedrock_server(self, path, new_id):
+    def download_steam_server(self, app_id, server_id, server_dir, server_exe):
+        download_thread = threading.Thread(
+            target=self._create_steam_server,
+            daemon=True,
+            args=(app_id, server_id, server_dir, server_exe),
+            name=f"{server_id}_download",
+        )
+        download_thread.start()
+
+    def _create_steam_server(self, app_id, server_id, server_dir, server_exe):
+        if not server_exe:
+            server_exe = "game.exe"  # replace with actual exe eventually
+
+        # Initiate SteamCMD & game installing status.
+        ServersController.set_import(server_id)
+
+        # Set our storage locations
+        steamcmd_path = os.path.join(server_dir, "steamcmd_files")
+        gamefiles_path = os.path.join(server_dir, "gameserver_files")
+
+        # Ensure game and steam directories exist in server directory.
+        self.helper.ensure_dir_exists(steamcmd_path)
+        self.helper.ensure_dir_exists(gamefiles_path)
+
+        # Initialize SteamCMD
+        self.steam = SteamCMD(steamcmd_path)
+
+        # Install SteamCMD for managing game server files.
+        self.steam.install()
+
+        # Install the game server files.
+        self.steam.app_update(app_id, gamefiles_path)
+
+        # Set the server execuion command. TODO brainstorm how to approach.
+        full_exe_path = os.path.join(steamcmd_path, server_exe)
+        if Helpers.is_os_windows():
+            server_command = f'"{full_exe_path}"'
+        else:
+            server_command = f"./{server_exe}"
+        logger.debug("command: " + server_command)
+
+        # Finalise SteamCMD & game installing status.
+        ServersController.finish_import(server_id)
+        server_users = PermissionsServers.get_server_user_list(server_id)
+        for user in server_users:
+            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+
+    def download_threaded_bedrock_server(self, path, new_id):
         bedrock_url = Helpers.get_latest_bedrock_url()
         download_thread = threading.Thread(
-            target=self.download_threaded_bedrock_server,
+            target=self._download_bedrock_server,
             daemon=True,
             args=(path, new_id, bedrock_url),
             name=f"{new_id}_download",
         )
         download_thread.start()
 
-    def download_threaded_bedrock_server(
-        self, path, new_id, bedrock_url, server_update=False
-    ):
+    def _download_bedrock_server(self, path, new_id, bedrock_url, server_update=False):
         """
         Downloads the latest Bedrock server, unzips it, sets necessary permissions.
 
@@ -118,7 +184,15 @@ class ImportHelpers:
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
+                    server_users = PermissionsServers.get_server_user_list(new_id)
                     logger.error("Failed to download the Bedrock server zip.")
+                    ServersController.finish_import(new_id)
+                    for user in server_users:
+                        WebSocketManager().broadcast_user(
+                            user,
+                            "send_error",
+                            {"error": "Failed to download the Bedrock server zip."},
+                        )
                     return
 
                 unzip_path = self.helper.wtol_path(file_path)
@@ -146,3 +220,105 @@ class ImportHelpers:
         server_users = PermissionsServers.get_server_user_list(new_id)
         for user in server_users:
             WebSocketManager().broadcast_user(user, "send_start_reload", {})
+
+    def download_install_threaded_hytale(self, path, new_id):
+        download_thread = threading.Thread(
+            target=self._download_install_hytale,
+            daemon=True,
+            args=(path, new_id),
+            name=f"{new_id}_download",
+        )
+        download_thread.start()
+
+    def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
+        server_users = PermissionsServers.get_server_user_list(new_id)
+
+        bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
+        self.hytale_installer.install(bb_cache, server_path, new_id)
+
+        ServersController.finish_import(new_id)
+        for user in server_users:
+            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+
+    def download_threaded_exe(self, jar, server, version, path, server_id):
+        update_thread = threading.Thread(
+            name=f"server_download-{server_id}-{server}-{version}",
+            target=self._download_exe,
+            daemon=True,
+            args=(jar, server, version, path, server_id),
+        )
+        update_thread.start()
+
+    def _download_exe(self, jar, server, version, path, server_id):
+        """
+        Downloads a server JAR file and performs post-download actions including
+        notifying users and setting import status.
+
+        This method waits for the server registration to complete, retrieves the
+        download URL for the specified server JAR file.
+
+        Upon successful download, it either runs the installer for
+        Forge servers or simply finishes the import process for other types. It
+        notifies server users about the completion of the download.
+
+        Parameters:
+            - jar (str): The category of the JAR file to download.
+            - server (str): The type of server software (e.g., 'forge', 'paper').
+            - version (str): The version of the server software.
+            - path (str): The local filesystem path where the JAR file will be saved.
+            - server_id (str): The unique identifier for the server being updated or
+                imported, used for notifying users and setting the import status.
+
+        Returns:
+            - bool: True if the JAR file was successfully downloaded and saved;
+                False otherwise.
+
+        The method ensures that the server is properly registered before proceeding
+        with the download and handles exceptions by logging errors and reverting
+        the import status if necessary.
+        """
+        # delaying download for server register to finish
+        time.sleep(3)
+
+        fetch_url = self.big_bucket.get_fetch_url(jar, server, version)
+        if not fetch_url:
+            return False
+
+        server_users = PermissionsServers.get_server_user_list(server_id)
+
+        # Make sure the server is registered before updating its stats
+        while True:
+            try:
+                ServersController.set_import(server_id)
+                for user in server_users:
+                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+                break
+            except Exception as ex:
+                logger.debug(f"Server not registered yet. Delaying download - {ex}")
+
+        # Initiate Download
+        jar_dir = os.path.dirname(path)
+        jar_name = os.path.basename(path)
+        logger.info(fetch_url)
+        success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
+
+        ServersController.finish_import(server_id)
+        # Post-download actions
+        if success:
+            match server:
+                case "forge-installer" | "neoforge-installer":
+                    server_obj = ServersController.get_server_obj(server_id)
+                    # If this is the newer Forge version, run the installer
+                    self.modded_installer.install(jar_dir, server_id, server_obj)
+
+            # Notify users
+            for user in server_users:
+                WebSocketManager().broadcast_user(
+                    user, "notification", "Executable download finished"
+                )
+                time.sleep(3)  # Delay for user notification
+                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        else:
+            logger.error(f"Unable to save jar to {path} due to download failure.")
+
+        return success

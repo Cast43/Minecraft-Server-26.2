@@ -103,20 +103,20 @@
 }
 
 /* Create the caret/arrow with a unicode, and style it */
-.tree-caret .fa-folder {
+.tree-caret .ph-folder {
   display: inline-block;
 }
 
-.tree-caret .fa-folder-open {
+.tree-caret .ph-folder-open {
   display: none;
 }
 
 /* Rotate the caret/arrow icon when clicked on (using JavaScript) */
-.tree-caret-down .fa-folder {
+.tree-caret-down .ph-folder {
   display: none;
 }
 
-.tree-caret-down .fa-folder-open {
+.tree-caret-down .ph-folder-open {
   display: inline-block;
 }
 

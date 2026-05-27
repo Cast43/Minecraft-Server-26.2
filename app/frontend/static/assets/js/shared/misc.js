@@ -31,10 +31,13 @@ if ($("body").hasClass("dark-theme")) {
 	var chartGridLineColor = "rgba(0,0,0,0.08)";
 }
 if ($("canvas").length) {
-	Chart.defaults.global.tooltips.enabled = false;
-	Chart.defaults.global.defaultFontColor = "#354d66";
-	Chart.defaults.global.defaultFontFamily = '"Poppins", sans-serif';
-	Chart.defaults.global.tooltips.custom = function (tooltipModel) {
+	// Chart.js v3+ API
+	if (Chart.defaults.plugins?.tooltip) {
+		Chart.defaults.plugins.tooltip.enabled = false;
+		Chart.defaults.font.color = "#354d66";
+		Chart.defaults.font.family = '"Poppins", sans-serif';
+		Chart.defaults.plugins.tooltip.external = function (context) {
+			const tooltipModel = context.tooltip;
 		// Tooltip Element
 		var tooltipEl = document.getElementById("chartjs-tooltip");
 
@@ -90,8 +93,8 @@ if ($("canvas").length) {
 			tableRoot.innerHTML = innerHtml;
 		}
 
-		// `this` will be the overall tooltip
-		var position = this._chart.canvas.getBoundingClientRect();
+		// Get chart canvas position
+		const position = context.chart.canvas.getBoundingClientRect();
 
 		// Display, position, and set styles for font
 		tooltipEl.style.opacity = 1;
@@ -100,15 +103,16 @@ if ($("canvas").length) {
 			position.left + window.pageXOffset + tooltipModel.caretX + "px";
 		tooltipEl.style.top =
 			position.top + window.pageYOffset + tooltipModel.caretY + "px";
-		tooltipEl.style.fontFamily = tooltipModel._bodyFontFamily;
-		tooltipEl.style.fontSize = tooltipModel.bodyFontSize + "px";
-		tooltipEl.style.fontStyle = tooltipModel._bodyFontStyle;
+		tooltipEl.style.fontFamily = tooltipModel.options.bodyFont.family;
+		tooltipEl.style.fontSize = tooltipModel.options.bodyFont.size + "px";
+		tooltipEl.style.fontStyle = tooltipModel.options.bodyFont.style;
 		tooltipEl.style.padding =
-			tooltipModel.yPadding + "px " + tooltipModel.xPadding + "px";
+			tooltipModel.options.padding + "px";
 		tooltipEl.style.pointerEvents = "none";
-	};
-	Chart.defaults.global.legend.labels.fontStyle = "italic";
-	Chart.defaults.global.tooltips.intersect = false;
+		};
+		Chart.defaults.plugins.legend.labels.font = { style: 'italic' };
+		Chart.defaults.plugins.tooltip.intersect = false;
+	}
 }
 
 (function ($) {

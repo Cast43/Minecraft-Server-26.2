@@ -35,7 +35,7 @@ end %} {% block content %}
                     <div id="context-container" class="table-responsive">
                         <div id="drop-zone">
                             <div id="drop-zone-overlay">
-                                <i class="fa-solid fa-cloud-arrow-up fa-10x" id="drop-zone-img"></i>
+                                <i class="ph ph-cloud-arrow-up" id="drop-zone-img" style="scale: 10;"></i>
                             </div>
                             <div class="table-nav-container" id="table-nav-container"
                                 data-renameItemQuestion="{{translate('serverFiles', 'renameItemQuestion', data['lang'])}}"
@@ -89,6 +89,9 @@ end %} {% block content %}
                                             ,
                                             data["lang"])}}</th>
                                         <th class="d-none d-sm-table-cell" scope="col">{{translate("serverFiles",
+                                            "permissions" ,
+                                            data["lang"])}}</th>
+                                        <th class="d-none d-sm-table-cell" scope="col">{{translate("serverFiles",
                                             "options" ,
                                             data["lang"])}}</th>
                                     </tr>
@@ -107,8 +110,8 @@ end %} {% block content %}
 <div id="file-status">
     <span class="d-none d-sm-inline align-items-center">
         &nbsp;{{ translate('serverFiles', 'operationStatus', data['lang'])
-        }}</span>&nbsp;<i class="fa-solid fa-chart-simple d-sm-none"></i>&nbsp;<span id="operation-total"></span><span
-        id="status-caret"><i class="fa-solid fa-caret-up"></i></span>
+        }}</span>&nbsp;<i class="ph ph-chart-line d-sm-none"></i>&nbsp;<span id="operation-total"></span><span
+        id="status-caret"><i class="ph ph-caret-up"></i></span>
     <div id="file-status-content" class="d-none">
         <br>
         <div id="upload-progress-bar-parent">

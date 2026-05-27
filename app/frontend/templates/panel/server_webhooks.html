@@ -44,11 +44,11 @@
             <div class="col-md-12 col-sm-12 overflow-x-auto">
               <div class="card">
                 <div class="card-header header-sm d-flex justify-content-between align-items-center">
-                  <h4 class="card-title"><i class="fa-regular fa-bell"></i> {{ translate('webhooks', 'webhooks', data['lang']) }} </h4>
+                  <h4 class="card-title"><i class="ph-fill ph-bell"></i> {{ translate('webhooks', 'webhooks', data['lang']) }} </h4>
                   {% if data['user_data']['hints'] %}
                   <span class="too_small" title="{{ translate('serverSchedules', 'cannotSee', data['lang']) }}" , data-content="{{ translate('serverSchedules', 'cannotSeeOnMobile', data['lang']) }}" , data-placement="bottom"></span>
                   {% end %}
-                  <div><a class="btn btn-info" href="/panel/add_webhook?id={{ data['server_stats']['server_id']['server_id'] }}"><i class="fas fa-plus-circle"></i> {{ translate('webhooks', 'new', data['lang']) }}</a></div>
+                  <div><a class="btn btn-info" href="/panel/add_webhook?id={{ data['server_stats']['server_id']['server_id'] }}"><i class="ph-fill ph-plus-circle"></i> {{ translate('webhooks', 'new', data['lang']) }}</a></div>
                 </div>
                 <div class="card-body">
                   {% if len(data['webhooks']) == 0 %}
@@ -93,13 +93,13 @@
                           </td>
                           <td id="webhook_edit" class="action">
                             <button onclick="window.location.href=`/panel/webhook_edit?id={{ data['server_stats']['server_id']['server_id'] }}&webhook_id={{webhook.id}}`" class="btn btn-info">
-                              <i class="fas fa-pencil-alt"></i>
+                              <i class="ph-fill ph-pencil-simple"></i>
                             </button>
                             <button data-webhook={{ webhook.id }} class="btn btn-danger del_button">
-                              <i class="fas fa-trash" aria-hidden="true"></i>
+                              <i class="ph-fill ph-trash-simple" aria-hidden="true"></i>
                             </button>
                             <button data-webhook={{ webhook.id }} data-toggle="tooltip" title="{{ translate('webhooks', 'run', data['lang']) }}" class="btn btn-outline-warning test-socket">
-                              <i class="fa-solid fa-vial"></i>
+                              <i class="ph-fill ph-test-tube"></i>
                             </button>
                           </td>
                         </tr>
@@ -132,13 +132,13 @@
                           </td>
                           <td id="webhook_edit" class="action">
                             <button onclick="window.location.href=`/panel/webhook_edit?id={{ data['server_stats']['server_id']['server_id'] }}&webhook_id={{webhook.id}}`" class="btn btn-info">
-                              <i class="fas fa-pencil-alt"></i>
+                              <i class="ph-fill ph-pencil-simple"></i>
                             </button>
                             <button data-webhook={{ webhook.id }} class="btn btn-danger del_button">
-                              <i class="fas fa-trash" aria-hidden="true"></i>
+                              <i class="ph-fill ph-trash-simple" aria-hidden="true"></i>
                             </button>
                             <button data-webhook={{ webhook.id }} data-toggle="tooltip" title="{{ translate('webhooks', 'run', data['lang']) }}" class="btn btn-outline-warning test-socket">
-                              <i class="fa-solid fa-vial"></i>
+                              <i class="ph-fill ph-test-tube"></i>
                             </button>
                           </td>
                         </tr>
@@ -301,11 +301,11 @@
       message: "{{ translate('webhooks', 'areYouSureDel', data['lang']) }}",
       buttons: {
         cancel: {
-          label: '<i class="fas fa-times"></i> {{ translate("serverSchedules", "cancel", data["lang"]) }}'
+          label: '<i class="ph-bold ph-x"></i> {{ translate("serverSchedules", "cancel", data["lang"]) }}'
         },
         confirm: {
           className: 'btn-outline-danger',
-          label: '<i class="fas fa-check"></i> {{ translate("serverSchedules", "confirm", data["lang"]) }}'
+          label: '<i class="ph-bold ph-check"></i> {{ translate("serverSchedules", "confirm", data["lang"]) }}'
         }
       },
       callback: function (result) {
@@ -324,11 +324,11 @@
       message: "{{ translate('webhooks', 'areYouSureRun', data['lang']) }}",
       buttons: {
         cancel: {
-          label: '<i class="fas fa-times"></i> {{ translate("serverSchedules", "cancel", data["lang"]) }}'
+          label: '<i class="ph-bold ph-x"></i> {{ translate("serverSchedules", "cancel", data["lang"]) }}'
         },
         confirm: {
           className: 'btn-outline-danger',
-          label: '<i class="fas fa-check"></i> {{ translate("serverSchedules", "confirm", data["lang"]) }}'
+          label: '<i class="ph-bold ph-check"></i> {{ translate("serverSchedules", "confirm", data["lang"]) }}'
         }
       },
       callback: function (result) {

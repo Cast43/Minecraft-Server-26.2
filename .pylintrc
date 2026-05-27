@@ -54,10 +54,6 @@ persistent=yes
 # the version used to run pylint.
 py-version=3.10
 
-# When enabled, pylint would attempt to guess common misconfiguration and emit
-# user-friendly hints instead of false-positive error messages.
-suggestion-mode=yes
-
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
@@ -108,7 +104,9 @@ disable=abstract-method,
         too-many-branches,
         too-many-instance-attributes,
         too-many-locals,
+        too-many-lines,
         too-many-nested-blocks,
+        too-many-positional-arguments,
         too-many-public-methods,
         too-many-return-statements,
         too-many-statements,

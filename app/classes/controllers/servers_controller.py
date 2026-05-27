@@ -15,7 +15,7 @@ from app.classes.shared.backup_mgr import BackupManager
 from app.classes.helpers.helpers import Helpers
 from app.classes.shared.main_models import DatabaseShortcuts
 
-from app.classes.minecraft.stats import Stats
+from app.classes.remote_stats.stats import Stats
 
 from app.classes.models.servers import HelperServers
 from app.classes.models.users import HelperUsers, ApiKeys
@@ -32,7 +32,12 @@ class ServersController(metaclass=Singleton):
     servers_list: ServerInstance
 
     def __init__(
-        self, helper, servers_helper, management_helper, file_helper, import_helper
+        self,
+        helper,
+        servers_helper,
+        management_helper,
+        file_helper,
+        import_helper,
     ):
         self.helper: Helpers = helper
         self.file_helper: FileHelpers = file_helper
@@ -63,6 +68,7 @@ class ServersController(metaclass=Singleton):
         created_by: int,
         server_port: int = 25565,
         server_host: str = "127.0.0.1",
+        app_id: int = None,
     ) -> int:
         """Create a server in the database
 
@@ -97,6 +103,7 @@ class ServersController(metaclass=Singleton):
             created_by,
             server_port,
             server_host,
+            app_id,
         )
 
     @staticmethod
@@ -117,6 +124,31 @@ class ServersController(metaclass=Singleton):
         srv = ServersController().get_server_instance_by_id(server_id)
         return srv.stats_helper.get_history_stats(server_id, hours)
 
+    def get_history_stats_adaptive(
+        self, server_id, hours, sampling_tiers=None, sampling_fallback_divisor=12
+    ):
+        srv = ServersController().get_server_instance_by_id(server_id)
+        return srv.stats_helper.get_history_stats_adaptive(
+            server_id, hours, sampling_tiers, sampling_fallback_divisor
+        )
+
+    def get_history_stats_by_date_range(
+        self,
+        server_id,
+        start_time,
+        end_time,
+        sampling_tiers=None,
+        sampling_fallback_divisor=12,
+    ):
+        srv = ServersController().get_server_instance_by_id(server_id)
+        return srv.stats_helper.get_history_stats_by_date_range(
+            server_id, start_time, end_time, sampling_tiers, sampling_fallback_divisor
+        )
+
+    def get_server_stats_earliest(self, server_id):
+        srv = ServersController().get_server_instance_by_id(server_id)
+        return srv.stats_helper.get_earliest_server_stats()
+
     @staticmethod
     def update_unloaded_server(server_obj):
         ret = HelperServers.update_server(server_obj)
@@ -128,15 +160,10 @@ class ServersController(metaclass=Singleton):
         return srv.stats_helper.set_import()
 
     @staticmethod
-    def finish_import(server_id, forge=False):
+    def finish_import(server_id):
         srv = ServersController().get_server_instance_by_id(server_id)
         # This is where we start the forge installerr
-        if forge:
-            srv.run_threaded_server(
-                HelperUsers.get_user_id_by_name("system"), forge_install=True
-            )
-        else:
-            srv.stats_helper.finish_import()
+        srv.stats_helper.finish_import()
 
     @staticmethod
     def get_import_status(server_id):
@@ -319,10 +346,10 @@ class ServersController(metaclass=Singleton):
         for role in roles_list:
             role_users = HelperUsers.get_users_from_role(role.role_id)
             for user_role in role_users:
-                user_ids.add(user_role.user_id.user_id)
+                user_ids.update([user_role.user_id.user_id])
 
         for user_id in HelperUsers.get_super_user_list():
-            user_ids.add(user_id)
+            user_ids.update([user_id])
         return user_ids
 
     def get_all_servers_stats(self):
@@ -343,7 +370,7 @@ class ServersController(metaclass=Singleton):
                     }
                 )
         except IndexError as ex:
-            logger.error(
+            logger.exception(
                 f"Stats collection failed with error: {ex}. Was a server just created?"
             )
         return server_data
@@ -573,7 +600,7 @@ class ServersController(metaclass=Singleton):
                 content = file.read()
                 file.close()
         except Exception as ex:
-            logger.error(ex)
+            logger.exception(ex)
             return {}
 
         return json.loads(content)
@@ -592,7 +619,7 @@ class ServersController(metaclass=Singleton):
                 content = file.read()
                 file.close()
         except Exception as ex:
-            logger.error(ex)
+            logger.exception(ex)
             return {}
 
         return json.loads(content)

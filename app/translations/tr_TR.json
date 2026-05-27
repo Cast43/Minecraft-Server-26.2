@@ -8,7 +8,7 @@
         "accessDenied": "Erişim Reddedildi",
         "contact": "Crafty Control Destek Discord Sunucusu",
         "contactAdmin": "Bu içeriğe erişebilmek için sunucu yöneticinizle iletişim kurun, ya da bu içeriğe erişmeniz gerektiğini düşünüyorsanız, destek ile iletişime geçin.",
-        "noAccess": "Bu kaynağa erişiminiz yok."
+        "noAccess": "Bu kaynağa erişiminiz yok"
     },
     "apiKeys": {
         "apiKeys": "API Anahtarları",
@@ -19,7 +19,7 @@
         "createNew": "Yeni API tokeni oluştur",
         "created": "Oluşturuldu",
         "deleteKeyConfirmation": "Bu API anahtarını silmek istediğine emin misin? Bu geri alınamaz.",
-        "deleteKeyConfirmationTitle": "${keyId} API anahtarını kaldırma işlemi.",
+        "deleteKeyConfirmationTitle": "${keyId} API anahtarı kaldırılsın mı?",
         "fullAccess": "Tam Erişim",
         "getToken": "Bir Token Al",
         "name": "Ad",
@@ -33,13 +33,12 @@
     },
     "base": {
         "doesNotWorkWithoutJavascript": "<strong>Uyarı: </strong>Crafty, Javascript aktifleştirilmediği zaman düzgün çalışmaz!",
-        "getMFA": "Sunucularınızı güvence altına alın!",
-        "createMFA": "Hesabınıza Çok Faktörlü Kimlik Doğrulama ekleyin!"
+        "getMFA": "Hesabınızı daha iyi korumak için çok faktörlü kimlik doğrulamayı (MFA) etkinleştirin. MFA olmadan, hesabınız yetkisiz erişime karşı daha savunmasızdır."
     },
     "credits": {
         "developmentTeam": "Geliştirme Takımı",
         "hugeDesc": " ",
-        "pageDescription": "Bu kişiler olmadan, Crafty olmazdı.",
+        "pageDescription": "Bu kişiler olmadan, Crafty olmazdı",
         "pageTitle": "Katkıda Bulunanlar",
         "patreonDesc": "Patreon / Ko-fi destekçilerimize kocaman bir TEŞEKKÜR!",
         "patreonOther": "Diğer",
@@ -70,13 +69,13 @@
         "selectImage": "Bir resim seçin"
     },
     "dashboard": {
-        "actions": "İşlemler",
+        "actions": "Eylemler",
         "allServers": "Tüm Sunucular",
         "avg": "Ort",
         "backups": "Yedekler",
         "bePatientClone": "Sunucuyu klonlarken lütfen sabırlı olunuz.<br /> Bu ekran birazdan kendini yenileyecektir",
         "bePatientRestart": "Sunucuyu yeniden başlatırken lütfen sabırlı olunuz.<br /> Bu ekran birazdan kendini yenileyecektir",
-        "bePatientStart": "Sunucuyu başlatırken lütfen sabırlı olunuz.<br /> Bu ekran birazdan kendini yenileyecektir.",
+        "bePatientStart": "Sunucuyu başlatırken lütfen sabırlı olunuz.<br /> Bu ekran birazdan kendini yenileyecektir",
         "bePatientStop": "Sunucuyu durdururken başlatırken lütfen sabırlı olunuz.<br /> Bu ekran birazdan kendini yenileyecektir",
         "cannotSee": "Gözükmeyen şeyler mi var?",
         "cannotSeeOnMobile": "Mobilde gözükmeyen şeyler mi var?",
@@ -108,14 +107,17 @@
         "sendingCommand": "Komutun gönderiliyor",
         "server": "Sunucu",
         "servers": "Sunucular",
-        "size": "Sunucu Dir Boyutu",
+        "size": "Sunucu Boyutu",
         "start": "Başlat",
         "starting": "Gecikmeli Başlangıç",
         "status": "Durum",
         "stop": "Dur",
         "storage": "Saklama Alanı",
         "version": "Sürüm",
-        "welcome": "Crafty Controller'a Hoşgeldiniz!"
+        "welcome": "Crafty Controller'a Hoşgeldiniz",
+        "serverIcon": "Sunucu Simgesi",
+        "port": "Port",
+        "columnSettings": "Sütun Ayarları"
     },
     "datatables": {
         "i18n": {
@@ -204,7 +206,6 @@
         "no-file": "Talep edilen dosyayı bulamıyoruz. Dosya yolunu tekrar kontrol edin. Crafty'nin doğru izinleri var mı?",
         "noInternet": "Crafty internete erişimde sorun yaşıyor. Sunucu oluşturma devre dışı bırakıldı. Lütfen internet bağlantınızı kontrol edin ve bu sayfayı yenileyin.",
         "noJava": "{} sunucusu başlamatılamadı. Hata: Java'nın yüklü olmadığını tespit ettik. Lütfen Java'yı yükleyin ve ardından sunucuyu başlatın.",
-        "not-downloaded": "Çalıştırılabilir dosyanızı bulamıyoruz. İndirme işlemi tamamlandı mı? İzinler çalıştırılabilir olarak ayarlandı mı?",
         "portReminder": "{} ilk kez çalıştırılıyor olduğunu tespit ettik. Bunu internet üzerinden uzaktan erişilebilir kılmak için {} bağlantı noktasını yönlendiriciniz/güvenlik duvarınız üzerinden ilettiğinizden emin olun.",
         "privMsg": "ve ",
         "return": "Arayüze Geri Dön",
@@ -212,7 +213,8 @@
         "start-error": "{} sunucusu başlamatılamadı. Hata kodu: {}",
         "superError": "Bu işlemi tamamlamak için süper kullanıcı olmanız gerekir.",
         "terribleFailure": "Ne Korkunç Bir Hata!",
-        "duplicateId": "Talep tokenleri yalnızca session_id veya token_id belirtmelidir, her ikisini birden belirtmemelidir."
+        "duplicateId": "Talep tokenleri yalnızca session_id veya token_id belirtmelidir, her ikisini birden belirtmemelidir.",
+        "experimental": "Bu kaynağa erişmek için deneysel özellikleri etkinleştirmeniz gerekir"
     },
     "footer": {
         "allRightsReserved": "Tüm hakları saklıdır",
@@ -236,8 +238,10 @@
         "passwordRecovery": "Şifre Kurtarma",
         "2faRecovery": "MFA'yı Kurtarma",
         "totp": "Doğrulayıcı Kodunu Girin",
-        "2fa": "MFA'yı buraya girin (MFA etkinse)",
-        "accountDisabled": "Kullanıcı hesabınız bir yönetici tarafından devre dışı bırakıldı. Daha fazla bilgi için lütfen sunucu yöneticiniz ile konuşunuz."
+        "2fa": "(MFA etkinse)",
+        "accountDisabled": "Kullanıcı hesabınız bir yönetici tarafından devre dışı bırakıldı. Daha fazla bilgi için lütfen sunucu yöneticiniz ile konuşunuz.",
+        "orSeparator": "veya",
+        "signInWithPasskey": "Geçiş anahtarı ile giriş yapın"
     },
     "notify": {
         "activityLog": "Faaliyet Günlükleri",
@@ -371,7 +375,7 @@
         "bePatientDeleteFiles": "Sunucunuzu Crafty panelinden kaldırırken ve dosyalarını silerken lütfen sabırlı olun. Bu ekran birazdan kapanacaktır.",
         "bePatientUpdate": "Sunucuyu güncellerken lütfen sabırlı olun. İndirme süreleri internet hızınıza bağlı olarak değişebilir.<br /> Bu ekran birazdan kendini yenileyecektir",
         "cancel": "İptal",
-        "countPlayers": "Sunucuyu toplam oyuncu sayısına dahil et.",
+        "countPlayers": "Sunucuyu toplam oyuncu sayısına dahil et",
         "crashTime": "Çökme Zaman Aşımı",
         "crashTimeDesc": "Sunucunuzun çöktüğünü varsaymadan önce ne kadar beklemeliyiz?",
         "deleteFilesQuestion": "Sunucu dosyaları makineden silinsin mi?",
@@ -398,7 +402,7 @@
         "serverAutostartDelayDesc": "Otomatik başlatmadan önceki gecikme (Aşağıda etkinleştirilmişse)",
         "serverCrashDetection": "Sunucu Çökmesi Algılama",
         "serverExecutable": "Sunucu Çalıştırılabilir Dosyası",
-        "serverExecutableDesc": "Sunucunun çalıştırılabilir dosyası",
+        "serverExecutableDesc": "Sunucu çalıştırma komutunda çağırdığınız dosya. Bu, güncelleyeceğimiz dosyadır.",
         "serverExecutionCommand": "Sunucu Çalıştırma Komutu",
         "serverExecutionCommandDesc": "Gizli bir terminalde başlatılacaklar",
         "serverIP": "Sunucu IP'si",
@@ -420,7 +424,7 @@
         "stopBeforeDeleting": "Lütfen sunucuyu silmeden önce durdurun",
         "timeoutExplain1": "Crafty'nin",
         "timeoutExplain2": "komutunu çalıştırdıktan sonra sunucuyu kapatmaya zorlamadan önce sunucunuzun kapanmasını ne kadar bekleyeceği.",
-        "update": "Çalıştırılabilir Dosyayı Güncelle",
+        "update": "Sunucuyu Güncelle",
         "yesDelete": "Evet, sil",
         "yesDeleteFiles": "Evet, dosyaları sil"
     },
@@ -479,7 +483,7 @@
         "renameItemQuestion": "Dosyanın yeni adı ne olsun?",
         "save": "Kaydet",
         "size": "Boyut",
-        "unsupportedLanguage": "Uyarı: Bu desteklenen bir dosya türü değil",
+        "unsupportedLanguage": "Bu, tanınan bir dosya türü değildir. Okuma ve düzenleme işlevleri bozulabilir.",
         "unzip": "Fermuarı aç",
         "upload": "Dosya Yükle",
         "uploadTitle": "Dosyayı buraya yükle: ",
@@ -499,7 +503,8 @@
         "overwrite": "Sunucudaki değişiklikleri üzerine yaz",
         "repull": "Sunucudan güncel dosyayı yükle (Tüm yerel değişiklikler kaybolacaktır)",
         "serverModified": "Bu sayfayı yüklediğinizden beri bu dosyanın durumu sunucuda değişmiştir. Lütfen bir seçenek seçin.",
-        "type": "Tür"
+        "type": "Tür",
+        "permissions": "İzinler"
     },
     "serverMetrics": {
         "resetZoom": "Yakınlaştırmayı Sıfırla",
@@ -516,7 +521,7 @@
         "basic": "Basit",
         "children": "Bağlantılı Alt Görevler: ",
         "command": "Komut",
-        "command-explain": "Hangi komutu çalıştırmamızı istiyorsunuz? '/'yi dahil etmeyin.",
+        "command-explain": "Hangi komutu çalıştırmamızı istiyorsunuz? '/'yi dahil etmeyin",
         "cron": "Cron",
         "cron-explain": "Cron dizenizi girin -- NOT: 0 = Son seçenekte Pazartesi.",
         "custom": "Özel Komut",
@@ -524,7 +529,7 @@
         "enabled": "Etkin",
         "hours": "Saatler",
         "interval": "Aralık",
-        "interval-explain": "Bu zamanlamanın ne sıklıkla uygulanmasını istiyorsunuz?",
+        "interval-explain": "Bu zamanlamanın ne sıklıkla çalıştırılmasını istiyorsunuz?",
         "minutes": "Dakika",
         "offset": "Gecikme Ofseti",
         "offset-explain": "İlk görevi ateşledikten sonra bunu ateşlemek için ne kadar beklemeliyiz? (Saniye)",
@@ -537,7 +542,7 @@
         "start": "Sunucuyu Başlat",
         "stop": "Sunucuyu Kapat",
         "time": "Zaman",
-        "time-explain": "Zamanlamanın ne zaman uygulanmasını istiyorsunuz?"
+        "time-explain": "Zamanlamanın ne zaman çalıştırılmasını istiyorsunuz?"
     },
     "serverSchedules": {
         "action": "Eylem",
@@ -643,8 +648,14 @@
         "sizeInGB": "GB cinsinden boyut",
         "unsupported": "Minecraft'ın 1.8'den eski sürümleri Crafty tarafından desteklenmemektedir. Yine de yükleyebilirsiniz. Sonuçlar değişkenlik gösterecektir.",
         "uploadButton": "Dosya Yükle",
-        "uploadZip": "Sunucu İçe Aktarımı İçin Zip Dosyası Yükle",
-        "zipPath": "Sunucu Konumu"
+        "uploadZip": "Zip Dosyası Yükle",
+        "zipPath": "Sunucu Konumu",
+        "experimentalFeature": "Bu deneysel bir özelliktir",
+        "experimental": "Deneysel",
+        "zipError": "Dosya zip dosyası olmalıdır!",
+        "authenticate": "Kurulumu tamamlamak ve Hytale hesabınızı doğrulamak için buraya tıklayın.",
+        "authenticateAway": "Crafty, giriş bilgilerinizi saklamayacaktır. Bu, sizi Crafty'den başka bir sayfaya yönlendirecektir.",
+        "plugins": "Crafty'deki istatistik özelliklerinin çalışması için aşağıdaki eklentiler otomatik olarak yüklenecektir:"
     },
     "sidebar": {
         "contribute": "Katkıda Bulun",
@@ -680,10 +691,10 @@
         "deleteUser": "Kullanıcıyı Sil: ",
         "deleteUserB": "Kullanıcıyı Sil",
         "enabled": "Etkin",
-        "gravDesc": "Bu e-posta katı bir şekilde sadece Gravatar™ kullanımı içindir. Crafty, hiçbir koşulda bu e-postayı Gravatar™'ınıza bakmak dışında herhangi bir amaçla kullanmayacaktır.",
+        "gravDesc": "Bu e-posta katı bir şekilde sadece Gravatar™ kullanımı içindir. Crafty, hiçbir koşulda bu e-postayı Gravatar™'ınıza bakmak dışında herhangi bir amaçla kullanmayacaktır",
         "gravEmail": "Gravatar™ Emaili",
         "lastIP": "Son IP: ",
-        "lastLogin": "Son Oturum Açma: ",
+        "lastLogin": "Son Giriş: ",
         "lastUpdate": "Son Güncelleme: ",
         "leaveBlank": "Şifreyi değiştirmeden kullanıcıyı düzenlemek için boş bırakın.",
         "manager": "Yönetici",
@@ -711,7 +722,8 @@
         "changeUser": "Kullanıcı Adını Değiştir",
         "editTOTP": "Kullanıcı MFA'sını düzenle",
         "totpHeader": "Çok Faktörlü Kimlik Doğrulama",
-        "selfDisable": "Kendi hesabınızı devre dışı bırakamazsınız"
+        "selfDisable": "Kendi hesabınızı devre dışı bırakamazsınız",
+        "passkeyHeader": "Geçiş Anahtarları"
     },
     "validators": {
         "serverLogPath": "Sunucu günlük yolu en az 1 uzunluğundaki bir dize olmalıdır",
@@ -823,11 +835,63 @@
         "security": "Güvenlik",
         "logs": "Günlük kaydı",
         "monitoring": "Gözetleme",
-        "miscellaneous": "Diğer"
+        "miscellaneous": "Diğer",
+        "experimental": "Deneysel Özellikleri Etkinleştir",
+        "time_range_presets": "Metrik tarih seçici için zaman aralığı ön ayarları",
+        "silent_notif_fields": "Değişiklikleri sessizce kaydeden kullanıcı alanları (bildirim penceresi açılmaz)",
+        "passkey_rp_name": "Geçiş anahtarı güvenen taraf adı (kimlik doğrulayıcı bildirimlerinde görüntülenir)",
+        "enable_passkey_auth": "Geçiş anahtarı (WebAuthn) kimlik doğrulamasını etkinleştir",
+        "sampling_fallback_divisor": "Yedek örnekleme bölücü (son kademe dışındaki zaman aralıkları için kullanılır)",
+        "sampling_tiers": "Grafik verisi örnekleme kademeleri (zaman aralığı başına veri noktası yoğunluğunu kontrol eder)"
     },
     "serverFilesEditor": {
         "saved": "Kaydedildi",
         "save": "Değişiklikleri Kaydet",
         "unsavedChanges": "Çıkmak istediğinizden emin misiniz? Kaydedilmemiş değişiklikleriniz var."
+    },
+    "serverUpdate": {
+        "upToDate": "Güncel",
+        "updateCtr": "Güncelleme Merkezi",
+        "newVersion": "Yeni Sürüm Mevcut",
+        "monitorUpdate": "Yeni Sürümde Uyar"
+    },
+    "passkey": {
+        "authFailed": "Doğrulama başarısız",
+        "loginFailed": "Geçiş anahtarı girişi başarısız",
+        "verificationFailed": "Geçiş anahtarı kaydı doğrulanamadı",
+        "updateFailed": "Ayar güncellemesi başarısız",
+        "deleteFailed": "Geçiş anahtarı silinemedi",
+        "passwordAuthDisabled": "Hesabınız için parolalı doğrulama devre dışıdır.",
+        "requiresPasskey": "Parolalı doğrulamayı devre dışı bırakmadan önce en az bir geçiş anahtarı kaydetmelisiniz.",
+        "disablePasswordAuth": "Parolalı doğrulamayı devre dışı bırak",
+        "success": "Başarı",
+        "registrationSuccess": "Geçiş anahtarı başarıyla kaydedildi",
+        "registrationFailed": "Geçiş anahtarı kaydedilemedi",
+        "insecureContext": "Geçiş anahtarları güvenli bir bağlantı gerektirir. https://localhost veya güvenilir bir SSL sertifikası kullanın.",
+        "cancelled": "Geçiş anahtarı işlemi iptal edildi",
+        "browserNotSupported": "Tarayıcınız geçiş anahtarlarını desteklemiyor",
+        "disabled": "Geçiş anahtarlı doğrulama devre dışıdır. Etkinleştirmek için yöneticinize başvurun.",
+        "never": "Asla",
+        "backedUp": "Yedeklendi",
+        "multiDevice": "Senkronize edildi",
+        "singleDevice": "Cihaza bağlı",
+        "no": "Hayır",
+        "yes": "Evet",
+        "deleteConfirm": "Bu geçiş anahtarını silmek istediğinizden emin misiniz?",
+        "delete": "Sil",
+        "actions": "Eylemler",
+        "lastUsed": "Son Kullanılan",
+        "createdAt": "Oluşturulma Tarihi",
+        "deviceType": "Cihaz Türü",
+        "name": "Ad",
+        "defaultName": "Benim Geçiş Anahtarım",
+        "registerTitle": "Geçiş Anahtarını Adlandır",
+        "newName": "Bu geçiş anahtarı için bir ad giriniz",
+        "newPasskey": "Yeni Geçiş Anahtarı",
+        "addNew": "Geçiş Anahtarı Ekle",
+        "passkeyTitle": "Geçiş Anahtarları",
+        "title": "Geçiş Anahtarlı Doğrulama",
+        "disablePasswordAuthDesc": "Etkinleştirildiğinde, yalnızca geçiş anahtarı ile giriş yapabilirsiniz. Şifre ile giriş engellenecektir.",
+        "disablePasswordAuthWarning": "Uyarı: Yalnızca şifre ile giriş yapabileceksiniz. Yedek geçiş şifrenizin kayıtlı olduğundan emin olun."
     }
 }

@@ -134,6 +134,7 @@ class ApiCraftyConfigServerDirHandler(BaseApiHandler):
                     {
                         "status": "error",
                         "error": "SERVER RUNNING",
+                        "error_data": "All servers must be stopped.",
                     },
                 )
 

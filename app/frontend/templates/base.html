@@ -8,6 +8,8 @@
   {% if not data.get("mfa", None) and not data.get("password_auth_disabled", False) %}
   <meta name="mfa_warn" content="{{translate('base', 'getMFA', data['lang'])}}">
   <meta name="userId" content="{{data['user_data']['user_id']}}">
+  <meta name="auth_translation" content="{{translate('serverWizard', 'authenticate', data['lang'])}}">
+  <meta name="auth_away_translation" content="{{translate('serverWizard', 'authenticateAway', data['lang'])}}">
   {% end %}
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   {% block meta %}{% end %}
@@ -19,6 +21,12 @@
   <link rel="stylesheet" href="/static/assets/vendors/ti-icons/css/themify-icons.css">
   <link rel="stylesheet" href="/static/assets/vendors/typicons/typicons.css">
   <link rel="stylesheet" href="/static/assets/vendors/fontawesome6/css/all.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/regular/style.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/fill/style.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/bold/style.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/duotone/style.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/light/style.css">
+  <link rel="stylesheet" href="/static/assets/vendors/phosphoricons/thin/style.css">
   <link rel="stylesheet" type="text/css" href="/static/assets/css/vendors/datatables.min.css" />
   <link rel="stylesheet" href="/static/assets/vendors/css/vendor.bundle.base.css">
 
@@ -318,6 +326,62 @@
           }
         })
       });
+      webSocket.on('download_progress', function (progress) {
+        try {
+          if (progress < 100) {
+            $("#download-progress").removeClass("d-none");
+            $("#download-progress-bar").css("width", progress);
+            $("#download-progress-bar").text(progress);
+          } else {
+            $("#download-progress").addClass("d-none");
+          }
+        } catch {
+          console.log("Could not find dom element for update")
+        }
+      })
+      webSocket.on('hytale_auth', function (data) {
+        $('.bootbox-close-button').click();
+        const HYTALE_AUTH_MSG =
+          document.querySelector('meta[name="auth_translation"]')?.content || "";
+
+        const HYTALE_AUTH_AWAY =
+          document.querySelector('meta[name="auth_away_translation"]')?.content || "";
+
+        document.querySelector('.bootbox')?.remove();
+        document.querySelector('.modal-backdrop')?.remove();
+
+        const container = $("<div>");
+
+        const link = $("<a>")
+          .attr("href", data.link)
+          .attr("target", "_blank")
+          .attr("rel", "noopener noreferrer")
+          .text(HYTALE_AUTH_MSG)
+          .on("click", function (e) {
+            e.preventDefault();
+            window.open(data.link, "_blank", "noopener");
+          });
+
+        const warning = $("<span>").html(
+          `<i class="ph-fill ph-warning"></i>`
+        );
+
+        warning.append($("<p>").text(HYTALE_AUTH_AWAY));
+
+        container.append(link);
+        container.append("<br>")
+        container.append("<br>")
+        container.append(warning);
+
+        bootbox.alert({
+          message: container,
+          callback: function () {
+            globalThis.window.open(data.link)
+            globalThis.location.href = `/panel/server_detail?id=${data.server_id}&subpage=term`
+          }
+        });
+      });
+
       webSocket.on('support_status_update', function (logs) {
         if (logs.percent >= 100) {
           document.getElementById('logs_progress_bar').innerHTML = '100%';
@@ -473,7 +537,7 @@
       toastHeaderDiv.appendChild(toastHeaderTitle);
 
       var toastHeaderCloseSpan = document.createElement('span');
-      toastHeaderCloseSpan.setAttribute("class", "fa-solid fa-xmark");
+      toastHeaderCloseSpan.setAttribute("class", "ph-bold ph-x");
       toastHeaderCloseSpan.setAttribute("aria-hidden", "true");
       toastHeaderCloseSpan.addEventListener('click', function () { closeNotification(this.parentElement) });
       toastHeaderDiv.appendChild(toastHeaderCloseSpan);

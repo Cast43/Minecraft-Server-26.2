@@ -14,6 +14,8 @@ ZIP_NAME_EXAMPLE = "Server.zip"
 ARCHIVE_PATH_TITLE = "Internal zip path"
 ARCHIVE_PATH_DESCRIPTION = "Path to internal zip folder"
 ARCHIVE_PATH_EXAMPLE = "server_files/my_server/"
+MIN_MEM = "Minimum JVM memory (in GiBs)"
+MAX_MEM = "Maximum JVM memory (in GiBs)"
 
 new_server_schema = {
     "definitions": {},
@@ -87,7 +89,13 @@ new_server_schema = {
             "title": "Server monitoring type",
             "type": "string",
             "default": "minecraft_java",
-            "enum": ["minecraft_java", "minecraft_bedrock", "none"],
+            "enum": [
+                "minecraft_java",
+                "minecraft_bedrock",
+                "hytale",
+                "steam_cmd",
+                "none",
+            ],
             "error": "enumErr",
             "fill": True,
             # TODO: SteamCMD, RakNet, etc.
@@ -142,12 +150,43 @@ new_server_schema = {
                 },
             },
         },
+        "hytale_monitoring_data": {
+            "title": "Hytale monitoring data",
+            "type": "object",
+            "required": ["host", "port"],
+            "properties": {
+                "host": {
+                    "title": "Host",
+                    "type": "string",
+                    "default": "127.0.0.1",
+                    "examples": ["127.0.0.1"],
+                    "minLength": 1,
+                    "error": "typeString",
+                    "fill": True,
+                },
+                "port": {
+                    "title": "Port",
+                    "type": "integer",
+                    "examples": [5520],
+                    "default": 5520,
+                    "minimum": 0,
+                    "error": "typeIntMinVal0",
+                    "fill": True,
+                },
+            },
+        },
         "create_type": {
             # This is only used for creation, this is not saved in the db
             "title": "Server creation type",
             "type": "string",
             "default": "minecraft_java",
-            "enum": ["minecraft_java", "minecraft_bedrock", "custom"],
+            "enum": [
+                "minecraft_java",
+                "minecraft_bedrock",
+                "hytale",
+                "steam_cmd",
+                "custom",
+            ],
             "error": "enumErr",
             "fill": True,
         },
@@ -202,7 +241,7 @@ new_server_schema = {
                             "fill": True,
                         },
                         "mem_min": {
-                            "title": "Minimum JVM memory (in GiBs)",
+                            "title": MIN_MEM,
                             "type": "number",
                             "examples": [1],
                             "default": 1,
@@ -211,7 +250,7 @@ new_server_schema = {
                             "fill": True,
                         },
                         "mem_max": {
-                            "title": "Maximum JVM memory (in GiBs)",
+                            "title": MAX_MEM,
                             "type": "number",
                             "examples": [2],
                             "default": 2,
@@ -279,7 +318,7 @@ new_server_schema = {
                             "fill": True,
                         },
                         "mem_min": {
-                            "title": "Minimum JVM memory (in GiBs)",
+                            "title": MIN_MEM,
                             "type": "number",
                             "examples": [1],
                             "default": 1,
@@ -288,7 +327,7 @@ new_server_schema = {
                             "fill": True,
                         },
                         "mem_max": {
-                            "title": "Maximum JVM memory (in GiBs)",
+                            "title": MAX_MEM,
                             "type": "number",
                             "examples": [2],
                             "default": 2,
@@ -444,6 +483,207 @@ new_server_schema = {
                     "title": "Only one creation data",
                     "oneOf": [
                         {"required": ["import_server_create_data"]},
+                        {"required": ["download_exe_create_data"]},
+                    ],
+                },
+            ],
+        },
+        "hytale_create_data": {
+            "title": "Hytale creation data",
+            "type": "object",
+            "required": ["create_type"],
+            "properties": {
+                "create_type": {
+                    "title": "Creation type",
+                    "type": "string",
+                    "default": "import_server",
+                    "enum": ["download_exe", "import_server"],
+                    "error": "enumErr",
+                    "fill": True,
+                },
+                "download_exe_create_data": {
+                    "title": "Import server data",
+                    "type": "object",
+                    "error": "enumErr",
+                    "fill": True,
+                    "required": ["mem_min", "mem_max"],
+                    "properties": {
+                        "agree_to_eula": {
+                            "title": "Agree to the EULA",
+                            "type": "boolean",
+                            "enum": [True],
+                        },
+                        "mem_min": {
+                            "title": MIN_MEM,
+                            "type": "number",
+                            "examples": [1],
+                            "default": 1,
+                            "exclusiveMinimum": 0,
+                            "error": "typeInteger",
+                            "fill": True,
+                        },
+                        "mem_max": {
+                            "title": MAX_MEM,
+                            "type": "number",
+                            "examples": [2],
+                            "default": 2,
+                            "exclusiveMinimum": 0,
+                            "error": "typeInteger",
+                            "fill": True,
+                        },
+                    },
+                },
+                "import_server_create_data": {
+                    "title": "Import server data",
+                    "type": "object",
+                    "error": "enumErr",
+                    "fill": True,
+                    "required": [
+                        "archive_name",
+                        "archive_internal_path",
+                        "executable",
+                        "mem_min",
+                        "mem_max",
+                    ],
+                    "properties": {
+                        "archive_name": {
+                            "title": IMPORT_TITLE,
+                            "description": IMPORT_DESCRIPTION,
+                            "type": "string",
+                            "examples": [ZIP_NAME_EXAMPLE],
+                            "minLength": 1,
+                            "error": "typeString",
+                            "fill": True,
+                        },
+                        "archive_internal_path": {
+                            "title": ARCHIVE_PATH_TITLE,
+                            "description": ARCHIVE_PATH_DESCRIPTION,
+                            "type": "string",
+                            "examples": ["", ARCHIVE_PATH_EXAMPLE],
+                            "minLength": 0,
+                            "error": "typeString",
+                            "fill": True,
+                        },
+                        "executable": {
+                            "title": "Executable File",
+                            "description": "File Crafty should execute"
+                            "on server launch",
+                            "type": "string",
+                            "examples": ["bedrock_server.exe"],
+                            "minlength": 1,
+                            "error": "typeString",
+                            "fill": True,
+                        },
+                        "command": {
+                            "title": "Command",
+                            "type": "string",
+                            "default": "echo foo bar baz",
+                            "examples": ["LD_LIBRARY_PATH=. ./bedrock_server"],
+                            "minLength": 1,
+                            "error": "typeString",
+                            "fill": True,
+                        },
+                        "mem_min": {
+                            "title": MIN_MEM,
+                            "type": "number",
+                            "examples": [1],
+                            "default": 1,
+                            "exclusiveMinimum": 0,
+                            "error": "typeInteger",
+                            "fill": True,
+                        },
+                        "mem_max": {
+                            "title": MAX_MEM,
+                            "type": "number",
+                            "examples": [2],
+                            "default": 2,
+                            "exclusiveMinimum": 0,
+                            "error": "typeInteger",
+                            "fill": True,
+                        },
+                    },
+                },
+            },
+            "allOf": [
+                {
+                    "$comment": "If..then section",
+                    "allOf": [
+                        {
+                            "if": {
+                                "properties": {
+                                    "create_type": {"const": "import_server"}
+                                }
+                            },
+                            "then": {"required": ["import_server_create_data"]},
+                        },
+                        {
+                            "if": {
+                                "properties": {"create_type": {"const": "download_exe"}}
+                            },
+                            "then": {
+                                "required": [
+                                    "download_exe_create_data",
+                                ]
+                            },
+                        },
+                    ],
+                },
+                {
+                    "title": "Only one creation data",
+                    "oneOf": [
+                        {"required": ["import_server_create_data"]},
+                        {"required": ["download_exe_create_data"]},
+                    ],
+                },
+            ],
+        },
+        "steam_cmd_create_data": {
+            "title": "SteamCMD creation data",
+            "type": "object",
+            "required": ["create_type"],
+            "properties": {
+                "create_type": {
+                    "title": "Creation type",
+                    "type": "string",
+                    "default": "download_exe",
+                    "enum": ["download_exe"],
+                },
+                "download_exe_create_data": {
+                    "title": "Import server data",
+                    "type": "object",
+                    "required": [],
+                    "properties": {
+                        "app_id": {
+                            "title": "Steam Server App ID",
+                            "type": "integer",
+                        },
+                        "agree_to_eula": {
+                            "title": "Agree to the EULA",
+                            "type": "boolean",
+                            "enum": [True],
+                        },
+                    },
+                },
+            },
+            "allOf": [
+                {
+                    "$comment": "If..then section",
+                    "allOf": [
+                        {
+                            "if": {
+                                "properties": {"create_type": {"const": "download_exe"}}
+                            },
+                            "then": {
+                                "required": [
+                                    "download_exe_create_data",
+                                ]
+                            },
+                        },
+                    ],
+                },
+                {
+                    "title": "Only one creation data",
+                    "oneOf": [
                         {"required": ["download_exe_create_data"]},
                     ],
                 },
@@ -608,6 +848,14 @@ new_server_schema = {
                     "then": {"required": ["minecraft_bedrock_create_data"]},
                 },
                 {
+                    "if": {"properties": {"create_type": {"const": "steam_cmd"}}},
+                    "then": {"required": ["steam_cmd_create_data"]},
+                },
+                {
+                    "if": {"properties": {"create_type": {"const": "hytale"}}},
+                    "then": {"required": ["hytale_create_data"]},
+                },
+                {
                     "if": {"properties": {"create_type": {"const": "custom"}}},
                     "then": {"required": ["custom_create_data"]},
                 },
@@ -627,6 +875,10 @@ new_server_schema = {
                     },
                     "then": {"required": ["minecraft_bedrock_monitoring_data"]},
                 },
+                {
+                    "if": {"properties": {"monitoring_type": {"const": "hytale"}}},
+                    "then": {"required": ["hytale_monitoring_data"]},
+                },
                 # end require monitoring data
             ],
         },
@@ -635,6 +887,8 @@ new_server_schema = {
             "oneOf": [
                 {"required": ["minecraft_java_create_data"]},
                 {"required": ["minecraft_bedrock_create_data"]},
+                {"required": ["steam_cmd_create_data"]},
+                {"required": ["hytale_create_data"]},
                 {"required": ["custom_create_data"]},
             ],
         },
@@ -643,6 +897,8 @@ new_server_schema = {
             "oneOf": [
                 {"required": ["minecraft_java_monitoring_data"]},
                 {"required": ["minecraft_bedrock_monitoring_data"]},
+                {"required": ["steam_cmd_monitoring_data"]},
+                {"required": ["hytale_monitoring_data"]},
                 {"properties": {"monitoring_type": {"const": "none"}}},
             ],
         },

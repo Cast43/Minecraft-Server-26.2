@@ -3,12 +3,18 @@ import logging
 import tornado.web
 import tornado.escape
 
+from app.classes.big_bucket.steamcmd import SteamCMD, OS
 from app.classes.models.crafty_permissions import EnumPermissionsCrafty
 from app.classes.helpers.helpers import Helpers
 from app.classes.shared.main_models import DatabaseShortcuts
 from app.classes.web.base_handler import BaseHandler
 
 logger = logging.getLogger(__name__)
+
+SERVER_CREATOR_ERROR = (
+    "/panel/error?error=Unauthorized access: "
+    "not a server creator or server limit reached"
+)
 
 
 class ServerHandler(BaseHandler):
@@ -94,7 +100,10 @@ class ServerHandler(BaseHandler):
                 "mfa"
             ),  # set value if the token has MFA set to true or not
             # for warning banner
+            "experimental": self.helper.get_setting("experimental"),
             "update_available": self.helper.update_available,
+            "steamCMD": True,
+            "windows": self.helper.is_os_windows(),
             "support_perm": self.helper.get_setting("general_user_log_access")
             or exec_user["superuser"],
             "version_data": self.helper.get_version_string(),
@@ -139,23 +148,14 @@ class ServerHandler(BaseHandler):
             "themes": self.helper.get_themes(),
         }
 
-        if superuser:
-            page_data["roles"] = list_roles
+        page_data["server_api"] = self.controller.big_bucket._check_bucket_alive()
 
         if page == "step1":
             if not superuser and not self.controller.crafty_perms.can_create_server(
                 exec_user["user_id"]
             ):
-                self.redirect(
-                    "/panel/error?error=Unauthorized access: "
-                    "not a server creator or server limit reached"
-                )
+                self.redirect(SERVER_CREATOR_ERROR)
                 return
-            page_data["server_api"] = False
-            if page_data["online"]:
-                page_data["server_api"] = (
-                    self.controller.big_bucket._check_bucket_alive()
-                )
             page_data["server_types"] = self.controller.big_bucket.get_bucket_data()
             page_data["js_server_types"] = json.dumps(
                 self.controller.big_bucket.get_bucket_data()
@@ -169,13 +169,46 @@ class ServerHandler(BaseHandler):
             if not superuser and not self.controller.crafty_perms.can_create_server(
                 exec_user["user_id"]
             ):
+                self.redirect(SERVER_CREATOR_ERROR)
+                return
+            page_data["server_api"] = True
+            template = "server/bedrock_wizard.html"
+
+        if page == "steam_cmd_step1":
+            if not superuser and not self.controller.crafty_perms.can_create_server(
+                exec_user["user_id"]
+            ):
                 self.redirect(
                     "/panel/error?error=Unauthorized access: "
                     "not a server creator or server limit reached"
                 )
                 return
+            if not self.helper.get_setting("experimental"):
+                error_string = self.helper.translation.translate(
+                    "error", "experimental", exec_user["lang"]
+                )
+                return self.redirect(f"/panel/error?error={error_string}")
+            try:
+                steamcmd = SteamCMD(
+                    self.controller.big_bucket.get_bucket_data(
+                        self.helper.big_bucket_steamapps_cache
+                    )
+                )
+                page_data["os"] = OS
+                page_data["servers"] = steamcmd.games
+            except KeyError:
+                page_data["server_api"] = False
+                page_data["servers"] = []
+            template = "server/steam_wizard.html"
+
+        if page == "hytale_step1":
+            if not superuser and not self.controller.crafty_perms.can_create_server(
+                exec_user["user_id"]
+            ):
+                self.redirect(SERVER_CREATOR_ERROR)
+                return
             page_data["server_api"] = True
-            template = "server/bedrock_wizard.html"
+            template = "server/hytale_wizard.html"
 
         self.render(
             template,

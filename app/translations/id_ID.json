@@ -174,7 +174,6 @@
         "internet": "Kami telah mendeteksi mesin yang menjalankan Crafty tidak memiliki koneksi ke internet. Koneksi klien ke server mungkin terbatas.",
         "no-file": "Kami tidak dapat menemukan file yang diminta. Periksa kembali jalurnya. Apakah Crafty memiliki izin yang tepat?",
         "noJava": "Server {} gagal memulai dengan kode kesalahan: Kami mendeteksi Java tidak diinstal. Silakan instal Java lalu mulai server.",
-        "not-downloaded": "Sepertinya kami tidak dapat menemukan file Anda yang dapat dieksekusi. Apakah sudah selesai diunduh? Apakah izin disetel ke dapat dieksekusi?",
         "portReminder": "Kami mendeteksi ini adalah pertama kalinya {} dijalankan. Pastikan untuk meneruskan porta {} melalui router/firewall Anda agar ini dapat diakses dari jarak jauh dari internet.",
         "start-error": "Server {} gagal untuk memulai dengan kode: {}",
         "terribleFailure": "Ini adalah kegagalan yang mengerikan"

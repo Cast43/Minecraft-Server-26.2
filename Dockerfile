@@ -7,15 +7,14 @@ ENV LOG4J_FORMAT_MSG_NO_LOOKUPS=true
 
 # Remove shipped sudoer user (Required for Ubuntu 24.04 base) MR !826
 # Create non-root user & required dirs
+# Install required system packages
 RUN touch /var/mail/ubuntu \
     && chown ubuntu /var/mail/ubuntu \
     && userdel -r ubuntu \
     && useradd -g root -M crafty \
     && mkdir /crafty \
-    && chown -R crafty:root /crafty
-
-# Install required system packages
-RUN apt-get update \
+    && chown -R crafty:root /crafty \
+    && apt-get update \
     && apt-get -y --no-install-recommends install \
         sudo \
         gcc \
@@ -30,7 +29,13 @@ RUN apt-get update \
         openjdk-11-jre-headless \
         openjdk-17-jre-headless \
         openjdk-21-jre-headless \
+        openjdk-25-jre-headless \
         tzdata \
+    && if [ "$TARGETARCH" = "amd64" ]; then \
+         apt-get -y --no-install-recommends install lib32gcc-s1; \
+       else \
+         echo "Skipping SteamCMD 32-bit deps on $TARGETARCH (no native support)."; \
+       fi \
     && apt-get autoremove \
     && apt-get clean
 
@@ -40,7 +45,7 @@ WORKDIR /crafty
 COPY --chown=crafty:root requirements.txt ./
 RUN python3 -m venv ./.venv \
     && . .venv/bin/activate \
-    && pip3 install --no-cache-dir --upgrade setuptools==75.6.0 pip==24.3.1 \
+    && pip3 install --no-cache-dir --upgrade setuptools pip \
     && pip3 install --no-cache-dir -r requirements.txt \
     && deactivate
 USER root
@@ -52,7 +57,9 @@ RUN mv ./app/config ./app/config_original \
     && chmod +x ./docker_launcher.sh
 
 # Expose Web Interface port & Server port range
+EXPOSE 5520-5550
 EXPOSE 8000
+EXPOSE 8123
 EXPOSE 8443
 EXPOSE 19132
 EXPOSE 25500-25600

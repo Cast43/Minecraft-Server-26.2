@@ -166,7 +166,8 @@ class PasskeyController:
                 user_obj = HelperUsers.get_by_id(user_id)
                 existing_passkeys = list(self.passkey_helper.get_user_passkeys(user_id))
 
-                # Don't return early if no passkeys - proceed with empty allow_credentials
+                # Don't return early if no passkeys -
+                # proceed with empty allow_credentials
                 # to prevent user enumeration. Auth will fail at verify step.
                 allow_credentials = [
                     PublicKeyCredentialDescriptor(

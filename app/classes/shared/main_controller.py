@@ -15,6 +15,7 @@ from peewee import DoesNotExist
 from tzlocal import get_localzone
 from apscheduler.schedulers.background import BackgroundScheduler
 
+from app.classes.big_bucket.steamcmd import SteamCMD
 from app.classes.models.server_permissions import EnumPermissionsServer
 from app.classes.shared.main_models import DatabaseShortcuts
 from app.classes.models.users import HelperUsers
@@ -36,12 +37,13 @@ from app.classes.shared.console import Console
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.shared.import_helper import ImportHelpers
-from app.classes.minecraft.bigbucket import BigBucket
+from app.classes.big_bucket.bigbucket import BigBucket
 from app.classes.shared.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
 
 MODDED_TYPES = ["forge-installer", "neoforge-installer"]
+TRAVERSAL_ERROR = "Failed to import server due to traversal"
 
 
 class Controller:
@@ -50,7 +52,9 @@ class Controller:
         self.helper: Helpers = helper
         self.file_helper: FileHelpers = file_helper
         self.import_helper: ImportHelpers = import_helper
+
         self.big_bucket: BigBucket = BigBucket(helper)
+
         self.users_helper: HelperUsers = HelperUsers(database, self.helper)
         self.totp_helper: HelperTOTP = HelperTOTP(database)
         self.passkey_helper: HelperPasskey = HelperPasskey(database)
@@ -418,9 +422,34 @@ class Controller:
         server_file = "server.jar"  # HACK: Throw this horrible default out of here
         root_create_data = data[data["create_type"] + "_create_data"]
         create_data = root_create_data[root_create_data["create_type"] + "_create_data"]
+
+        monitoring_port = 25565
+        monitoring_host = "127.0.0.1"
+        monitoring_type = "custom"
+
+        if data["monitoring_type"] == "minecraft_java":
+            monitoring_port = data["minecraft_java_monitoring_data"]["port"]
+            monitoring_host = data["minecraft_java_monitoring_data"]["host"]
+            monitoring_type = "minecraft-java"
+        elif data["monitoring_type"] == "minecraft_bedrock":
+            monitoring_port = data["minecraft_bedrock_monitoring_data"]["port"]
+            monitoring_host = data["minecraft_bedrock_monitoring_data"]["host"]
+            monitoring_type = "minecraft-bedrock"
+        elif data["monitoring_type"] == "hytale":
+            monitoring_port = data["hytale_monitoring_data"]["port"] + 3
+            monitoring_host = data["hytale_monitoring_data"]["host"]
+            monitoring_type = "hytale"
+        elif data["monitoring_type"] == "steam_cmd":
+            monitoring_port = data["steam_cmd_monitoring_data"]["port"]
+            monitoring_host = data["steam_cmd_monitoring_data"]["host"]
+            monitoring_type = "steam_cmd"
         if data["create_type"] == "minecraft_java":
             if root_create_data["create_type"] == "download_jar":
-                server_file = f"{create_data['type']}-{create_data['version']}.jar"
+                server_file = f"{create_data['type']}.jar"
+                if create_data["type"] in MODDED_TYPES:  # Modded types need version
+                    # because that's how we create the execution command.
+                    # This needs to be changed in the future. Too messy.
+                    server_file = f"{create_data['type']}-{create_data['version']}.jar"
 
                 # Create an EULA file
                 if "agree_to_eula" in create_data:
@@ -483,7 +512,9 @@ class Controller:
                     f"-jar {_wrap_jar_if_windows()} nogui"
                 )
 
-        elif data["create_type"] == "minecraft_bedrock":
+        elif (
+            data["create_type"] == "minecraft_bedrock"
+        ):  # same process for hytale and bedrock
             if root_create_data["create_type"] == "import_server":
                 if Helpers.is_os_windows():
                     server_command = (
@@ -507,6 +538,42 @@ class Controller:
             _create_server_properties_if_needed(0, True)
 
             server_command = create_data.get("command", server_command)
+
+        elif data["create_type"] == "hytale":  # same process for hytale and bedrock
+            if root_create_data["create_type"] == "import_server":
+                server_file = create_data["executable"]
+            else:
+                server_file = "Server/HytaleServer.jar"
+            min_mem = create_data["mem_min"]
+            max_mem = create_data["mem_max"]
+            server_command = (
+                f"java -Xms{Helpers.float_to_string(min_mem)}M "
+                f"-Xmx{Helpers.float_to_string(max_mem)}M -jar {server_file} "
+                f"--assets Assets.zip --bind 0.0.0.0:{int(monitoring_port)-3}"
+            )
+
+            server_command = create_data.get("command", server_command)
+        elif data["create_type"] == "steam_cmd":
+            server_file = "steamcmd.exe"
+            full_jar_path = os.path.join(new_server_path, server_file)
+            try:
+                steamcmd = SteamCMD(
+                    self.big_bucket.get_bucket_data(
+                        self.helper.big_bucket_steamapps_cache
+                    )
+                )
+                steam_server = steamcmd.get_game_by_id(create_data["app_id"])
+            except KeyError:
+                return logger.error("Failed to get big bucket. Crashing out.")
+
+            if Helpers.is_os_windows():
+                server_command = steam_server.windows_startup_command.replace(
+                    "SERVER_PORT", monitoring_port
+                )
+            else:
+                server_command = steam_server.unix_startup_command.replace(
+                    "SERVER_PORT", monitoring_port
+                )
         elif data["create_type"] == "custom":
             # This is not implemented yet. Raise a key error
             raise KeyError
@@ -519,21 +586,6 @@ class Controller:
         log_location = data.get("log_location", "")
         if log_location == "" and data["create_type"] == "minecraft_java":
             log_location = "./logs/latest.log"
-
-        if data["monitoring_type"] == "minecraft_java":
-            monitoring_port = data["minecraft_java_monitoring_data"]["port"]
-            monitoring_host = data["minecraft_java_monitoring_data"]["host"]
-            monitoring_type = "minecraft-java"
-        elif data["monitoring_type"] == "minecraft_bedrock":
-            monitoring_port = data["minecraft_bedrock_monitoring_data"]["port"]
-            monitoring_host = data["minecraft_bedrock_monitoring_data"]["host"]
-            monitoring_type = "minecraft-bedrock"
-        elif data["monitoring_type"] == "none":
-            # TODO: this needs to be NUKED..
-            # There shouldn't be anything set if there is nothing to monitor
-            monitoring_port = 25565
-            monitoring_host = "127.0.0.1"
-            monitoring_type = "minecraft-java"
 
         new_server_id = self.register_server(
             name=data["name"],
@@ -564,7 +616,7 @@ class Controller:
                     )
                     server_obj.executable_update_url = url
                     self.servers.update_server(server_obj)
-                self.big_bucket.download_jar(
+                self.import_helper.download_threaded_exe(
                     create_data["category"],
                     create_data["type"],
                     create_data["version"],
@@ -578,7 +630,7 @@ class Controller:
                 if not self.helper.validate_traversal(
                     IMPORT_PATH, Path(existing_archive_path).resolve()
                 ):
-                    return logger.error("Failed to import server due to traversal")
+                    return logger.error(TRAVERSAL_ERROR)
 
                 ServersController.set_import(new_server_id)
                 self.import_helper.import_zipped_server(
@@ -587,12 +639,13 @@ class Controller:
                     create_data["archive_internal_path"],
                     monitoring_port,
                     new_server_id,
+                    data["create_type"],
                 )
 
         elif data["create_type"] == "minecraft_bedrock":
             if root_create_data["create_type"] == "download_exe":
                 ServersController.set_import(new_server_id)
-                self.import_helper.download_bedrock_server(
+                self.import_helper.download_threaded_bedrock_server(
                     new_server_path, new_server_id
                 )
             elif root_create_data["create_type"] == "import_server":
@@ -604,16 +657,52 @@ class Controller:
                 if not self.helper.validate_traversal(
                     IMPORT_PATH, Path(existing_archive_path).resolve()
                 ):
-                    return logger.error("Failed to import server due to traversal")
+                    return logger.error(TRAVERSAL_ERROR)
                 self.import_helper.import_zipped_server(
                     existing_archive_path,
                     new_server_path,
                     create_data["archive_internal_path"],
                     monitoring_port,
                     new_server_id,
+                    data["create_type"],
                     full_exe_path,
                 )
 
+        elif data["create_type"] == "hytale":
+            if root_create_data["create_type"] == "download_exe":
+                ServersController.set_import(new_server_id)
+                self.import_helper.download_install_threaded_hytale(
+                    new_server_path, new_server_id
+                )
+            elif root_create_data["create_type"] == "import_server":
+                ServersController.set_import(new_server_id)
+                full_exe_path = os.path.join(new_server_path, create_data["executable"])
+                existing_archive_path = self.file_helper.get_absolute_path(
+                    IMPORT_PATH, create_data["archive_name"]
+                )
+                if not self.helper.validate_traversal(
+                    IMPORT_PATH, Path(existing_archive_path).resolve()
+                ):
+                    return logger.error(TRAVERSAL_ERROR)
+                self.import_helper.import_zipped_server(
+                    existing_archive_path,
+                    new_server_path,
+                    create_data["archive_internal_path"],
+                    monitoring_port,
+                    new_server_id,
+                    data["create_type"],
+                    full_exe_path,
+                )
+        elif data["create_type"] == "steam_cmd":
+            server_exe = "steamcmd.exe"
+            if root_create_data["create_type"] == "download_exe":
+                ServersController.set_import(new_server_id)
+                self.import_helper.download_steam_server(
+                    create_data["app_id"],
+                    new_server_id,
+                    new_server_path,
+                    server_exe,
+                )
         exec_user = self.users.get_user_by_id(int(user_id))
         captured_roles = data.get("roles", [])
         # These lines create a new Role for the Server with full permissions
@@ -806,60 +895,7 @@ class Controller:
             server_type="minecraft-bedrock",
         )
         ServersController.set_import(new_id)
-        self.import_helper.download_bedrock_server(new_server_dir, new_id)
-        return new_id
-
-    def restore_bedrock_zip_server(
-        self,
-        server_name: str,
-        zip_path: str,
-        server_exe: str,
-        port: int,
-        user_id: int,
-    ):
-        server_id = Helpers.create_uuid()
-        new_server_dir = os.path.join(self.helper.servers_dir, server_id)
-        backup_path = os.path.join(self.helper.backup_path, server_id)
-        if Helpers.is_os_windows():
-            new_server_dir = Helpers.wtol_path(new_server_dir)
-            backup_path = Helpers.wtol_path(backup_path)
-            new_server_dir.replace(" ", "^ ")
-            backup_path.replace(" ", "^ ")
-
-        temp_dir = Helpers.get_os_understandable_path(zip_path)
-        Helpers.ensure_dir_exists(new_server_dir)
-        Helpers.ensure_dir_exists(backup_path)
-
-        full_jar_path = os.path.join(new_server_dir, server_exe)
-
-        if Helpers.is_os_windows():
-            server_command = f'"{full_jar_path}"'
-        else:
-            server_command = f"./{server_exe}"
-        logger.debug("command: " + server_command)
-        server_log_file = ""
-        server_stop = "stop"
-
-        new_id = self.register_server(
-            server_name,
-            server_id,
-            new_server_dir,
-            server_command,
-            server_exe,
-            server_log_file,
-            server_stop,
-            port,
-            user_id,
-            server_type="minecraft-bedrock",
-        )
-        ServersController.set_import(new_id)
-        self.import_helper.import_bedrock_zip_server(
-            temp_dir, new_server_dir, full_jar_path, port, new_id
-        )
-        if os.name != "nt":
-            if Helpers.check_file_exists(full_jar_path):
-                os.chmod(full_jar_path, 0o2760)
-
+        self.import_helper.download_threaded_bedrock_server(new_server_dir, new_id)
         return new_id
 
     # **********************************************************************************
@@ -895,6 +931,7 @@ class Controller:
         created_by: int,
         server_type: str,
         server_host: str = "127.0.0.1",
+        app_id: int = None,
     ):
         # put data in the db
         new_id = self.servers.create_server(
@@ -909,6 +946,7 @@ class Controller:
             created_by,
             server_port,
             server_host,
+            app_id,
         )
 
         if not Helpers.check_file_exists(
@@ -927,7 +965,7 @@ class Controller:
                     )
 
             except Exception as e:
-                logger.error(f"Unable to create required server files due to :{e}")
+                logger.exception(f"Unable to create required server files due to :{e}")
                 return False
 
         # let's re-init all servers
@@ -961,7 +999,7 @@ class Controller:
                             )
                         )
                     except Exception as e:
-                        logger.error(
+                        logger.exception(
                             f"Unable to delete server files for server with ID: "
                             f"{server_id} with error logged: {e}"
                         )
@@ -1092,7 +1130,7 @@ class Controller:
                         new_local_server_path,
                     )
                 except FileExistsError as e:
-                    logger.error(f"Failed to move server with error: {e}")
+                    logger.exception(f"Failed to move server with error: {e}")
 
             server_obj = self.servers.get_server_obj(server.get("server_id"))
 
