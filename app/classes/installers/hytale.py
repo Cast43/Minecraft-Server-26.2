@@ -6,6 +6,7 @@ from pathlib import PurePosixPath, Path
 
 from app.classes.models.server_permissions import (
     PermissionsServers,
+    EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
 
@@ -101,7 +102,8 @@ class HytaleInstaller:
                     {"id": new_id},
                     "vterm_new_line",
                     {"line": line + "<br />"},
-                )  # Not limiting to just terminal since it's an install/update status
+                    required_permission=EnumPermissionsServer.TERMINAL,
+                )
             if (
                 line.startswith(self.hytale_json.parsing_lines.url_line_start)
                 and url_line == ""
