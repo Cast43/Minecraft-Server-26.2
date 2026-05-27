@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
+BACKING_UP_FILE_STR = "backing up file"
+ERROR_BACKING_UP_FILE_STR = "Error backing up file"
 FILE_PATH = "file path"
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
@@ -495,7 +497,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={FILE_PATH: path})
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -506,7 +508,7 @@ class FileHelpers:
                     zipfile.error,
                 ) as why:
                     logger.warning(
-                        "Error backing up file",
+                        ERROR_BACKING_UP_FILE_STR,
                         extra={FILE_PATH: path, "error": why},
                     )
 
@@ -551,7 +553,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={FILE_PATH: path})
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -562,7 +564,7 @@ class FileHelpers:
                     zipfile.error,
                 ) as why:
                     logger.warning(
-                        "Error backing up file",
+                        ERROR_BACKING_UP_FILE_STR,
                         extra={FILE_PATH: path, "error": why},
                     )
 
@@ -616,7 +618,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={FILE_PATH: file})
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: file})
                     zip_file.write(file, file.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -627,7 +629,7 @@ class FileHelpers:
                     zipfile.error,
                 ) as why:
                     logger.warning(
-                        "Error backing up file",
+                        ERROR_BACKING_UP_FILE_STR,
                         extra={FILE_PATH: file, "error": why},
                     )
 
