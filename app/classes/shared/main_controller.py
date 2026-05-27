@@ -616,7 +616,7 @@ class Controller:
                     )
                     server_obj.executable_update_url = url
                     self.servers.update_server(server_obj)
-                self.big_bucket.download_jar(
+                self.import_helper.download_threaded_exe(
                     create_data["category"],
                     create_data["type"],
                     create_data["version"],
@@ -645,7 +645,7 @@ class Controller:
         elif data["create_type"] == "minecraft_bedrock":
             if root_create_data["create_type"] == "download_exe":
                 ServersController.set_import(new_server_id)
-                self.import_helper.download_bedrock_server(
+                self.import_helper.download_threaded_bedrock_server(
                     new_server_path, new_server_id
                 )
             elif root_create_data["create_type"] == "import_server":
@@ -895,7 +895,7 @@ class Controller:
             server_type="minecraft-bedrock",
         )
         ServersController.set_import(new_id)
-        self.import_helper.download_bedrock_server(new_server_dir, new_id)
+        self.import_helper.download_threaded_bedrock_server(new_server_dir, new_id)
         return new_id
 
     # **********************************************************************************
@@ -965,7 +965,7 @@ class Controller:
                     )
 
             except Exception as e:
-                logger.error(f"Unable to create required server files due to :{e}")
+                logger.exception(f"Unable to create required server files due to :{e}")
                 return False
 
         # let's re-init all servers
@@ -999,7 +999,7 @@ class Controller:
                             )
                         )
                     except Exception as e:
-                        logger.error(
+                        logger.exception(
                             f"Unable to delete server files for server with ID: "
                             f"{server_id} with error logged: {e}"
                         )
@@ -1130,7 +1130,7 @@ class Controller:
                         new_local_server_path,
                     )
                 except FileExistsError as e:
-                    logger.error(f"Failed to move server with error: {e}")
+                    logger.exception(f"Failed to move server with error: {e}")
 
             server_obj = self.servers.get_server_obj(server.get("server_id"))
 

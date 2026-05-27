@@ -103,7 +103,7 @@ class BaseApiHandler(BaseHandler):
         Returns:
             bool: Returns true if user can edit target user
         """
-        if auth_data[4]["user_id"] == user_id or str(user_id) == "@me":
+        if int(auth_data[4]["user_id"]) == int(user_id) or str(user_id) == "@me":
             return True
         if auth_data[4]["superuser"]:
             return True
