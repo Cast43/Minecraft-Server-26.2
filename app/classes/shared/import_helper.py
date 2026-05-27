@@ -309,7 +309,7 @@ class ImportHelpers:
         jar_dir = os.path.dirname(path)
         jar_name = os.path.basename(path)
         logger.info(fetch_url)
-        success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
+        success = self.file_helper.ssl_get_file(fetch_url, jar_dir, jar_name)
 
         ServersController.finish_import(server_id)
         # Post-download actions
