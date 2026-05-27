@@ -1,5 +1,6 @@
 import uuid
 import json
+import shlex
 import logging
 import subprocess
 from pathlib import PurePosixPath, Path
@@ -81,6 +82,7 @@ class HytaleInstaller:
             new_id (uuid.UUID): server ID
         """
         server_users = PermissionsServers.get_server_user_list(new_id)
+        install_command = shlex.split(install_command)
         process = subprocess.Popen(
             install_command,
             cwd=server_path,
