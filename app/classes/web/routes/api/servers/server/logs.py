@@ -12,6 +12,39 @@ ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
 
 
 class ApiServersServerLogsHandler(BaseApiHandler):
+    def validate_read_perms(self, auth_data, server_id, read_log_file):
+        mask = self.controller.server_perms.get_lowest_api_perm_mask(
+            self.controller.server_perms.get_user_permissions_mask(
+                auth_data[4]["user_id"], server_id
+            ),
+            auth_data[5],
+        )
+        server_permissions = self.controller.server_perms.get_permissions(mask)
+
+        # if the user doesn't have access to the server, return an error
+        if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
+            return False
+        if (
+            EnumPermissionsServer.TERMINAL not in server_permissions
+            and EnumPermissionsServer.LOGS not in server_permissions
+        ):
+            # if the user doesn't have terminal permission, return an error
+            # since they're trying to get the buffer
+            return False
+
+        if (
+            EnumPermissionsServer.TERMINAL not in server_permissions
+            and not read_log_file
+        ):
+            # if the user doesn't have terminal permission, return an error
+            # since they're trying to get the buffer
+            return False
+        if EnumPermissionsServer.LOGS not in server_permissions and read_log_file:
+            # if the user doesn't have Logs permission, and is trying to read the file
+            # return an error
+            return False
+        return True
+
     def get(self, server_id: str):
         auth_data = self.authenticate_user()
         if not auth_data:
@@ -26,8 +59,7 @@ class ApiServersServerLogsHandler(BaseApiHandler):
         # GET /api/v2/servers/server/logs?html=true
         use_html = self.get_query_argument("html", None) == "true"
 
-        if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
-            # if the user doesn't have access to the server, return an error
+        if not self.validate_read_perms(auth_data, server_id, read_log_file):
             return self.finish_json(
                 400,
                 {
@@ -38,60 +70,6 @@ class ApiServersServerLogsHandler(BaseApiHandler):
                     ),
                 },
             )
-        mask = self.controller.server_perms.get_lowest_api_perm_mask(
-            self.controller.server_perms.get_user_permissions_mask(
-                auth_data[4]["user_id"], server_id
-            ),
-            auth_data[5],
-        )
-        server_permissions = self.controller.server_perms.get_permissions(mask)
-        if (
-            EnumPermissionsServer.TERMINAL not in server_permissions
-            and EnumPermissionsServer.LOGS not in server_permissions
-        ):
-            # if the user doesn't have terminal permission, return an error
-            # since they're trying to get the buffer
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
-
-        if (
-            EnumPermissionsServer.TERMINAL not in server_permissions
-            and not read_log_file
-        ):
-            # if the user doesn't have terminal permission, return an error
-            # since they're trying to get the buffer
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
-        if EnumPermissionsServer.LOGS not in server_permissions and read_log_file:
-            # if the user doesn't have Logs permission, and is trying to read the file
-            # return an error
-            return self.finish_json(
-                400,
-                {
-                    "status": "error",
-                    "error": "NOT_AUTHORIZED",
-                    "error_data": self.helper.translation.translate(
-                        "validators", "insufficientPerms", auth_data[4]["lang"]
-                    ),
-                },
-            )
-
         server_data = self.controller.servers.get_server_data_by_id(server_id)
 
         if read_log_file:
