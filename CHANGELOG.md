@@ -1,11 +1,14 @@
 # Changelog
 ## --- [4.10.5] - 2026/TBD
+### Refactor
+- Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003))
 ### New features
-TBD
+- Add API method to list backup files ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1014))
 ### Bug fixes
-TBD
+- Fix general users not being able to edit themselves ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1016))
 ### Tweaks
-TBD
+- Bump cryptography for CVE-2026-26007 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1017))
+- Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
 <br><br>
 
 ## --- [4.10.4] - 2026/04/19

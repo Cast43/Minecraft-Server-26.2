@@ -30,6 +30,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
+BACKING_UP_FILE_STR = "backing up file"
+ERROR_BACKING_UP_FILE_STR = "Error backing up file"
+FILE_PATH = "file path"
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
 BLAKE3_HASH_LENGTH_BYTES = 128
@@ -351,14 +354,14 @@ class FileHelpers:
 
         """
         file_path = Path(path)
-        logger.debug("Deleting file", extra={"file path": file_path})
+        logger.debug("Deleting file", extra={FILE_PATH: file_path})
         try:
             # Remove the file
             file_path.unlink()
         except OSError as why:
             logger.exception(
                 "Unable to delete file",
-                extra={"file path": file_path, "error": why},
+                extra={FILE_PATH: file_path, "error": why},
             )
             return False
         return True
@@ -494,7 +497,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={"file path": path})
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -505,8 +508,8 @@ class FileHelpers:
                     zipfile.error,
                 ) as why:
                     logger.warning(
-                        "Error backing up file",
-                        extra={"file path": path, "error": why},
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: path, "error": why},
                     )
 
         return True
@@ -550,7 +553,7 @@ class FileHelpers:
                     continue
 
                 try:
-                    logger.info("backing up file", extra={"file path": path})
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
                     zip_file.write(path, path.relative_to(path_to_zip))
                 # This set of errors should be everything that can be thrown here from
                 # my research.
@@ -561,17 +564,17 @@ class FileHelpers:
                     zipfile.error,
                 ) as why:
                     logger.warning(
-                        "Error backing up file",
-                        extra={"file path": path, "error": why},
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: path, "error": why},
                     )
 
         return True
 
     def make_backup(  # pylint: disable=too-many-positional-arguments
         self,
-        path_to_destination,
+        path_to_destination: str,
         path_to_zip,
-        excluded_dirs,
+        excluded_dirs: list[str],
         server_id,
         backup_id,
         comment="",
@@ -579,12 +582,14 @@ class FileHelpers:
     ):
         # create a ZipFile object
         path_to_destination += ".zip"
-        ex_replace = [
-            Path(self.get_absolute_path(path_to_zip, p)).as_posix()
+        ex_replace: list[Path] = [
+            Path(self.get_absolute_path(path_to_zip, p)).resolve()
             for p in excluded_dirs
         ]
+        path_to_zip: Path = Path(path_to_zip)
+
         total_bytes = 0
-        dir_bytes = FileHelpers.get_dir_size(path_to_zip)
+        dir_bytes = FileHelpers.get_dir_size(str(path_to_zip))
         results = {
             "percent": 0,
             "total_files": self.helper.human_readable_file_size(dir_bytes),
@@ -608,65 +613,52 @@ class FileHelpers:
                 comment,
                 "utf-8",
             )  # comments over 65535 bytes will be truncated
-            for root, dirs, files in os.walk(path_to_zip, topdown=True):
-                for l_dir in dirs[:]:
-                    # make all paths in exclusions a unix style slash
-                    # to match directories.
-                    if str(os.path.join(root, l_dir)).replace("\\", "/") in ex_replace:
-                        dirs.remove(l_dir)
-                ziproot = path_to_zip
-                # iterate through list of files
-                for file in files:
-                    # check if file/dir is in exclusions list.
-                    # Only proceed if not exluded.
-                    if (
-                        str(os.path.join(root, file)).replace("\\", "/")
-                        not in ex_replace
-                        and file != "crafty.sqlite"
-                    ):
-                        try:
-                            logger.debug(f"backing up: {os.path.join(root, file)}")
-                            # add trailing slash to zip root dir if not windows.
-                            full_path = Path(root) / file
-                            zip_file.write(
-                                full_path, full_path.relative_to(path_to_zip)
-                            )
+            for file in path_to_zip.rglob("*"):
+                if file in ex_replace or file.name == "crafty.sqlite" or file.is_dir():
+                    continue
 
-                        except Exception as e:
-                            logger.warning(
-                                f"Error backing up: {os.path.join(root, file)}!"
-                                f" - Error was: {e}",
-                            )
-                    # debug logging for exlusions list
-                    else:
-                        logger.debug(f"Found {file} in exclusion list. Skipping...")
+                try:
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: file})
+                    zip_file.write(file, file.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: file, "error": why},
+                    )
 
-                    try:
-                        # add current file bytes to total bytes.
-                        total_bytes += os.path.getsize(os.path.join(root, file))
-                    except FileNotFoundError as why:
-                        logger.debug(f"Failed to calculate file size with error {why}")
+                try:
+                    # add current file bytes to total bytes.
+                    total_bytes += file.stat().st_size
+                except OSError as why:
+                    logger.debug(f"Failed to calculate file size with error {why}")
                     # calcualte percentage based off total size and current archive size
-                    percent = round((total_bytes / dir_bytes) * 100, 2)
-                    # package results
-                    results = {
-                        "percent": percent,
-                        "total_files": self.helper.human_readable_file_size(dir_bytes),
-                        "backup_id": backup_id,
-                    }
-                    # send status results to page.
-                    WebSocketManager().broadcast_page_params(
-                        SERVER_DETAIL,
-                        {"id": str(server_id)},
-                        "backup_status",
-                        results,
-                    )
-                    WebSocketManager().broadcast_page_params(
-                        "/panel/edit_backup",
-                        {"id": str(server_id)},
-                        "backup_status",
-                        results,
-                    )
+                percent = round((total_bytes / dir_bytes) * 100, 2)
+                # package results
+                results = {
+                    "percent": percent,
+                    "total_files": self.helper.human_readable_file_size(dir_bytes),
+                    "backup_id": backup_id,
+                }
+                # send status results to page.
+                WebSocketManager().broadcast_page_params(
+                    SERVER_DETAIL,
+                    {"id": str(server_id)},
+                    "backup_status",
+                    results,
+                )
+                WebSocketManager().broadcast_page_params(
+                    "/panel/edit_backup",
+                    {"id": str(server_id)},
+                    "backup_status",
+                    results,
+                )
         return True
 
     def move_item_file_or_dir(self, old_dir: str, new_dir: str, item: str) -> None:
@@ -687,14 +679,14 @@ class FileHelpers:
             if Path(old_dir, item).is_dir():
                 # Source item is a directory
                 FileHelpers.move_dir_exist(
-                    Path(old_dir) / item,
-                    Path(new_dir) / item,
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
             else:
                 # Source item is a file.
                 FileHelpers.move_file(
-                    Path(old_dir) / item,
-                    Path(new_dir) / item,
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
 
         # Error raised by shutil if an error is encountered. Raising the same error if

@@ -505,7 +505,9 @@ class ApiServersServerUpdateConfig(BaseApiHandler):
             server_id,
             self.get_remote_ip(),
         )
-        server_instance.check_server_version()  # check for a new version after instance
+        server_instance.update_manager.check_server_version(
+            server_instance.settings
+        )  # check for a new version after instance
         # is updated
         return self.finish_json(
             200,

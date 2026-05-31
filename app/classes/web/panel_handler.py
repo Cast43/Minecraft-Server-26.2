@@ -213,7 +213,7 @@ class PanelHandler(BaseHandler):
                 data = json.loads(server["int_ping_results"])
                 server["int_ping_results"] = data
             except Exception as e:
-                logger.error(f"Failed server data for page with error: {e}")
+                logger.exception(f"Failed server data for page with error: {e}")
 
         return page_data
 
@@ -392,7 +392,7 @@ class PanelHandler(BaseHandler):
                     logger.error("Issue with upstream Staff, using local.")
                     credits_dict: dict = json.loads(credits_default_local)
             except Exception as e:
-                logger.error("Request to credits bucket failed, using local. %s", e)
+                logger.exception("Request to credits bucket failed, using local. %s", e)
                 credits_dict: dict = json.loads(credits_default_local)
 
             timestamp = credits_dict["lastUpdate"] / 1000.0
@@ -487,7 +487,9 @@ class PanelHandler(BaseHandler):
                                 )
                             )
                         except Exception as e:
-                            logger.error(f"Failed to get server waiting to start: {e}")
+                            logger.exception(
+                                f"Failed to get server waiting to start: {e}"
+                            )
                             server["stats"]["waiting_start"] = False
 
                     if str(server["server_data"]["server_id"]) == str(server_id):
@@ -514,7 +516,7 @@ class PanelHandler(BaseHandler):
                 )
                 server["alert"] = server_obj.last_backup_failed
                 server["update"] = (
-                    server_obj.update_available
+                    server_obj.update_manager.update_available
                     and server["server_data"]["update_watcher"]
                 )  # Only add update notify if user has the watcher enabled
 
@@ -553,7 +555,7 @@ class PanelHandler(BaseHandler):
                     server_id
                 )
                 page_data["backup_failed"] = server_obj.last_backup_failed
-                page_data["update"] = server_obj.update_available
+                page_data["update"] = server_obj.update_manager.update_available
                 page_data["update_next_run"] = server_obj.server_scheduler.get_job(
                     f"{server_obj.server_id}_update_watcher"
                 ).next_run_time.strftime("%m/%d/%Y, %H:%M:%S")
@@ -619,7 +621,7 @@ class PanelHandler(BaseHandler):
                     server_id
                 )
             except Exception as e:
-                logger.error(f"Failed to get server waiting to start: {e}")
+                logger.exception(f"Failed to get server waiting to start: {e}")
                 page_data["waiting_start"] = False
             page_data["permissions"] = {
                 "Commands": EnumPermissionsServer.COMMANDS,

@@ -7,6 +7,7 @@ import subprocess
 import urllib.request
 import logging
 
+from pathlib import Path
 from getpass import getpass
 from app.classes.steamcmd.steamcmd_command import SteamCMDcommand
 
@@ -167,7 +168,7 @@ class SteamCMD:
     def app_update(
         self,
         app_id: int,
-        install_dir: str = None,
+        install_dir: str | Path = None,
         validate: bool = None,
         beta: str = None,
         betapassword: str = None,
@@ -276,7 +277,7 @@ class SteamCMD:
             ) from e
 
     @staticmethod
-    def find_app_id(gameserver_files_path):
+    def find_app_id(gameserver_files_path) -> int:
         """
         Searches for appmanifest file in the given directory and extracts the app ID.
 
@@ -309,4 +310,4 @@ class SteamCMD:
             raise ValueError(
                 f"App ID could not be found in directory: {steamapps_path}"
             )
-        return app_id
+        return int(app_id)
