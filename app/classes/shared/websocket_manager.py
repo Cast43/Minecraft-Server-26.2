@@ -110,11 +110,15 @@ class WebSocketManager(metaclass=Singleton):
             kwarg_perms = kwargs.get("required_permission")
             try:
                 user_perms = PermissionsServers.get_user_id_permissions_list(
-                    client.get_user_id(), params.get("server_id", "")
+                    client.get_user_id(), params.get("id", "")
                 )
-            except DoesNotExist:
+            except DoesNotExist as why:
+                logger.exception(
+                    "User perms not found for websocket filter terminal buffer: %s",
+                    why,
+                )
                 user_perms = []
-            if (kwarg_perms) and kwarg_perms not in user_perms:
+            if kwarg_perms and (kwarg_perms not in user_perms):
                 # Only send data to users with proper permission
                 return False
             if client.page != page:
