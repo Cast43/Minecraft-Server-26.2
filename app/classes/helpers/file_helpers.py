@@ -218,11 +218,11 @@ class FileHelpers:
 
         if not headers:
             headers = {
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/58.0.3029.110 Safari/537.3"
-                ),
+                "User-Agent": f"CraftyController/{self.helper.get_version_string()}",
+                "Accept-Encoding": "gzip, delflate, br",
+                "Connection": "keep-alive",
+                "Accept": "*/*",
+                "Cache-Control": "no-cache",
             }
 
         # Prevent file:// or ftp:// links from being opened. Urllib will happily open
