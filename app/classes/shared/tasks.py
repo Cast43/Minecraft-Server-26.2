@@ -22,6 +22,7 @@ from app.classes.controllers.users_controller import UsersController
 from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.helpers.helpers import Helpers
 from app.classes.models.management import HelpersManagement, Schedules
+from app.classes.models.server_permissions import PermissionsServers
 from app.classes.models.users import HelperUsers
 from app.classes.shared.console import Console
 from app.classes.shared.main_controller import Controller
@@ -199,7 +200,18 @@ class TasksManager:
                 case "update_executable":
                     svr.server_upgrade()
                 case _:
-                    svr.send_command(command)
+                    try:
+                        svr.send_command(command)
+                    except AttributeError as e:
+                        server_users = PermissionsServers.get_server_user_list(
+                            svr.server_id
+                        )
+                        for user in server_users:
+                            WebSocketManager().broadcast_user(
+                                user,
+                                "Error",
+                                "Unable to send commands to a offline server",
+                            )
 
             time.sleep(1)
 
