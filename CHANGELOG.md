@@ -7,6 +7,7 @@
 - Add API method to list backup files ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1014))
 ### Bug fixes
 - Fix general users not being able to edit themselves ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1016))
+- Improve upload progress bar consistency ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1023))
 ### Tweaks
 - Bump cryptography for CVE-2026-26007 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1017))
 - Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
