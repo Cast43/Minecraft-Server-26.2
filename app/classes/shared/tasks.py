@@ -209,7 +209,7 @@ class TasksManager:
                         for user in server_users:
                             WebSocketManager().broadcast_user(
                                 user,
-                                "Error",
+                                "send_error",
                                 "Unable to send commands to a offline server",
                             )
 
