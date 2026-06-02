@@ -73,13 +73,16 @@ class ImportHelpers:
         server_type,
         full_exe_path,
     ):
-        self.file_helper.unzip_file(
-            archive_path,
-            new_server_dir,
-            new_id,
-            False,
-            base_include_path=base_include_path,
-        )
+        try:
+            self.file_helper.unzip_file(
+                archive_path,
+                new_server_dir,
+                new_id,
+                False,
+                base_include_path=base_include_path,
+            )
+        except OSError as why:
+            logger.exception(f"Error unzipping file: {why}")
 
         time.sleep(2)
         if (
@@ -198,9 +201,15 @@ class ImportHelpers:
                 unzip_path = self.helper.wtol_path(file_path)
                 destination_path = pathlib.Path(unzip_path).parents[0]
                 # unzips archive that was downloaded.
-                self.file_helper.unzip_file(
-                    unzip_path, destination_path, new_id, server_update=server_update
-                )
+                try:
+                    self.file_helper.unzip_file(
+                        unzip_path,
+                        destination_path,
+                        new_id,
+                        server_update=server_update,
+                    )
+                except OSError as why:
+                    logger.exception(f"Error unzipping file: {why}")
                 # adjusts permissions for execution if os is not windows
 
                 if not self.helper.is_os_windows():
@@ -300,7 +309,7 @@ class ImportHelpers:
         jar_dir = os.path.dirname(path)
         jar_name = os.path.basename(path)
         logger.info(fetch_url)
-        success = FileHelpers.ssl_get_file(fetch_url, jar_dir, jar_name)
+        success = self.file_helper.ssl_get_file(fetch_url, jar_dir, jar_name)
 
         ServersController.finish_import(server_id)
         # Post-download actions

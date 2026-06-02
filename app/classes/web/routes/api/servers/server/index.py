@@ -240,7 +240,7 @@ class ApiServersServerIndexHandler(BaseApiHandler):
         srv_instance = self.controller.servers.get_server_instance_by_id(server_id)
         server = model_to_dict(server_obj)
         status_dict = {
-            "update_available": srv_instance.update_available,
+            "update_available": srv_instance.update_manager.update_available,
             "updating": srv_instance.updating,
             "backing_up": srv_instance.is_backingup,
             "last_backup": srv_instance.last_backup_failed,

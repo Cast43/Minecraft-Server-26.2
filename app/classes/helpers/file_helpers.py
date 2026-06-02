@@ -1,5 +1,4 @@
 import datetime
-import io
 import logging
 import mimetypes
 import os
@@ -10,30 +9,77 @@ import time
 import urllib.request
 import zipfile
 import zlib
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
+from typing import TYPE_CHECKING, ClassVar
+from urllib.error import URLError
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
 
 import certifi
+from urllib3.util import SSLContext
 
-from app.classes.models.server_permissions import PermissionsServers
 from app.classes.helpers.cryptography_helper import CryptoHelper
 from app.classes.helpers.helpers import Helpers
+from app.classes.models.server_permissions import PermissionsServers
 from app.classes.shared.websocket_manager import WebSocketManager
+
+if TYPE_CHECKING:
+    import io
 
 logger = logging.getLogger(__name__)
 
 mimetypes.init(files=[])
+BACKING_UP_FILE_STR = "backing up file"
+ERROR_BACKING_UP_FILE_STR = "Error backing up file"
+FILE_PATH = "file path"
 SERVER_DETAIL = "/panel/server_detail"
 PLAIN_TEXT = "text/plain"
+BLAKE3_HASH_LENGTH_BYTES = 128
+
+
+class SnapshotFileTypes(Enum):
+    """The types of files that need to be restored by the snapshot backups."""
+
+    FILES = "files"
+    CHUNKS = "chunks"
+
+
+@dataclass(frozen=True)
+class BackupPercentageBroadcast:
+    """Give names and types to the backup progress websocket broadcast."""
+
+    id: str | None
+    percent: int
+    complete: bool
+
+    def as_dict(self) -> dict[str, str | int | bool | None]:
+        """Output the BackupPercentageBroadcast as a dict."""
+        return {"id": self.id, "percent": self.percent, "complete": self.complete}
+
+
+# Ruff does not like the use of a boolean as a parameter. This is a warning if in the
+# case of "True" or "False" being unclear. For this, "use_compression" is fairly
+# explicit when saying "True", or "False". So we are disabling the lint check for FBT001
+# in all such cases. see:
+# https://docs.astral.sh/ruff/rules/boolean-type-hint-positional-argument/
 
 
 class FileHelpers:
-    allowed_quotes = ['"', "'", "`"]
+    """File operation and backup/restore functionality."""
+
+    allowed_quotes: ClassVar[list[str]] = ['"', "'", "`"]
     BYTE_TRUE: bytes = bytes.fromhex("01")
     BYTE_FALSE: bytes = bytes.fromhex("00")
     SNAPSHOT_BACKUP_DATE_FORMAT_STRING: str = "%Y-%m-%d-%H-%M-%S"
+    UNZIP_IGNORED_NAMES: ClassVar[list[str]] = [
+        "server.properties",
+        "permissions.json",
+        "allowlist.json",
+    ]
 
-    def __init__(self, helper):
+    def __init__(self, helper: Helpers) -> None:
+        """Create a new filehelper."""
         self.helper: Helpers = helper
         self.add_mime_types()  # Add to account for yml, conf, properties, etc
         self.text_mime_prefixes = [
@@ -50,7 +96,12 @@ class FileHelpers:
             "text/x-log",
         ]
 
-    def add_mime_types(self):
+    def add_mime_types(self) -> None:
+        """
+        Add various mimetypes.
+
+        I'm not sure what this is doing.
+        """
         # Extend the default list
         mimetypes.add_type("text/yaml", ".yml")
         mimetypes.add_type("text/yaml", ".yaml")
@@ -64,9 +115,13 @@ class FileHelpers:
         mimetypes.add_type("text/x-log", ".log")
 
     def can_unicode_decode(
-        self, path: str, encoding: str = "utf-8", sample_size: int = 4096
+        self,
+        path: str,
+        encoding: str = "utf-8",
+        sample_size: int = 4096,
     ) -> bool:
-        """Check to see if file can be unicode decoded. Check for binary files
+        """
+        Check to see if file can be unicode decoded. Check for binary files.
 
         Args:
             path (str): path to file to check
@@ -75,51 +130,71 @@ class FileHelpers:
 
         Returns:
             bool: Returns true if file can be opened, false if not
+
         """
+        file_path = Path(path)
+        # Attempt to read the file, if there is an error we can not decode it.
         try:
-            with open(
-                path,
-                "rb",
-            ) as sample:
-                chunk = sample.read(sample_size)
-            chunk.decode(encoding)
-            if (
-                b"\x00" in chunk
-            ):  # check for empty bytes (binary files) this will also capture utf-16
-                return False
-            return True
-        except (UnicodeDecodeError, PermissionError):
+            with file_path.open("rb") as sample:
+                chunk: bytes = sample.read(sample_size)
+        except OSError:
             return False
 
+        # Attempt to decode the chunk, if we get a decode error return false.
+        try:
+            chunk.decode(encoding)
+        except UnicodeDecodeError:
+            return False
+
+        # Check the leading byte. Not sure what for exactly. Original behavior returned
+        # false if the byte was in the chunk, true if it was not.
+        return b"\x00" not in chunk
+
     def probably_can_open_file(self, path: str) -> tuple:
+        """
+        Check various file factors to assume it can be read by the text editor.
+
+        This is very computationally expensive and we should probably kill this.
+        There are also some TOCTOU type issues. We should most likely let users try to
+        open any kind of file and just tell the user it can't be opened on open rather
+        than check beforehand.
+
+        Args:
+            path: Path to the file to check.
+
+        """
         if Path(path).is_dir():
             return (False, None)
         mime = mimetypes.guess_type(path)
         return (self.can_unicode_decode(path), mime[0])
 
-    @staticmethod
-    def ssl_get_file(  # pylint: disable=too-many-positional-arguments
-        url, out_path, out_file, max_retries=3, backoff_factor=2, headers=None
-    ):
+    def ssl_get_file(
+        self,
+        url: str,
+        out_path: str,
+        out_file: str,
+        headers: dict[str, str] | None = None,
+    ) -> bool:
         """
-        Downloads a file from a given URL using HTTPS with SSL context verification,
-        retries with exponential backoff and providing download progress feedback.
+        Download a file from a given URL.
 
-        Parameters:
+        Uses HTTPS with SSL context verification, retries with exponential backoff and
+        providing download progress feedback.
+
+        Parameters
+        ----------
             - url (str): The URL of the file to download. Must start with "https".
             - out_path (str): The local path where the file will be saved.
             - out_file (str): The name of the file to save the downloaded content as.
-            - max_retries (int, optional): The maximum number of retry attempts
-                in case of download failure. Defaults to 3.
-            - backoff_factor (int, optional): The factor by which the wait time
-                increases after each failed attempt. Defaults to 2.
             - headers (dict, optional):
                 A dictionary of HTTP headers to send with the request.
 
-        Returns:
+        Returns
+        -------
             - bool: True if the download was successful, False otherwise.
 
-        Raises:
+        Raises
+        ------
             - urllib.error.URLError: If a URL error occurs during the download.
             - ssl.SSLError: If an SSL error occurs during the download.
         Exception: If an unexpected error occurs during the download.
@@ -127,7 +202,13 @@ class FileHelpers:
         Note:
         This method logs critical errors and download progress information.
         Ensure that the logger is properly configured to capture this information.
+
         """
+        # Download settings. These are not changed by any call site in Crafty so taking
+        # them out of function signature to reduce the number of parameters.
+        max_retries = 3
+        backoff_factor = 2
+
         if not url.lower().startswith("https"):
             logger.error("SSL File Get - Error: URL must start with https.")
             return False
@@ -141,59 +222,107 @@ class FileHelpers:
                     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/58.0.3029.110 Safari/537.3"
-                )
+                ),
             }
-        req = urllib.request.Request(url, headers=headers)
 
-        write_path = os.path.join(out_path, out_file)
+        # Prevent file:// or ftp:// links from being opened. Urllib will happily open
+        # files, and FTP given a link path.
+        if not url.startswith(("http:", "https:")):
+            return False
+
+        # Check to mitigate S310 is done just above.
+        req = urllib.request.Request(url, headers=headers)  # noqa: S310
+
+        write_path = Path(out_path, out_file)
         attempt = 0
 
-        logger.info(f"SSL File Get - Requesting remote: {url}")
-        file_path_full = os.path.join(out_path, out_file)
-        logger.info(f"SSL File Get - Download Destination: {file_path_full}")
+        logger.info("SSL File Get - Requesting remote", extra={"url": url})
+        file_path_full = Path(out_path, out_file)
+        logger.info(
+            "SSL File Get - Download Destination",
+            extra={"full file path": file_path_full},
+        )
 
         while attempt < max_retries:
             try:
-                with urllib.request.urlopen(req, context=ssl_context) as response:
-                    total_size = response.getheader("Content-Length")
-                    if total_size:
-                        total_size = int(total_size)
-                    downloaded = 0
-                    with open(write_path, "wb") as file:
-                        while True:
-                            chunk = response.read(1024 * 1024)  # 1 MB
-                            if not chunk:
-                                break
-                            file.write(chunk)
-                            downloaded += len(chunk)
-                            if total_size:
-                                progress = (downloaded / total_size) * 100
-                                logger.info(
-                                    f"SSL File Get - Download progress: {progress:.2f}%"
-                                )
-                                WebSocketManager().broadcast_page(
-                                    SERVER_DETAIL,
-                                    "download_progress",
-                                    round(progress, 1),
-                                )
-                    return True
-            except (urllib.error.URLError, ssl.SSLError) as e:
-                logger.warning(f"SSL File Get - Attempt {attempt+1} failed: {e}")
-                time.sleep(backoff_factor**attempt)
-            except Exception as e:
-                logger.critical(f"SSL File Get - Unexpected error: {e}")
-                return False
-            finally:
+                return self._ssl_get_file_single_shot(req, ssl_context, write_path)
+            # The noqa here is for try/except inside of a loop. Not performance critical
+            # so blocking that inspection.
+            except (  # noqa: PERF203
+                URLError,
+                ssl.SSLError,
+            ) as e:
                 attempt += 1
+                logger.warning(
+                    "SSL File Get",
+                    extra={"attempt": attempt, "failed": e},
+                )
+                time.sleep(backoff_factor**attempt)
+            # I do not think an error other than URLError or ssl.SSLError is possible
+            # here but leaving this bare Except.
+            except Exception as e:
+                logger.critical("SSL File Get - Unexpected error", extra={"error": e})
+                return False
 
         logger.error("SSL File Get - Maximum retries reached. Download failed.")
         return False
 
     @staticmethod
-    def del_dirs(path):
-        path = pathlib.Path(path)
+    def _ssl_get_file_single_shot(
+        req: urllib.request.Request,
+        ssl_context: SSLContext,
+        write_path: Path,
+    ) -> bool:
+        """
+        Single download attempt for ssl_file_get.
+
+        This should not be used by itself. Use ssl_get_file instead
+
+        Args:
+            req: the request to be made.
+            ssl_context: the ssl context for this download.
+            write_path: Where the file should be written to.
+
+        """
+        # Validation of URL is done in ssl_get_file when the req is created. Safe to
+        # disable the inspection here.
+        with urllib.request.urlopen(req, context=ssl_context) as response:  # noqa: S310
+            total_size = response.getheader("Content-Length")
+            if total_size:
+                total_size = int(total_size)
+            downloaded = 0
+            with write_path.open("wb") as file:
+                while True:
+                    chunk = response.read(1024 * 1024)  # 1 MB
+                    if not chunk:
+                        break
+                    file.write(chunk)
+                    downloaded += len(chunk)
+                    if total_size:
+                        progress = (downloaded / total_size) * 100
+                        logger.info(
+                            "SSL File Get",
+                            extra={"Download Progress": f"{progress:.2f}%"},
+                        )
+                        WebSocketManager().broadcast_page(
+                            SERVER_DETAIL,
+                            "download_progress",
+                            round(progress, 1),
+                        )
+            return True
+
+    @staticmethod
+    def del_dirs(path: str | Path) -> bool:
+        """
+        Delete target directory.
+
+        Args:
+            path: Path to delete.
+
+        """
+        target_path = Path(path)
         clean = True
-        for sub in path.iterdir():
+        for sub in target_path.iterdir():
             if sub.is_dir():
                 # Delete folder if it is a folder
                 FileHelpers.del_dirs(sub)
@@ -203,129 +332,249 @@ class FileHelpers:
                     sub.unlink()
                 except Exception as e:
                     clean = False
-                    logger.error(f"Unable to delete file {sub}: {e}")
+                    logger.exception(
+                        "Unable to delete file",
+                        extra={"file": sub, "error": e},
+                    )
         try:
             # This removes the top-level folder:
-            path.rmdir()
+            target_path.rmdir()
         except Exception:
-            logger.error("Unable to remove top level")
+            logger.exception("Unable to remove top level")
             return False
         return clean
 
     @staticmethod
-    def del_file(path):
-        path = pathlib.Path(path)
-        clean = True
-        try:
-            logger.debug(f"Deleting file: {path}")
-            # Remove the file
-            os.remove(path)
-            return clean
-        except (FileNotFoundError, PermissionError):
-            logger.error(f"Path specified is not a file or does not exist. {path}")
-            clean = False
-            return clean
+    def del_file(path: str | Path) -> bool:
+        """
+        Delete a target file.
 
-    def check_mime_types(self, file_path):
+        Args:
+            path: the path to the file to delete
+
+        """
+        file_path = Path(path)
+        logger.debug("Deleting file", extra={FILE_PATH: file_path})
+        try:
+            # Remove the file
+            file_path.unlink()
+        except OSError as why:
+            logger.exception(
+                "Unable to delete file",
+                extra={FILE_PATH: file_path, "error": why},
+            )
+            return False
+        return True
+
+    def check_mime_types(self, file_path: Path) -> str | None:
+        """
+        Attempt to get a file's mime type.
+
+        Args:
+        file_path: Path to target file.
+
+        """
         m_type, _value = mimetypes.guess_type(file_path)
         return m_type
 
     @staticmethod
-    def copy_dir(src_path, dest_path, dirs_exist_ok=False):
+    def copy_dir(
+        src_path: str,
+        dest_path: str,
+        dirs_exist_ok: bool = False,  # noqa: FBT001, FBT002
+    ) -> None:
+        """
+        Copy a directory using shutil copytree.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+            dirs_exist_ok: Allows target dirs to exist, default False.
+
+        Raises:
+            OSError: If there is an error copying directories of if files exist.
+
+        """
         # pylint: disable=unexpected-keyword-arg
         shutil.copytree(src_path, dest_path, dirs_exist_ok=dirs_exist_ok)
 
     @staticmethod
-    def copy_file(src_path, dest_path):
+    def copy_file(src_path: str, dest_path: str) -> None:
+        """
+        Copy a file with shutil copy.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is any error copying the file.
+
+        """
         shutil.copy(src_path, dest_path)
 
     @staticmethod
-    def move_dir(src_path, dest_path):
+    def move_dir(src_path: str, dest_path: str) -> None:
+        """
+        Move a directory using shutil move.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is an error moving directory.
+
+        """
         shutil.move(src_path, dest_path)
 
     @staticmethod
-    def move_dir_exist(src_path, dest_path):
-        FileHelpers.copy_dir(src_path, dest_path, True)
+    def move_dir_exist(src_path: str, dest_path: str) -> None:
+        """
+        Move dir with target dirs already present.
+
+        This function also deletes the source.
+
+        Args:
+            src_path: Source path.
+            dest_path: Destination path.
+
+        Raises:
+            OSError: If there is an error copying the directory or deleting the source
+
+        """
+        FileHelpers.copy_dir(src_path, dest_path, dirs_exist_ok=True)
         FileHelpers.del_dirs(src_path)
 
     @staticmethod
-    def move_file(src_path, dest_path):
+    def move_file(src_path: str, dest_path: str) -> None:
+        """
+        Move a file with shutil move.
+
+        Args:
+            src_path: Source path
+            dest_path: Destination path
+
+        Raises:
+            OSError: If there is an error moving the file.
+
+        """
         shutil.move(src_path, dest_path)
 
     @staticmethod
-    def make_archive(path_to_destination, path_to_zip, comment=""):
-        # create a ZipFile object
-        string_target_path = str(path_to_destination)
-        path_to_destination = string_target_path
+    def make_archive(
+        path_to_destination: Path,
+        path_to_zip: Path,
+        comment: str = "",
+    ) -> bool:
+        """
+        Make a zip archive without compression.
 
-        string_zip_path = str(path_to_zip)
+        Extremely duplicated code with make_compressed_archive. These should be
+        combined, we will need to look at the call sites.
 
-        if not path_to_destination.endswith(".zip"):
-            path_to_destination += ".zip"
+        Args:
+            path_to_destination: Where the zip should be saved to. .zip suffix not
+                required.
+            path_to_zip: The path to zip up.
+            comment: Comment to be added to zip file.
+
+        """
+        if path_to_destination.suffix != ".zip":
+            path_to_destination.with_suffix(".zip")
+
+        # Create zip file
         with ZipFile(path_to_destination, "w") as zip_file:
+            # Add comment to zip file
             zip_file.comment = bytes(
-                comment, "utf-8"
+                comment,
+                "utf-8",
             )  # comments over 65535 bytes will be truncated
-            for root, _dirs, files in os.walk(string_zip_path, topdown=True):
-                ziproot = string_zip_path
-                for file in files:
-                    try:
-                        logger.info(f"backing up: {os.path.join(root, file)}")
-                        if os.name == "nt":
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, ""), file),
-                            )
-                        else:
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, "/"), file),
-                            )
 
-                    except Exception as e:
-                        logger.warning(
-                            f"Error backing up: {os.path.join(root, file)}!"
-                            f" - Error was: {e}"
-                        )
+            for path in path_to_zip.rglob("*"):
+                # Skip directories
+                if path.is_dir():
+                    continue
+
+                try:
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
+                    zip_file.write(path, path.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: path, "error": why},
+                    )
+
         return True
 
     @staticmethod
-    def make_compressed_archive(path_to_destination, path_to_zip, comment=""):
-        # create a ZipFile object
-        path_to_destination += ".zip"
-        with ZipFile(path_to_destination, "w", ZIP_DEFLATED) as zip_file:
-            zip_file.comment = bytes(
-                comment, "utf-8"
-            )  # comments over 65535 bytes will be truncated
-            for root, _dirs, files in os.walk(path_to_zip, topdown=True):
-                ziproot = path_to_zip
-                for file in files:
-                    try:
-                        logger.info(f"packaging: {os.path.join(root, file)}")
-                        if os.name == "nt":
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, ""), file),
-                            )
-                        else:
-                            zip_file.write(
-                                os.path.join(root, file),
-                                os.path.join(root.replace(ziproot, "/"), file),
-                            )
+    def make_compressed_archive(
+        path_to_destination: Path,
+        path_to_zip: Path,
+        comment: str = "",
+    ) -> bool:
+        """
+        Make a zip archive with compression.
 
-                    except Exception as e:
-                        logger.warning(
-                            f"Error packaging: {os.path.join(root, file)}!"
-                            f" - Error was: {e}"
-                        )
+        Uses ZIP DEFLATED compression mode.
+
+        Args:
+            path_to_destination: Where the zip should be saved to. .zip suffix not
+                required.
+            path_to_zip: The path to zip up.
+            comment: Comment to be added to zip file.
+
+        """
+        if path_to_destination.suffix != ".zip":
+            path_to_destination.with_suffix(".zip")
+
+        # Create zip file
+        with ZipFile(
+            path_to_destination,
+            mode="w",
+            compression=ZIP_DEFLATED,
+        ) as zip_file:
+            # Add comment to zip file
+            zip_file.comment = bytes(
+                comment,
+                "utf-8",
+            )  # comments over 65535 bytes will be truncated
+
+            for path in path_to_zip.rglob("*"):
+                # Skip directories
+                if path.is_dir():
+                    continue
+
+                try:
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: path})
+                    zip_file.write(path, path.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: path, "error": why},
+                    )
 
         return True
 
     def make_backup(  # pylint: disable=too-many-positional-arguments
         self,
-        path_to_destination,
+        path_to_destination: str,
         path_to_zip,
-        excluded_dirs,
+        excluded_dirs: list[str],
         server_id,
         backup_id,
         comment="",
@@ -333,12 +582,14 @@ class FileHelpers:
     ):
         # create a ZipFile object
         path_to_destination += ".zip"
-        ex_replace = [
-            Path(self.get_absolute_path(path_to_zip, p)).as_posix()
+        ex_replace: list[Path] = [
+            Path(self.get_absolute_path(path_to_zip, p)).resolve()
             for p in excluded_dirs
         ]
+        path_to_zip: Path = Path(path_to_zip)
+
         total_bytes = 0
-        dir_bytes = FileHelpers.get_dir_size(path_to_zip)
+        dir_bytes = FileHelpers.get_dir_size(str(path_to_zip))
         results = {
             "percent": 0,
             "total_files": self.helper.human_readable_file_size(dir_bytes),
@@ -359,135 +610,135 @@ class FileHelpers:
         compression_mode = ZIP_DEFLATED if compressed else ZIP_STORED
         with ZipFile(path_to_destination, "w", compression_mode) as zip_file:
             zip_file.comment = bytes(
-                comment, "utf-8"
+                comment,
+                "utf-8",
             )  # comments over 65535 bytes will be truncated
-            for root, dirs, files in os.walk(path_to_zip, topdown=True):
-                for l_dir in dirs[:]:
-                    # make all paths in exclusions a unix style slash
-                    # to match directories.
-                    if str(os.path.join(root, l_dir)).replace("\\", "/") in ex_replace:
-                        dirs.remove(l_dir)
-                ziproot = path_to_zip
-                # iterate through list of files
-                for file in files:
-                    # check if file/dir is in exclusions list.
-                    # Only proceed if not exluded.
-                    if (
-                        str(os.path.join(root, file)).replace("\\", "/")
-                        not in ex_replace
-                        and file != "crafty.sqlite"
-                    ):
-                        try:
-                            logger.debug(f"backing up: {os.path.join(root, file)}")
-                            # add trailing slash to zip root dir if not windows.
-                            if os.name == "nt":
-                                zip_file.write(
-                                    os.path.join(root, file),
-                                    os.path.join(root.replace(ziproot, ""), file),
-                                )
-                            else:
-                                zip_file.write(
-                                    os.path.join(root, file),
-                                    os.path.join(root.replace(ziproot, "/"), file),
-                                )
+            for file in path_to_zip.rglob("*"):
+                if file in ex_replace or file.name == "crafty.sqlite" or file.is_dir():
+                    continue
 
-                        except Exception as e:
-                            logger.warning(
-                                f"Error backing up: {os.path.join(root, file)}!"
-                                f" - Error was: {e}"
-                            )
-                    # debug logging for exlusions list
-                    else:
-                        logger.debug(f"Found {file} in exclusion list. Skipping...")
+                try:
+                    logger.info(BACKING_UP_FILE_STR, extra={FILE_PATH: file})
+                    zip_file.write(file, file.relative_to(path_to_zip))
+                # This set of errors should be everything that can be thrown here from
+                # my research.
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    zipfile.error,
+                ) as why:
+                    logger.warning(
+                        ERROR_BACKING_UP_FILE_STR,
+                        extra={FILE_PATH: file, "error": why},
+                    )
 
-                    try:
-                        # add current file bytes to total bytes.
-                        total_bytes += os.path.getsize(os.path.join(root, file))
-                    except FileNotFoundError as why:
-                        logger.debug(f"Failed to calculate file size with error {why}")
+                try:
+                    # add current file bytes to total bytes.
+                    total_bytes += file.stat().st_size
+                except OSError as why:
+                    logger.debug(f"Failed to calculate file size with error {why}")
                     # calcualte percentage based off total size and current archive size
-                    percent = round((total_bytes / dir_bytes) * 100, 2)
-                    # package results
-                    results = {
-                        "percent": percent,
-                        "total_files": self.helper.human_readable_file_size(dir_bytes),
-                        "backup_id": backup_id,
-                    }
-                    # send status results to page.
-                    WebSocketManager().broadcast_page_params(
-                        SERVER_DETAIL,
-                        {"id": str(server_id)},
-                        "backup_status",
-                        results,
-                    )
-                    WebSocketManager().broadcast_page_params(
-                        "/panel/edit_backup",
-                        {"id": str(server_id)},
-                        "backup_status",
-                        results,
-                    )
+                percent = round((total_bytes / dir_bytes) * 100, 2)
+                # package results
+                results = {
+                    "percent": percent,
+                    "total_files": self.helper.human_readable_file_size(dir_bytes),
+                    "backup_id": backup_id,
+                }
+                # send status results to page.
+                WebSocketManager().broadcast_page_params(
+                    SERVER_DETAIL,
+                    {"id": str(server_id)},
+                    "backup_status",
+                    results,
+                )
+                WebSocketManager().broadcast_page_params(
+                    "/panel/edit_backup",
+                    {"id": str(server_id)},
+                    "backup_status",
+                    results,
+                )
         return True
 
-    def move_item_file_or_dir(self, old_dir, new_dir, item) -> None:
+    def move_item_file_or_dir(self, old_dir: str, new_dir: str, item: str) -> None:
         """
-        Move item to new location if it is either a file or a dir. Will raise
-        shutil.Error for any errors encountered.
+        Move item to new location if it is either a file or a dir.
 
         Args:
             old_dir: Old location.
             new_dir: New location.
             item: File or directory name.
 
-        Returns: None
+        Raises:
+            shutil.Error: For any move errors that are encountered.
 
         """
         try:
             # Check if source item is a directory or a file.
-            if os.path.isdir(os.path.join(old_dir, item)):
+            if Path(old_dir, item).is_dir():
                 # Source item is a directory
                 FileHelpers.move_dir_exist(
-                    os.path.join(old_dir, item),
-                    os.path.join(new_dir, item),
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
             else:
                 # Source item is a file.
                 FileHelpers.move_file(
-                    os.path.join(old_dir, item),
-                    os.path.join(new_dir, item),
+                    str(Path(old_dir) / item),
+                    str(Path(new_dir) / item),
                 )
 
         # Error raised by shutil if an error is encountered. Raising the same error if
         # encountered.
         except shutil.Error as why:
-            raise RuntimeError(
-                f"Error moving {old_dir} to {new_dir} with information: {why}"
-            ) from why
+            err_msg = f"Error moving {old_dir} to {new_dir} with information: {why}"
+            raise RuntimeError(err_msg) from why
 
     @staticmethod
-    def restore_archive(archive_location, destination):
+    def restore_archive(archive_location: str, destination: str) -> None:
+        """
+        Restore zip file into specified destination.
+
+        Args:
+            archive_location: The zip to unzip.
+            destination: The target location to unzip to.
+
+        """
         with zipfile.ZipFile(archive_location, "r") as zip_ref:
             zip_ref.extractall(destination)
 
-    def send_percentage(self, user, percent, proc_id, complete):
-        if isinstance(user, str):
+    @staticmethod
+    def send_percentage(
+        user: list[str],
+        broadcast_data: BackupPercentageBroadcast,
+    ) -> None:
+        """
+        Send a websocket percentage to given user(s).
+
+        Args:
+            user: List of user(s) to send broadcast to.
+            broadcast_data: The information to be sent to the users.
+
+        """
+        for usr in user:
             WebSocketManager().broadcast_user(
-                user,
+                usr,
                 "zip_status",
-                {"id": None, "percent": percent, "complete": complete},
+                broadcast_data.as_dict(),
             )
-        else:
-            for usr in user:
-                WebSocketManager().broadcast_user(
-                    usr,
-                    "zip_status",
-                    {"id": proc_id, "percent": percent, "complete": complete},
-                )
 
     def should_extract(
-        self, file, base_include_path, excluded_files, server_update
+        self,
+        file: str,
+        base_include_path: str | None,
+        excluded_files: list[str],
+        server_update: bool,  # noqa: FBT001 see unzip file.
     ) -> bool:
-        """Checks a number of inclusions or exclusions against a given file to see
-        if that file should be unpacked to the target directory.
+        """
+        Check a number of inclusions or exclusions against a given file.
+
+        Checks to see if that file should be unpacked to the target directory.
 
         ** Base include path and excluded files should not be used in conjunction with
         eachother.
@@ -504,6 +755,7 @@ class FileHelpers:
         Returns:
             bool: Whether or not the file from the list should be included in the
             unzipped archive.
+
         """
         if server_update and file in excluded_files:
             return False
@@ -513,14 +765,22 @@ class FileHelpers:
 
         try:
             pathlib.PurePosixPath(file).relative_to(
-                pathlib.PurePosixPath(base_include_path)
+                pathlib.PurePosixPath(base_include_path),
             )
-            return True
         except ValueError:
             return False
 
-    def get_archive_internal_name(self, file, base_include_path) -> str:
-        """If we have a base include path we will rewrite the internal zip object path
+        return True
+
+    def get_archive_internal_name(
+        self,
+        file: str,
+        base_include_path: str | None,
+    ) -> str:
+        """
+        Get relative base path from an archive.
+
+        If we have a base include path we will rewrite the internal zip object path
         to remove the /path/to/file/in/archive so we don't have nested folders when we
         unzip. This will return the relative path to the archive to avoid nesting.
 
@@ -531,86 +791,152 @@ class FileHelpers:
 
         Returns:
             str | PurePosixPath: returns the original file name or new file name
+
         """
         if base_include_path:  # Rewrite path of zip_ref_info if we have a base include
             try:
                 rel = pathlib.PurePosixPath(file).relative_to(base_include_path)
                 return str(rel)
             except ValueError:
+
                 logger.debug("%s is not relative to %s", file, base_include_path)
         return str(file)
 
-    def unzip_file(
+    @staticmethod
+    def _normalize_websocket_recipients(
+        server_id: str | None,
+        user_id: str | None,
+    ) -> list[str]:
+        """
+        Get a normalized list of users for unzip_file.
+
+        Args:
+            server_id: The server ID to use to get list of relevant users.
+            user_id: The user ID of the user.
+
+        """
+        if not user_id:
+            recipients = PermissionsServers.get_server_user_list(server_id)
+        else:
+            recipients: list[str] = [user_id]
+
+        return recipients
+
+    # Disabling the lint for too many position arguments. My notes are in the function.
+    # This bad boy needs a rewrite, I don't understand the websockets enough to make
+    # that happen at the moment.
+    def unzip_file(  # noqa: PLR0913
         self,
-        zip_path,
-        destination_path,
-        server_id=None,
-        server_update: bool = False,
-        proc_id=None,
-        user_id=None,
-        base_include_path=None,
+        zip_path: str,
+        destination_path: Path,
+        server_id: str | None = None,
+        server_update: bool = False,  # noqa: FBT001, FBT002
+        proc_id: str | None = None,
+        user_id: str | None = None,
+        base_include_path: str | None = None,
     ) -> None:
         """
-        Unzips zip file at zip_path to location generated at new_dir based on zip
-        contents.
+        Unzips zip file at zip_path.
+
+        Unzips to location generated at new_dir based on zipcontents.
+
+        Boat Note: I'm less convinced about the ruff exception on server_update, I'll
+        leave it for now but happy to re-architect this function to resolve that later.
 
         Args:
             zip_path: Path to zip file to unzip.
+            destination_path: Where the zip file should be unziped to.
+            server_id: The ID of the server associated with this unzip, used for
+                websocket broadcasts.
             server_update: Will skip ignored items list if not set to true. Used for
-            updating bedrock servers.
+                updating bedrock servers.
+            proc_id: Used for websocket broadcasts, not sure what this is.
+            user_id: Used for websocket broadcasts.
+            base_include_path: Used for file/path exclusions.
 
-        Returns: None
+        Raises:
+            OSError: If there are file permission or other issue that prevent file
+            operations. All call sites should check for OSError.
 
         """
-        ignored_names = [
-            "server.properties",
-            "permissions.json",
-            "allowlist.json",
-        ]
-        server_users = user_id
-        if not server_users:
-            server_users = PermissionsServers.get_server_user_list(server_id)
+        # This function is not perfect, likely needs a rewrite.
+        # I don't understand enough about this function to rewrite it at the moment.
+        # It's trying to do too much, the functionality should be more
+        # compartmentalized. Having this function also handle websockets is difficult.
 
-        # make sure we're able to access the zip file
-        if Helpers.check_file_perms(zip_path) and os.path.isfile(zip_path):
-            # make sure the directory we're unzipping this to exists
-            Helpers.ensure_dir_exists(destination_path)
-            with zipfile.ZipFile(zip_path, "r") as zip_ref:
-                files_list = zip_ref.namelist()
-                for idx, file in enumerate(files_list):
-                    info = zip_ref.getinfo(file)
-                    # Skip directory entries
-                    if info.is_dir():
-                        continue
-                    target = Path(destination_path, file).resolve()
-                    try:
-                        self.helper.validate_traversal(destination_path, target)
-                    except ValueError:
-                        self.send_percentage(server_users, 100, proc_id, True)
-                        return logger.error("Traversal detected. Dumping out.")
-                    # if the file is one of our ignored names we'll skip it
-                    if self.should_extract(
-                        file, base_include_path, ignored_names, server_update
-                    ):
-                        info.filename = self.get_archive_internal_name(
-                            file, base_include_path
-                        )
-                        try:
-                            zip_ref.extract(info, destination_path)
-                        except FileNotFoundError:
-                            logger.error(
-                                "Could not extract file: %s to %s from archive %s",
-                                file,
-                                destination_path,
-                                zip_path,
-                            )
-                    percent = round((idx / len(files_list)) * 100)
-                    self.send_percentage(server_users, percent, proc_id, False)
-            self.send_percentage(server_users, 100, proc_id, True)
+        recipients = self._normalize_websocket_recipients(server_id, user_id)
+
+        # I've unwrapped explicitly permission checks before the rest of this function.
+        # Doing so before actually unzipping is a bit of a TOCTOU error and is better
+        # handled by catching OSError around call sites rather than explicitly checking
+        # it here. All call sites must then check for OSError on this function.
+
+        # make sure the directory we're unzipping this to exists
+        Helpers.ensure_dir_exists(destination_path)
+        with zipfile.ZipFile(zip_path, "r") as zip_ref:
+            files_list = zip_ref.namelist()
+            for idx, file in enumerate(files_list):
+                info = zip_ref.getinfo(file)
+                # Skip directory entries
+                if info.is_dir():
+                    continue
+
+                target = Path(destination_path, file).resolve()
+                try:
+                    self.helper.validate_traversal(destination_path, target)
+                except ValueError:
+                    self.send_percentage(
+                        recipients,
+                        BackupPercentageBroadcast(
+                            id=proc_id,
+                            percent=100,
+                            complete=True,
+                        ),
+                    )
+                    return logger.exception("Traversal detected. Dumping out.")
+
+                # if the file is one of our ignored names we'll skip it
+                if not self.should_extract(
+                    file,
+                    base_include_path,
+                    self.UNZIP_IGNORED_NAMES,
+                    server_update,
+                ):
+                    continue
+
+                info.filename = self.get_archive_internal_name(
+                    file,
+                    base_include_path,
+                )
+                try:
+                    zip_ref.extract(info, destination_path)
+                except FileNotFoundError:
+                    logger.exception(
+                        "Could not extract file: %s to %s from archive %s",
+                        file,
+                        destination_path,
+                        zip_path,
+                    )
+                percent = round((idx / len(files_list)) * 100)
+                self.send_percentage(
+                    recipients,
+                    BackupPercentageBroadcast(
+                        id=proc_id,
+                        percent=percent,
+                        complete=False,
+                    ),
+                )
+        self.send_percentage(
+            recipients,
+            BackupPercentageBroadcast(id=proc_id, percent=100, complete=True),
+        )
+
+        return None
 
     @staticmethod
-    def get_absolute_path(server_path, path) -> str:
-        """Takes requested path and returns absolute path
+    def get_absolute_path(server_path: str, path: str) -> str:
+        """
+        Take requested path and returns absolute path.
 
         Args:
             server_path (str): requested server's root path
@@ -618,6 +944,7 @@ class FileHelpers:
 
         Returns:
             _type_: Path
+
         """
         request_path = path
         if not Path(path).is_absolute():
@@ -635,20 +962,22 @@ class FileHelpers:
             repository_location: Path to the backup repository.
 
         Return: Path to chunk in repository.
+
         """
         hash_hex = CryptoHelper.bytes_to_hex(chunk_hash)
-        if len(hash_hex) != 128:
-            raise ValueError(
-                f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(chunk_hash)}"
-            )
+        if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
+            err_msg = f"Provided hash is of incorrect length. Hash: {
+                CryptoHelper.bytes_to_hex(chunk_hash)
+                }."
+            raise ValueError(err_msg)
         return repository_location / "chunks" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
     def get_file_path_from_hash(file_hash: bytes, repository_location: Path) -> Path:
         """
-        Get path to file manifest file in repository location given file hash and
-        repository location.
+        Get path to file manifest file in repository location.
+
+        This is constructed given file hash and repository location.
 
         Args:
             file_hash: Hash of file.
@@ -658,27 +987,29 @@ class FileHelpers:
 
         """
         hash_hex: str = CryptoHelper.bytes_to_hex(file_hash)
-        if len(hash_hex) != 128:
-            raise ValueError(
-                f"Provided hash is of incorrect length."
-                f"Hash: {CryptoHelper.bytes_to_hex(file_hash)}"
-            )
+        if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
+            err_msg = f"Provided hash is of incorrect length. Hash: {
+                CryptoHelper.bytes_to_hex(file_hash)
+                }"
+            raise ValueError(err_msg)
         return repository_location / "files" / hash_hex[:2] / hash_hex[-126:]
 
     @staticmethod
-    def discover_files(target_path: Path, exclusions) -> list[Path]:
+    def discover_files(target_path: Path, exclusions: list[str]) -> list[Path]:
         """
-        Returns a list of all files in a target path, ignores empty directories.
+        Return a list of all files in a target path, ignores empty directories.
 
         Args:
             target_path: Path to find all files in.
+            exclusions: File path(s) to exclude from this file discovery.
 
         Returns: List of all files in target path.
 
         """
         # Check that target is a directory.
         if not target_path.is_dir():
-            raise NotADirectoryError(f"{target_path} is not a directory.")
+            err_msg = f"{target_path} is not a directory."
+            raise NotADirectoryError(err_msg)
 
         discovered_files = []
         excluded_dirs = []
@@ -701,14 +1032,14 @@ class FileHelpers:
 
     def clean_old_backups(self, num_to_keep: int, backup_repository_path: Path) -> None:
         """
-        Remove all old backups from the backup repository based on number of backups to
-        keep.
+        Remove all old backups from the backup repository.
+
+        Based on number of backups to keep.
 
         Args:
             num_to_keep: Number of backups to keep. Keeps latest n.
             backup_repository_path: Path to the backup repository.
 
-        Return:
         """
         if num_to_keep <= 0:
             return
@@ -727,7 +1058,7 @@ class FileHelpers:
                 datetime.datetime.strptime(
                     manifest_file.name.split(".")[0],
                     self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
-                )
+                ).astimezone(),
             )
 
         # sort list of manifests.
@@ -751,34 +1082,41 @@ class FileHelpers:
         self.delete_unused_manifest_files(manifests_datetime, manifest_files_list)
 
         files_to_keep, chunks_to_keep = self.create_file_keepers_set(
-            backup_repository_path, manifests_datetime
+            backup_repository_path,
+            manifests_datetime,
         )
 
         # Delete unused files and chunks.
         self.delete_unused_items_from_repository(
-            files_to_keep, backup_repository_path, False
+            files_to_keep,
+            backup_repository_path,
+            SnapshotFileTypes.FILES,
         )
         self.delete_unused_items_from_repository(
-            chunks_to_keep, backup_repository_path, True
+            chunks_to_keep,
+            backup_repository_path,
+            SnapshotFileTypes.CHUNKS,
         )
 
     @staticmethod
     def delete_unused_items_from_repository(
-        items_to_keep: set[bytes], backup_repository_path: Path, mode: bool
+        items_to_keep: set[bytes],
+        backup_repository_path: Path,
+        mode: SnapshotFileTypes,
     ) -> None:
         """
-        Delete unused chunks for files from the backup repository. Switches type based
-        on mode.
+        Delete unused chunks for files from the backup repository.
+
+        Switches type based on mode.
 
         Args:
             items_to_keep: Set of chunks or files to keep.
             backup_repository_path: Path to backup repository.
-            mode: False for file, True for chunks.
+            mode: Which snapshot files to operate on.
 
-        Return:
         """
         # Mode False = files. True = chunks.
-        if mode:
+        if mode == SnapshotFileTypes.CHUNKS:
             item_manifests_path = backup_repository_path / "chunks"
         else:
             item_manifests_path = backup_repository_path / "files"
@@ -802,12 +1140,14 @@ class FileHelpers:
         manifest_files_list: list[Path],
     ) -> None:
         """
-        Deletes unused backup manifest files from the backup repository.
-        :param manifest_files_to_keep: List of manifest files to keep. Datetime list of
-        backups to keep.
-        :param manifest_files_list: List of all files currently found in the backup
-        repository.
-        :return:
+        Delete unused backup manifest files from the backup repository.
+
+        Args:
+            manifest_files_to_keep: List of manifest files to keep. Datetime list of
+                backups to keep.
+            manifest_files_list: List of all files currently found in the backup
+                repository.
+
         """
         # This is a little nasty.
         # Iterate over files found in the backup repository.
@@ -818,28 +1158,35 @@ class FileHelpers:
                 datetime.datetime.strptime(
                     manifest_file.name.split(".")[0],
                     self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
-                )
+                ).astimezone()
                 not in manifest_files_to_keep
             ):
                 # Delete the file.
                 manifest_file.unlink(missing_ok=True)
 
     def create_file_keepers_set(
-        self, backup_repository_path: Path, keepers_datetime_list
-    ) -> (set[bytes], set[bytes]):
+        self,
+        backup_repository_path: Path,
+        keepers_datetime_list: list[datetime.datetime],
+    ) -> tuple[set[bytes], set[bytes]]:
         """
-        Creates a set of files to keep from a given backup manifest files to keep.
+        Create a set of files to keep from a given backup manifest files to keep.
 
         Args:
             backup_repository_path: Path to backup repository.
             keepers_datetime_list: List of manifest files to keep. Datetime list.
 
         Returns: Set of files to keep, set of chunks to keep.
+
+        Raises:
+            RuntimeError: If the manifest file can not be read, the manifest is not of
+            the correct version number, down downstream file errors.
+
         """
         files_to_keep = set()
         for keeper_manifest_datetime in keepers_datetime_list:
             backup_time = keeper_manifest_datetime.strftime(
-                self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING
+                self.SNAPSHOT_BACKUP_DATE_FORMAT_STRING,
             )
             # Open file
             manifest_file_path = (
@@ -848,17 +1195,16 @@ class FileHelpers:
             try:
                 manifest_file: io.TextIOWrapper = manifest_file_path.open("r")
             except OSError as why:
-                raise RuntimeError(
-                    f"Unable to open manifest file at {manifest_file_path}"
-                ) from why
+                err_msg = f"Unable to open manifest file at {manifest_file_path}"
+                raise RuntimeError(err_msg) from why
 
             # Check that manifest is readable with this version.
             if manifest_file.readline() != "00\n":
                 manifest_file.close()
-                raise RuntimeError(
-                    f"Backup manifest is not of correct version. Manifest: "
-                    f"{manifest_file_path}."
-                )
+                err_msg = f"Backup manifest is not of correct version. Manifest: {
+                    manifest_file_path
+                    }."
+                raise RuntimeError(err_msg)
 
             for line in manifest_file:
                 # Add hash to keep to output set.
@@ -872,14 +1218,17 @@ class FileHelpers:
         # Iterate over files to keep, and record all chunks to keep for those files.
         for file_to_keep in files_to_keep:
             file_chunks = self.get_keeper_chunks_file_file_hash(
-                backup_repository_path, file_to_keep
+                backup_repository_path,
+                file_to_keep,
             )
             for chunk in file_chunks:
                 keeper_chunks.add(chunk)
         return files_to_keep, keeper_chunks
 
     def get_keeper_chunks_file_file_hash(
-        self, backup_repository_location: Path, file_hash: bytes
+        self,
+        backup_repository_location: Path,
+        file_hash: bytes,
     ) -> list[bytes]:
         """
         Get chunks that should be kept based on given file.
@@ -892,38 +1241,36 @@ class FileHelpers:
 
         """
         file_manifest_path: Path = self.get_file_path_from_hash(
-            file_hash, backup_repository_location
+            file_hash,
+            backup_repository_location,
         )
 
         # Open file and read keeper chunks.
         try:
             file_manifest_file = file_manifest_path.open("r")
         except OSError as why:
-            raise RuntimeError(
-                f"Unable to open file manifest file at {file_manifest_path}"
-            ) from why
+            err_msg = f"Unable to open file manifest file at {file_manifest_path}"
+            raise RuntimeError(err_msg) from why
 
         if file_manifest_file.readline() != "00\n":
             file_manifest_file.close()
-            raise RuntimeError(
+            err_msg = (
                 f"File manifest file {file_manifest_path} is not of a readable version."
             )
+            raise RuntimeError(err_msg)
 
-        output = set()
+        output: set[bytes] = set()
 
         for line in file_manifest_file:
             output.add(CryptoHelper.b64_to_bytes(line))
 
-        output_list: list[bytes] = []
-        for item in output:
-            output_list.append(item)
-
-        return output_list
+        return list(output)
 
     @staticmethod
     def get_local_path_with_base(desired_path: Path, base: Path) -> str:
         """
-        Removes base from given path.
+        Remove base from given path.
+
         Given:
             Path: /root/example.md
             Base: /root/
@@ -935,10 +1282,14 @@ class FileHelpers:
 
         Returns: Local path to file.
 
+        Raises:
+            OSError if given a child path that is not in the parent.
+
         """
         # Check that file is contained in base, and the base is a directory.
         if base not in desired_path.parents:
-            raise OSError(f"{desired_path} is not a child of {base}.")
+            err_msg = f"{desired_path} is not a child of {base}."
+            raise OSError(err_msg)
 
         return str(desired_path.resolve())[len(str(base.resolve())) + 1 :]
 
@@ -947,11 +1298,13 @@ class FileHelpers:
         source_file: Path,
         repository_location: Path,
         file_hash: bytes,
-        use_compression: bool,
+        use_compression: bool,  # noqa: FBT001
     ) -> None:
         """
-        Saves given file to repository location. Will not save duplicate files or
-        duplicate chunks. All errors resolve to RuntimeErrors.
+        Save given file to repository location.
+
+        Will not save duplicate files or duplicate chunks. All errors resolve to
+        RuntimeErrors.
 
         Args:
             source_file: Source file to save to the backup repository.
@@ -959,19 +1312,22 @@ class FileHelpers:
             file_hash: Hash of file.
             use_compression: If the file in the backup repository should be compressed.
 
-        Returns:
+        Raises:
+            RuntimeError: if the given file has is of the incorrect length, the file can
+            not be read, the file can can not be opned, or downstream file and chunk
+            write errors.
 
         """
         # File is read and saved in 20mb chunks. Should allow memory use to stay low and
         # for files to be processed that are larger than available memory.
         try:
             file_manifest_file_location: Path = self.get_file_path_from_hash(
-                file_hash, repository_location
+                file_hash,
+                repository_location,
             )
         except ValueError as why:
-            raise RuntimeError(
-                "Provided file hash does not appear to be of improper length!"
-            ) from why
+            err_msg = "Provided file hash does not appear to be of improper length!"
+            raise RuntimeError(err_msg) from why
 
         # Exit if file is already present in the backup repository. Ensure that we don't
         # try to save the save file twice.
@@ -983,16 +1339,18 @@ class FileHelpers:
         try:
             source_file_obj = source_file.open("rb")
         except OSError as why:
-            raise RuntimeError(f"Unable to read file at {source_file}.") from why
+            err_msg = f"Unable to read file at {source_file}."
+            raise RuntimeError(err_msg) from why
 
         # Open target file manifest file to write chunks.
         try:
             file_manifest_file = file_manifest_file_location.open("w+")
         except OSError as why:
             source_file_obj.close()
-            raise RuntimeError(
+            err_msg = (
                 f"Unable to open file manifest file at {file_manifest_file_location}."
-            ) from why
+            )
+            raise RuntimeError(err_msg) from why
 
         # Begin reading source and writing to manifest file.
         # Write file manifest file version number as first line.
@@ -1016,20 +1374,21 @@ class FileHelpers:
             try:
                 self.save_chunk(chunk, repository_location, chunk_hash, use_compression)
             except RuntimeError as why:
-                raise RuntimeError(
-                    f"Unable to save chunk with hash {chunk_hash}."
-                ) from why
+                err_msg = f"Unable to save chunk with hash {chunk_hash}."
+                raise RuntimeError(err_msg) from why
 
     def save_chunk(
         self,
         file_chunk: bytes,
         repository_location: Path,
         chunk_hash: bytes,
-        use_compression: bool,
+        use_compression: bool,  # noqa: FBT001
     ) -> None:
         """
-        Saves chunk to backup repository. Space is made in this version of the chunk
-        for encryption, but that functionality is not yet present.
+        Save chunk to backup repository.
+
+        Space is made in this version of the chunk for encryption, but that
+        functionality is not yet present.
 
         Args:
             file_chunk: chunk data to save to file.
@@ -1037,7 +1396,8 @@ class FileHelpers:
             chunk_hash: hash of chunk.
             use_compression: If the chunk should be compressed before saving to file.
 
-        Return:
+        Raises:
+            RuntimeError: When there is an error saving the chunk to disk.
 
         """
         file_location = self.get_chunk_path_from_hash(chunk_hash, repository_location)
@@ -1071,10 +1431,14 @@ class FileHelpers:
             with file_location.open("wb+") as file:
                 file.write(output)
         except OSError as why:
-            raise RuntimeError(f"Unable to save chunk to {file_location}") from why
+            err_msg = f"Unable to save chunk to {file_location}"
+            raise RuntimeError(err_msg) from why
 
     def read_file(
-        self, file_hash: bytes, target_path: Path, backup_repo_path: Path
+        self,
+        file_hash: bytes,
+        target_path: Path,
+        backup_repo_path: Path,
     ) -> None:
         """
         Read file from file manifest, restores to target path.
@@ -1084,37 +1448,43 @@ class FileHelpers:
             target_path: Path to restore file to.
             backup_repo_path: Path to the backup repo.
 
-        Returns:
+        Raises:
+            RuntimeError: When the given file hash is not of the correct length, If
+            there is an issue opening the targeted file path, if the file manifest is
+            not of the correct version, or if there is an error restoring a chunk to the
+            target file.
 
         """
         # Get file manifest file path.
         try:
             source_file_manifest_path: Path = self.get_file_path_from_hash(
-                file_hash, backup_repo_path
+                file_hash,
+                backup_repo_path,
             )
         except ValueError as why:
-            raise RuntimeError(
-                f"Provided hash does not appear to be of proper length. Hash: "
-                f"{CryptoHelper.bytes_to_hex(file_hash)}"
-            ) from why
+            err_msg = f"Provided hash does not appear to be of proper length. Hash: {
+                CryptoHelper.bytes_to_hex(file_hash)}"
+            raise RuntimeError(err_msg) from why
 
         # Ensure target folder exists.
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Open target.
         try:
-            target_file: io.BufferedReader = target_path.open("wb+")
+            target_file: io.BufferedRandom = target_path.open("wb+")
             source_file_manifest = source_file_manifest_path.open("r")
         except OSError as why:
-            raise RuntimeError("Error opening file for backup restore.") from why
+            err_msg = f"Error opening file at {target_path} for backup restore."
+            raise RuntimeError(err_msg) from why
 
         # Ensure manifest version is of expected value.
         if source_file_manifest.readline() != "00\n":
             target_file.close()
             source_file_manifest.close()
-            raise RuntimeError(
-                f"File manifest is not of correct version. File: {file_hash}."
-            )
+
+            err_msg = f"File manifest is not of correct version. File: {file_hash}."
+
+            raise RuntimeError(err_msg)
 
         # Iterate over file manifest and restore file.
         for line in source_file_manifest:
@@ -1124,23 +1494,29 @@ class FileHelpers:
             except RuntimeError as why:
                 target_file.close()
                 source_file_manifest.close()
-                raise RuntimeError(
-                    f"Error restoring chunk with hash: {chunk_hash}."
-                ) from why
+
+                err_msg = f"Error restoring chunk with hash: {chunk_hash}."
+
+                raise RuntimeError(err_msg) from why
 
         target_file.close()
         source_file_manifest.close()
 
     def read_chunk(self, chunk_hash: bytes, repo_path: Path) -> bytes:
         """
-        Reads data out of a data chunk. Set for version 00 chunks. Does not currently
-        handle encryption.
+        Read data out of a data chunk. Set for version 00 chunks.
+
+        This function does not currently handle encryption.
 
         Args:
             chunk_hash: Hash of chunk to get out of storage.
             repo_path: Path to the backup repository.
 
         Returns: Data in chunk.
+
+        Raises:
+            RuntimeError: If the given chunk can not be read, is not of version 00,
+            or if decompression of the chunk fails.
 
         """
         # Get chunk path.
@@ -1150,22 +1526,25 @@ class FileHelpers:
         try:
             chunk_file: io.BufferedReader = chunk_path.open("rb")
         except OSError as why:
-            raise RuntimeError(
-                f"Unable to read chunk with hash "
-                f"{CryptoHelper.bytes_to_hex(chunk_hash)}."
-            ) from why
+            err_msg = (f"Unable to read chunk with hash {
+                    CryptoHelper.bytes_to_hex(chunk_hash)
+                }.",)
+
+            raise RuntimeError(err_msg) from why
 
         # confirm version byte is expected value.
         version: bytes = chunk_file.read(1)
         if version != bytes.fromhex("00"):
+            # Chunk is of unexpected version here. Close chunk and panic out.
             chunk_file.close()
-            raise RuntimeError(
-                f"Chunk is of unexpected version. Unable to read. Version was "
-                f"{CryptoHelper.bytes_to_hex(version)}."
-            )
+            err_msg = f"Chunk is of unexpected version. Unable to read. Version was {
+                CryptoHelper.bytes_to_hex(version)
+            }."
+
+            raise RuntimeError(err_msg)
 
         # Read encryption byte and none. Code not currently used.
-        # One byte for use encryption byte and 12 bytes of nonce.from
+        # One byte for use encryption byte and 12 bytes of nonce.
         _ = chunk_file.read(13)
 
         # Read compression byte.
@@ -1177,10 +1556,11 @@ class FileHelpers:
             try:
                 chunk_data = self.zlib_decompress_bytes(chunk_data)
             except zlib.error as why:
-                raise RuntimeError(
-                    f"Unable to decompress chunk with hash: "
-                    f"{CryptoHelper.bytes_to_hex(chunk_hash)}."
-                ) from why
+                err_msg = f"Unable to decompress chunk with hash: {
+                    CryptoHelper.bytes_to_hex(chunk_hash)
+                }."
+
+                raise RuntimeError(err_msg) from why
 
         return chunk_data
 
@@ -1200,27 +1580,32 @@ class FileHelpers:
     @staticmethod
     def zlib_decompress_bytes(bytes_to_decompress: bytes) -> bytes:
         """
-        Decompress given bytes with zlib. Can throw zlib.error if bytes are not zlib
-        compressed bytes.
+        Decompress given bytes with zlib.
 
         Args:
             bytes_to_decompress: Bytes to decompress.
 
         Returns: Decompressed bytes.
 
+        Raises:
+            zlib.error: The given bytes were not a zlib compressed blob.
+
         """
         return zlib.decompress(bytes_to_decompress)
 
     @staticmethod
-    def get_dir_size(server_path):
-        """Recursively calculates dir size. Returns size in bytes. Must calculate human
-        readable based on returned data
+    def get_dir_size(server_path: str) -> int:
+        """
+        Recursively calculates dir size. Returns size in bytes.
+
+        Must calculate human readable based on returned data
 
         Args:
             server_path (str): Path to calculate size
 
         Returns:
             _type_: Integer
+
         """
         # because this is a recursive function, we will return bytes,
         # and set human readable later
@@ -1233,12 +1618,12 @@ class FileHelpers:
         return total
 
     @staticmethod
-    def get_drive_free_space(file_location: Path):
+    def get_drive_free_space(file_location: Path) -> int:
+        """Get the free storage available at a give file path."""
         _total, _used, free = shutil.disk_usage(file_location)
         return free
 
     @staticmethod
-    def has_enough_storage(target_size: float, target_free_storage: float):
-        if target_size > target_free_storage:
-            return False
-        return True
+    def has_enough_storage(target_size: float, target_free_storage: float) -> bool:
+        """Compare given free size and free storage for enough space."""
+        return target_size <= target_free_storage
