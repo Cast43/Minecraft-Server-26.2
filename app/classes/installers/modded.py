@@ -5,6 +5,8 @@ import logging
 import subprocess
 from pathlib import Path
 
+from app.classes.models.server_permissions import EnumPermissionsServer
+
 logger = logging.getLogger(__name__)
 
 
@@ -58,7 +60,8 @@ class ModdedInstaller:
                     {"id": new_id},
                     "vterm_new_line",
                     {"line": line + "<br />"},
-                )  # Not limiting to just terminal since it's an install/update status
+                    required_permission=EnumPermissionsServer.TERMINAL,
+                )
 
     def _parse_version(self, command: str):
         match = re.search(

@@ -1,5 +1,6 @@
 let activeUploads = 0;
 let last_tree_view = "";
+const uploadProgressMap = new Map();
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -34,8 +35,11 @@ async function uploadChunk(file, url, chunk, start, end, chunk_hash, totalChunks
                 throw new Error(data.message || 'Unknown error occurred');
             }
             // Update progress bar
-            const progress = (i + 1) / totalChunks * 100;
-            updateProgressBar(Math.round(progress), type, file_num, fileId);
+			const progress = Math.round(((i + 1) / totalChunks) * 100);
+			const previousProgress = uploadProgressMap.get(fileId) || 0;
+			const newProgress = Math.max(previousProgress, progress);
+			uploadProgressMap.set(fileId, newProgress);
+			updateProgressBar(newProgress, type, file_num, fileId);
         });
 }
 

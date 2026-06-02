@@ -239,7 +239,7 @@ class PermissionsServers:
         return permissions_mask
 
     @staticmethod
-    def get_server_user_list(server_id):
+    def get_server_user_list(server_id) -> list[str]:
         final_users = []
         server_roles = RoleServers.select().where(RoleServers.server_id == server_id)
         super_users = Users.select(Users.user_id).where(
