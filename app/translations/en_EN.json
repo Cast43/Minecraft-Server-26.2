@@ -157,7 +157,11 @@
         "stop": "Stop",
         "storage": "Storage",
         "version": "Version",
-        "welcome": "Welcome to Crafty Controller"
+        "welcome": "Welcome to Crafty Controller",
+        "stopAll": "Stop All",
+        "stopAllConfirm": "Are you sure you want to stop all running servers?",
+        "stopAllServers": "Stop All Servers",
+        "stoppingServers": "Please be patient while we stop all servers."
     },
     "datatables": {
         "i18n": {
