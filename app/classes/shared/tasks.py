@@ -202,7 +202,7 @@ class TasksManager:
                 case _:
                     try:
                         svr.send_command(command)
-                    except AttributeError as e:
+                    except AttributeError:
                         server_users = PermissionsServers.get_server_user_list(
                             svr.server_id
                         )
