@@ -967,6 +967,8 @@ class ApiServersServerFilesZipHandler(BaseApiHandler):
             )
         if Helpers.check_file_exists(target_file):
             destination_path = Path(target_file).parents[0]
+            # Unzip file can throw OSError here, but this was true before my changes.
+            # Leaving this call site as-is for now but happy to change it if needed.
             unzip_thread = threading.Thread(
                 target=self.file_helper.unzip_file,
                 daemon=True,
