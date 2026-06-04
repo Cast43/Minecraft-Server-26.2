@@ -9,6 +9,7 @@
 ### Bug fixes
 - Fix general users not being able to edit themselves ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1016))
 - Improve upload progress bar consistency ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1023))
+- Improve terminal performance for noizy servers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1022))
 - Allow users to access terminal buffer without log perms ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/869))
 - Fix headers for remote requests agents ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1019))
 ### Tweaks
