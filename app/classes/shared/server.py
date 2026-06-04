@@ -10,6 +10,7 @@ import subprocess
 import threading
 import time
 from contextlib import redirect_stderr
+import queue
 from pathlib import Path
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -140,31 +141,67 @@ class ServerOutBuf:
         self.line_buffer = ""
         ServerOutBuf.lines[self.server_id] = []
 
-    def process_byte(self, char):
-        if char == "\n":
-            line = self.line_buffer.rstrip("\r")
-            ServerOutBuf.lines[self.server_id].append(line)
+    def start_reader(self):
+        self._queue = queue.Queue()
 
-            self.new_line_handler(line)
-            self.line_buffer = ""
-            # Limit list length to self.max_lines:
-            if len(ServerOutBuf.lines[self.server_id]) > self.max_lines:
-                ServerOutBuf.lines[self.server_id].pop(0)
-        else:
-            self.line_buffer += char
+        def reader():
+            text_wrapper = io.TextIOWrapper(
+                self.proc.stdout,
+                encoding="UTF-8",
+                errors="ignore",
+                newline=None,
+                line_buffering=True,
+            )
 
-    def check(self):
-        text_wrapper = io.TextIOWrapper(
-            self.proc.stdout, encoding="UTF-8", errors="ignore", newline=""
-        )
+            while True:
+                line = text_wrapper.readline()
+                if not line:
+                    break
+                self._queue.put(line)
+
+        t = threading.Thread(target=reader, daemon=True)
+        t.start()
+
+    def process_line(self, line):
+        linetemp = line.rstrip("\n")
+        new_lines = linetemp.split("\n")
+
+        for tmp in new_lines:
+            ServerOutBuf.lines[self.server_id].append(tmp)
+
+        self.new_line_handler(linetemp)
+
+        # Limit list length to self.max_lines:
+        if len(ServerOutBuf.lines[self.server_id]) > self.max_lines:
+            x = len(ServerOutBuf.lines[self.server_id]) - self.max_lines
+            del ServerOutBuf.lines[self.server_id][:x]
+
+    def check(self, batch_size=20, timeout=0.00):
+
+        buffer = []
+        self.start_reader()
+
         while True:
-            if self.proc.poll() is None:
-                char = text_wrapper.read(1)
-                self.process_byte(char)
-            else:
-                flush = text_wrapper.read()
-                for char in flush:
-                    self.process_byte(char)
+            # Check if new data available (non-blocking)
+            # rlist, _, _ = select.select([fd], [], [], timeout)
+
+            try:
+                line = self._queue.get(timeout=timeout)
+                buffer.append(line)
+
+                if len(buffer) >= batch_size:
+                    self.process_line("".join(buffer))
+                    buffer.clear()
+
+            except queue.Empty:
+                # If timeout then flush
+                if buffer:
+                    self.process_line("".join(buffer))
+                    buffer.clear()
+
+            if self.proc.poll() is not None and self._queue.empty():
+                if buffer:
+                    self.process_line("".join(buffer))
                 break
 
     def new_line_handler(self, new_line):
