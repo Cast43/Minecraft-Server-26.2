@@ -117,6 +117,18 @@ class WebSocketManager(metaclass=Singleton):
 
         self.broadcast_with_fn(filter_fn, event_type, data)
 
+    def broadcast_to_server_users(self, server_id: str, event_type: str, data):
+        """Send an event to users with permission to access a server.
+
+        Args:
+            server_id (str): Server id used to look up permitted users.
+            event_type (str): Client-side event name to emit.
+            data: JSON-serializable payload for the event.
+        """
+        server_users = PermissionsServers.get_server_user_list(server_id)
+        for user in server_users:
+            self.broadcast_user(user, event_type, data)
+
     def broadcast_user_page(self, page: str, user_id: str, event_type: str, data):
         """Send an event to a user's clients on a specific page.
 
