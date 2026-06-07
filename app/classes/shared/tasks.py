@@ -819,6 +819,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": json.loads(
                                     host_stats.get("disk_json").replace("'", '"')
                                 ),
@@ -839,6 +840,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": {},
                             },
                         )

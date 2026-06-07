@@ -64,7 +64,7 @@
                       data.get('hosts_data').get('cpu_usage') }}</span>
                   </p>
                   <p id="mem_usage" class="mb-0 text-danger" data-toggle="tooltip" data-placement="top"
-                    title="{{ translate('dashboard', 'memUsage', data['lang']) }}: {{ data.get('hosts_data').get('mem_usage') }}">
+                    title="{{ translate('dashboard', 'memUsage', data['lang']) }}: {{ data.get('hosts_data').get('mem_usage') }} / {{ data.get('hosts_data').get('mem_total') }}">
                     {{ translate('dashboard', 'memUsage', data['lang']) }}: <span id="mem_percent">{{
                       data.get('hosts_data').get('mem_percent') }}%</span>
                   </p>
@@ -950,7 +950,7 @@
         let cpuDataTitle = `{% raw translate('dashboard', 'cpuCores', data['lang']) %}: ${hostStats.cpu_cores} <br /> {% raw translate("dashboard", "cpuCurFreq", data['lang']) %}: ${hostStats.cpu_cur_freq} <br /> {% raw translate("dashboard", "cpuMaxFreq", data['lang']) %}: ${hostStats.cpu_max_freq}`;
         cpu_data.setAttribute('data-original-title', cpuDataTitle);
         cpu_usage.textContent = hostStats.cpu_usage;
-        mem_usage.setAttribute('data-original-title', `{% raw translate("dashboard", "memUsage", data['lang']) %}: ${hostStats.mem_usage}`);
+        mem_usage.setAttribute('data-original-title', `{% raw translate("dashboard", "memUsage", data['lang']) %}: ${hostStats.mem_usage} / ${hostStats.mem_total}`);
         mem_percent.textContent = hostStats.mem_percent + '%';
 
         var storage_html = '<div class="row">';
