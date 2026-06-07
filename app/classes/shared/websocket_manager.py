@@ -77,21 +77,6 @@ class WebSocketManager(metaclass=Singleton):
 
         self.broadcast_with_fn(filter_fn, event_type, data)
 
-    def broadcast_user_page_params(
-        self, page: str, params: dict, user_id: str, event_type: str, data
-    ):
-        def filter_fn(client):
-            if client.get_user_id() != user_id:
-                return False
-            if client.page != page:
-                return False
-            for key, param in params.items():
-                if param != client.page_query_params.get(key, None):
-                    return False
-            return True
-
-        self.broadcast_with_fn(filter_fn, event_type, data)
-
     def broadcast_page_params(
         self, page: str, params: dict, event_type: str, data, **kwargs
     ):
