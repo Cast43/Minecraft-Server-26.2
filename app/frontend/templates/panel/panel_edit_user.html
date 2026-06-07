@@ -381,6 +381,19 @@ data['lang']) }}{% end %}
     outline: 1px solid red !important;
     ;
   }
+
+  /*
+   * Checkboxes inside the roles/permissions tables are placed bare in <td>
+   * cells without a position:relative .form-check wrapper. Bootstrap's default
+   * absolute positioning then anchors them outside the horizontally scrolling
+   * .table-responsive, so they stayed fixed instead of scrolling with their
+   * column. Keep them in normal flow so they track their cell. (#397)
+   */
+  .table-responsive .form-check-input {
+    position: static;
+    margin-top: 0;
+    margin-left: 0;
+  }
 </style>
 <!-- content-wrapper ends -->
 
