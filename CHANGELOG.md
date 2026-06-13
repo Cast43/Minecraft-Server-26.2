@@ -15,6 +15,7 @@
 ### Tweaks
 - Bump cryptography for CVE-2026-26007 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1017))
 - Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
+- Add busy timeout to sqlite connections ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1028))
 <br><br>
 
 ## --- [4.10.4] - 2026/04/19
