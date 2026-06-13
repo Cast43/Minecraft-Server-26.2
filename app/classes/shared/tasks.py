@@ -199,7 +199,14 @@ class TasksManager:
                 case "update_executable":
                     svr.server_upgrade()
                 case _:
-                    svr.send_command(command)
+                    try:
+                        svr.send_command(command)
+                    except AttributeError:
+                        WebSocketManager().broadcast_to_server_users(
+                            svr.server_id,
+                            "send_error",
+                            "Unable to send commands to a offline server",
+                        )
 
             time.sleep(1)
 
@@ -807,6 +814,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": json.loads(
                                     host_stats.get("disk_json").replace("'", '"')
                                 ),
@@ -827,6 +835,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": {},
                             },
                         )

@@ -6,7 +6,6 @@ import subprocess
 from pathlib import PurePosixPath, Path
 
 from app.classes.models.server_permissions import (
-    PermissionsServers,
     EnumPermissionsServer,
 )
 from app.classes.big_bucket.hytale import HytaleJSON
@@ -81,7 +80,6 @@ class HytaleInstaller:
             server_path (Path): path to server directory
             new_id (uuid.UUID): server ID
         """
-        server_users = PermissionsServers.get_server_user_list(new_id)
         install_command = shlex.split(install_command)
         process = subprocess.Popen(
             install_command,
@@ -117,12 +115,11 @@ class HytaleInstaller:
                     encoding="utf-8",
                 ) as auth_file:
                     auth_file.write(url_line)
-                for user in server_users:
-                    self.websocket_manager().broadcast_user(
-                        user,
-                        "hytale_auth",
-                        {"link": line, "server_id": new_id},
-                    )
+                self.websocket_manager().broadcast_to_server_users(
+                    new_id,
+                    "hytale_auth",
+                    {"link": line, "server_id": new_id},
+                )
 
     def _setup_server(self, bb_cache: dict, server_path: Path, new_id: uuid.UUID):
         """Unzips downloaded server archive.

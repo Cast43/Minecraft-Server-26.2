@@ -3,6 +3,7 @@
 ### Refactor
 - Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1024))
 - Sonar refactor: File Helpers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1015))
+- Refactor repeated broadcast logic into new Websocket Manager function ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1032))
 ### New features
 - Add API method to list backup files ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1014))
 - Add "Stop All Servers" button ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1001))
@@ -12,9 +13,13 @@
 - Improve terminal performance for noizy servers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1022))
 - Allow users to access terminal buffer without log perms ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/869))
 - Fix headers for remote requests agents ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1019))
+- Fix command watcher thread crash when sending command to offline server ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1026))
+- Fix permission checkbox behavior during horizontal scroll ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1030))
+- Fix server control nav not collapsing to dropdown on small screens ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1031))
 ### Tweaks
 - Bump cryptography for CVE-2026-26007 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1017))
 - Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
+- Show total system RAM in dashboard memory tooltip ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1034))
 - Add busy timeout to sqlite connections ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1028))
 <br><br>
 

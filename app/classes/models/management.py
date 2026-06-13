@@ -15,7 +15,6 @@ from playhouse.shortcuts import model_to_dict
 from app.classes.models.base_model import BaseModel
 from app.classes.models.users import HelperUsers
 from app.classes.models.servers import Servers
-from app.classes.models.server_permissions import PermissionsServers
 from app.classes.helpers.helpers import Helpers
 from app.classes.shared.websocket_manager import WebSocketManager
 
@@ -150,12 +149,12 @@ class HelpersManagement:
         audit_msg = f"{str(user_data['username']).capitalize()} {log_msg}"
 
         if notify:
-            server_users = PermissionsServers.get_server_user_list(server_id)
-            for user in server_users:
-                try:
-                    WebSocketManager().broadcast_user(user, "notification", audit_msg)
-                except Exception as e:
-                    logger.error(f"Error broadcasting to user {user} - {e}")
+            try:
+                WebSocketManager().broadcast_to_server_users(
+                    server_id, "notification", audit_msg
+                )
+            except Exception as e:
+                logger.error(f"Error broadcasting to server users - {e}")
         auth_logger.info(
             str(log_msg),
             extra={
