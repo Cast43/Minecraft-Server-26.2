@@ -1,5 +1,5 @@
 # Changelog
-## --- [4.10.5] - 2026/06/13
+## --- [4.10.5] - 2026/06/14
 ### Refactor
 - Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1024))
 - Sonar refactor: File Helpers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1015))
@@ -21,6 +21,7 @@
 - Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
 - Show total system RAM in dashboard memory tooltip ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1034))
 - Add busy timeout to sqlite connections ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1028))
+- Use exception instead of error in exception handlers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1038))
 <br><br>
 
 ## --- [4.10.4] - 2026/04/19
