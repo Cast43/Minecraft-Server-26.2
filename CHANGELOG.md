@@ -3,6 +3,7 @@
 ### Refactor
 - Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1024))
 - Sonar refactor: File Helpers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1015))
+- Refactor repeated broadcast logic into new Websocket Manager function ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1032))
 ### New features
 - Add API method to list backup files ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1014))
 - Add "Stop All Servers" button ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1001))
