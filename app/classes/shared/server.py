@@ -708,9 +708,9 @@ class ServerInstance:
                 if user != user_id:
                     WebSocketManager().broadcast_user(user, "send_start_reload", {})
         else:
-            server_users = PermissionsServers.get_server_user_list(self.server_id)
-            for user in server_users:
-                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+            WebSocketManager().broadcast_to_server_users(
+                self.server_id, "send_start_reload", {}
+            )
 
         # Register an shedule for polling server stats when running
         logger.info(f"Polling server statistics {self.name} every {5} seconds")
@@ -965,7 +965,6 @@ class ServerInstance:
 
         # massive resetting of variables
         self.cleanup_server_object()
-        server_users = PermissionsServers.get_server_user_list(self.server_id)
 
         try:
             # remove the stats polling job since server is stopped
@@ -979,8 +978,9 @@ class ServerInstance:
             )
         self.record_server_stats()
 
-        for user in server_users:
-            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        WebSocketManager().broadcast_to_server_users(
+            self.server_id, "send_start_reload", {}
+        )
 
     def restart_threaded_server(self, user_id):
         if self.is_backingup:
@@ -1422,14 +1422,11 @@ class ServerInstance:
         server_users = PermissionsServers.get_server_user_list(self.server_id)
         # check to make sure a backup config actually exists before starting the update
         if len(self.management_helper.get_backups_by_server(self.server_id, True)) <= 0:
-            for user in server_users:
-                WebSocketManager().broadcast_user(
-                    user,
-                    "notification",
-                    "Backup config does not exist for "
-                    + self.name
-                    + ". canceling update.",
-                )
+            WebSocketManager().broadcast_to_server_users(
+                self.server_id,
+                "notification",
+                "Backup config does not exist for " + self.name + ". canceling update.",
+            )
             logger.error(f"Back config does not exist for {self.name}. Update Failed.")
             self.stats_helper.set_update(False)
             return False
@@ -1454,12 +1451,11 @@ class ServerInstance:
         # start backup
         backup_result = self.backup_server(backup_config["backup_id"])
         if backup_result["backup_status"] == "failed":
-            for user in server_users:
-                WebSocketManager().broadcast_user(
-                    user,
-                    "notification",
-                    f"Backup failed for {self.name}. Canceling update.",
-                )
+            WebSocketManager().broadcast_to_server_users(
+                self.server_id,
+                "notification",
+                f"Backup failed for {self.name}. Canceling update.",
+            )
             self.stats_helper.set_update(False)
             return False
         return True
@@ -1473,12 +1469,11 @@ class ServerInstance:
             if len(WebSocketManager().clients) > 0:
                 # There are clients
                 self.check_update()
-                for user in server_users:
-                    WebSocketManager().broadcast_user(
-                        user,
-                        "notification",
-                        f"Executable update finished for {self.name}",
-                    )
+                WebSocketManager().broadcast_to_server_users(
+                    self.server_id,
+                    "notification",
+                    f"Executable update finished for {self.name}",
+                )
                 # sleep so first notif can completely run
                 time.sleep(3)
             for user in server_users:
@@ -1505,27 +1500,25 @@ class ServerInstance:
             if was_started:
                 self.run_threaded_server(HelperUsers.get_user_id_by_name("system"))
         else:
-            for user in server_users:
-                WebSocketManager().broadcast_user(
-                    user,
-                    "notification",
-                    (
-                        f"Executable update failed for {self.name}"
-                        ". Check log file for details."
-                    ),
-                )
+            WebSocketManager().broadcast_to_server_users(
+                self.server_id,
+                "notification",
+                (
+                    f"Executable update failed for {self.name}"
+                    ". Check log file for details."
+                ),
+            )
             logger.error("Executable download failed.")
             self.stats_helper.set_update(False)
         self.update_manager.check_server_version(
             self.settings
         )  # Check to make sure the update was
         # successful and that we match remote
-        for user in server_users:
-            WebSocketManager().broadcast_user(
-                user,
-                "remove_spinner",
-                {"server_id": self.server_id},
-            )
+        WebSocketManager().broadcast_to_server_users(
+            self.server_id,
+            "remove_spinner",
+            {"server_id": self.server_id},
+        )
 
     def threaded_jar_update(self):
         downloaded = False

@@ -7,9 +7,6 @@ import threading
 from pathlib import Path
 
 from app.classes.big_bucket.bigbucket import BigBucket
-from app.classes.controllers.server_perms_controller import (
-    PermissionsServers,
-)
 from app.classes.controllers.servers_controller import ServersController
 from app.classes.helpers.helpers import Helpers
 from app.classes.helpers.file_helpers import FileHelpers
@@ -109,9 +106,7 @@ class ImportHelpers:
                 file.close()
         time.sleep(5)
         ServersController.finish_import(new_id)
-        server_users = PermissionsServers.get_server_user_list(new_id)
-        for user in server_users:
-            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        WebSocketManager().broadcast_to_server_users(new_id, "send_start_reload", {})
 
     def download_steam_server(self, app_id, server_id, server_dir, server_exe):
         download_thread = threading.Thread(
@@ -156,9 +151,7 @@ class ImportHelpers:
 
         # Finalise SteamCMD & game installing status.
         ServersController.finish_import(server_id)
-        server_users = PermissionsServers.get_server_user_list(server_id)
-        for user in server_users:
-            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        WebSocketManager().broadcast_to_server_users(server_id, "send_start_reload", {})
 
     def download_threaded_bedrock_server(self, path, new_id):
         bedrock_url = Helpers.get_latest_bedrock_url()
@@ -187,15 +180,13 @@ class ImportHelpers:
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
-                    server_users = PermissionsServers.get_server_user_list(new_id)
                     logger.error("Failed to download the Bedrock server zip.")
                     ServersController.finish_import(new_id)
-                    for user in server_users:
-                        WebSocketManager().broadcast_user(
-                            user,
-                            "send_error",
-                            {"error": "Failed to download the Bedrock server zip."},
-                        )
+                    WebSocketManager().broadcast_to_server_users(
+                        new_id,
+                        "send_error",
+                        {"error": "Failed to download the Bedrock server zip."},
+                    )
                     return
 
                 unzip_path = self.helper.wtol_path(file_path)
@@ -226,9 +217,7 @@ class ImportHelpers:
             raise e
 
         ServersController.finish_import(new_id)
-        server_users = PermissionsServers.get_server_user_list(new_id)
-        for user in server_users:
-            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        WebSocketManager().broadcast_to_server_users(new_id, "send_start_reload", {})
 
     def download_install_threaded_hytale(self, path, new_id):
         download_thread = threading.Thread(
@@ -240,14 +229,11 @@ class ImportHelpers:
         download_thread.start()
 
     def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
-        server_users = PermissionsServers.get_server_user_list(new_id)
-
         bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
         self.hytale_installer.install(bb_cache, server_path, new_id)
 
         ServersController.finish_import(new_id)
-        for user in server_users:
-            WebSocketManager().broadcast_user(user, "send_start_reload", {})
+        WebSocketManager().broadcast_to_server_users(new_id, "send_start_reload", {})
 
     def download_threaded_exe(self, jar, server, version, path, server_id):
         update_thread = threading.Thread(
@@ -293,14 +279,13 @@ class ImportHelpers:
         if not fetch_url:
             return False
 
-        server_users = PermissionsServers.get_server_user_list(server_id)
-
         # Make sure the server is registered before updating its stats
         while True:
             try:
                 ServersController.set_import(server_id)
-                for user in server_users:
-                    WebSocketManager().broadcast_user(user, "send_start_reload", {})
+                WebSocketManager().broadcast_to_server_users(
+                    server_id, "send_start_reload", {}
+                )
                 break
             except Exception as ex:
                 logger.debug(f"Server not registered yet. Delaying download - {ex}")
@@ -321,12 +306,13 @@ class ImportHelpers:
                     self.modded_installer.install(jar_dir, server_id, server_obj)
 
             # Notify users
-            for user in server_users:
-                WebSocketManager().broadcast_user(
-                    user, "notification", "Executable download finished"
-                )
-                time.sleep(3)  # Delay for user notification
-                WebSocketManager().broadcast_user(user, "send_start_reload", {})
+            WebSocketManager().broadcast_to_server_users(
+                server_id, "notification", "Executable download finished"
+            )
+            time.sleep(3)  # Delay for user notification
+            WebSocketManager().broadcast_to_server_users(
+                server_id, "send_start_reload", {}
+            )
         else:
             logger.error(f"Unable to save jar to {path} due to download failure.")
 
