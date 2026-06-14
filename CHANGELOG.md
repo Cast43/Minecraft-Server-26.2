@@ -1,5 +1,5 @@
 # Changelog
-## --- [4.10.5] - 2026/06/14
+## --- [4.10.5] - 2026/06/15
 ### Refactor
 - Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1024))
 - Sonar refactor: File Helpers ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1015))
@@ -16,6 +16,7 @@
 - Fix command watcher thread crash when sending command to offline server ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1026))
 - Fix permission checkbox behavior during horizontal scroll ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1030))
 - Fix server control nav not collapsing to dropdown on small screens ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1031))
+- Rework Validate Read Perms to Fail-Shut by Default ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1040))
 ### Tweaks
 - Bump cryptography for CVE-2026-26007 ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1017))
 - Fallback code block to automatically parse Java Versions on Arch Linux ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/845))
