@@ -21,29 +21,25 @@ class ApiServersServerLogsHandler(BaseApiHandler):
         )
         server_permissions = self.controller.server_perms.get_permissions(mask)
 
-        # if the user doesn't have access to the server, return an error
-        if server_id not in [str(x["server_id"]) for x in auth_data[0]]:
-            return False
-        if (
-            EnumPermissionsServer.TERMINAL not in server_permissions
-            and EnumPermissionsServer.LOGS not in server_permissions
+        # does user have access to the server?
+        # does user have terminal perms?
+        # does user have log permissions?
+        # is user reading the log file?
+        match (
+            server_id in [str(x["server_id"]) for x in auth_data[0]],
+            EnumPermissionsServer.TERMINAL in server_permissions,
+            EnumPermissionsServer.LOGS in server_permissions,
+            read_log_file,
         ):
-            # if the user doesn't have terminal permission, return an error
-            # since they're trying to get the buffer
-            return False
-
-        if (
-            EnumPermissionsServer.TERMINAL not in server_permissions
-            and not read_log_file
-        ):
-            # if the user doesn't have terminal permission, return an error
-            # since they're trying to get the buffer
-            return False
-        if EnumPermissionsServer.LOGS not in server_permissions and read_log_file:
-            # if the user doesn't have Logs permission, and is trying to read the file
-            # return an error
-            return False
-        return True
+            # allow terminal buffer access
+            case (True, True, _, False):
+                return True
+            # allow log file access
+            case (True, _, True, True):
+                return True
+            # fail-shut
+            case _:
+                return False
 
     def get(self, server_id: str):
         auth_data = self.authenticate_user()
