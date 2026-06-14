@@ -126,7 +126,7 @@ class PasskeyController:
                 expected_origin=self.get_origin(),
             )
         except Exception as e:
-            logger.error("Registration verification failed: %s", e)
+            logger.exception("Registration verification failed: %s", e)
             self.passkey_helper.delete_challenge(challenge_id)
             return False
 
@@ -259,7 +259,7 @@ class PasskeyController:
                 credential_current_sign_count=passkey.sign_count,
             )
         except Exception as e:
-            logger.error("Authentication verification failed: %s", e)
+            logger.exception("Authentication verification failed: %s", e)
             self.passkey_helper.delete_challenge(challenge_id)
             return False
 

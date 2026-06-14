@@ -30,7 +30,7 @@ class HytaleInstaller:
                 server_path, windows_exe, unix_exe
             )
         except KeyError:
-            logger.error("Failed to create Hytale server with keyerror")
+            logger.exception("Failed to create Hytale server with keyerror")
             return
         self._download_component(server_path, unix_exe, windows_exe)
         self._run_installer(install_command, server_path, new_id)
@@ -149,7 +149,7 @@ class HytaleInstaller:
         try:
             hytale_json = HytaleJSON(bb_cache)
         except KeyError:
-            logger.error("Failed to download hytale plugins with keyerror")
+            logger.exception("Failed to download hytale plugins with keyerror")
             return
         logger.info("Installing Nitrado Webserver Plugin to server %s", server_id)
         # make sure our mods dir exists before doing anything

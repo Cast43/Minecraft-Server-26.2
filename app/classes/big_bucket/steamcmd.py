@@ -20,7 +20,7 @@ class SteamGame:
             self.unix_startup_command: str = input_dict["unix_startup_command"]
 
         except KeyError as why:
-            logger.error(f"error reading steamcmd config: {why}")
+            logger.exception(f"error reading steamcmd config: {why}")
 
         self.os: list[OS] = []
 

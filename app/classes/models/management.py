@@ -154,7 +154,7 @@ class HelpersManagement:
                     server_id, "notification", audit_msg
                 )
             except Exception as e:
-                logger.error(f"Error broadcasting to server users - {e}")
+                logger.exception(f"Error broadcasting to server users - {e}")
         auth_logger.info(
             str(log_msg),
             extra={

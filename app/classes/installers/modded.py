@@ -115,7 +115,7 @@ class ModdedInstaller:
             with open(run_path, "r", encoding="utf-8") as f:
                 text = f.read()
         except Exception:
-            logger.error("Failed to read Forge run script.")
+            logger.exception("Failed to read Forge run script.")
             return False
 
         match = re.search(

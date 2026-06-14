@@ -14,7 +14,7 @@ class HytaleCommands:
             # Repeat for all commands...
         except KeyError as why:
             # shape must have changed of json
-            logger.error(LOG_ERROR, why)
+            logger.exception(LOG_ERROR, why)
             raise
 
 
@@ -26,7 +26,7 @@ class HytaleParsingLines:
             self.auth_code_line_start: str = input_dict["auth_code_line_start"]
         except KeyError as why:
             # shape must have changed of json
-            logger.error(LOG_ERROR, why)
+            logger.exception(LOG_ERROR, why)
             raise
 
 
@@ -39,7 +39,7 @@ class HytalePlugins:
             # Repeat for all plugins...
         except KeyError as why:
             # shape must have changed of json
-            logger.error(LOG_ERROR, why)
+            logger.exception(LOG_ERROR, why)
             raise
 
 
@@ -57,5 +57,5 @@ class HytaleJSON:
             self.plugins: HytalePlugins = HytalePlugins(input_dict["plugins"])
         except KeyError as why:
             # shape must have changed of json
-            logger.error(LOG_ERROR, why)
+            logger.exception(LOG_ERROR, why)
             raise

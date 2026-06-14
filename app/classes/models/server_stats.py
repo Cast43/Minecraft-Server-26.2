@@ -155,7 +155,7 @@ class HelperServerStats:
                     }
                 )
         except IndexError as ex:
-            logger.error(
+            logger.exception(
                 f"Stats collection failed with error: {ex}. Was a server just created?"
             )
         self.database.close()
@@ -436,7 +436,7 @@ class HelperServerStats:
                 self.database
             )
         except DoesNotExist as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
 
@@ -464,7 +464,7 @@ class HelperServerStats:
                 self.database
             )
         except Exception as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
         ServerStats.update(first_run=False).where(
@@ -512,7 +512,7 @@ class HelperServerStats:
                 self.database
             )
         except DoesNotExist as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
         ServerStats.update(waiting_start=value).where(

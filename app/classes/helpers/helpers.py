@@ -218,7 +218,7 @@ class Helpers:
                     return remote_version
 
         except Exception as e:
-            logger.error(f"Unable to check for new crafty version! \n{e}")
+            logger.exception(f"Unable to check for new crafty version! \n{e}")
         return False
 
     @staticmethod
@@ -261,7 +261,7 @@ class Helpers:
             return bedrock_data["linux_stable"]
 
         except Exception as e:
-            logger.error(f"Unable to resolve remote bedrock download url! \n{e}")
+            logger.exception(f"Unable to resolve remote bedrock download url! \n{e}")
             raise e
 
     def get_execution_java(self, value, execution_command):
@@ -363,7 +363,7 @@ class Helpers:
                 if re.match("^(/[^/ ]*)+/?$", paths):
                     return paths.split("\n")
             except Exception as e:
-                logger.error(f"Java Detect Error: {e}")
+                logger.exception(f"Java Detect Error: {e}")
             return []  # handle all execution paths
 
         logger.warning("sbin/update-alternatives not found! Trying archlinux-java")
@@ -382,7 +382,7 @@ class Helpers:
                         for m in matched
                     ]
             except Exception as e:
-                logger.error(f"Java Detect Error: {e}")
+                logger.exception(f"Java Detect Error: {e}")
         return []  # handle all execution paths
 
     @staticmethod
@@ -826,7 +826,7 @@ class Helpers:
                 data.append(self.update_available)
             return data
         except Exception as e:
-            logger.error(f"Failed to fetch notifications with error: {e}")
+            logger.exception(f"Failed to fetch notifications with error: {e}")
             if self.update_available:
                 data = [self.update_available]
             else:
@@ -1094,7 +1094,7 @@ class Helpers:
                 return contents
 
             except Exception as e:
-                logger.error(f"Unable to read file: {path}. \n Error: {e}")
+                logger.exception(f"Unable to read file: {path}. \n Error: {e}")
                 return False
         else:
             logger.error(
@@ -1127,7 +1127,9 @@ class Helpers:
                     os.remove(self.session_file)
 
             except Exception as e:
-                logger.error(f"Failed to locate existing session.lock with error: {e} ")
+                logger.exception(
+                    f"Failed to locate existing session.lock with error: {e} "
+                )
                 Console.error(
                     f"Failed to locate existing session.lock with error: {e} "
                 )

@@ -48,7 +48,7 @@ class WebhookProvider(ABC):
             response.raise_for_status()
             return "Dispatch successful"
         except requests.RequestException as error:
-            logger.error(error)
+            logger.exception(error)
             raise RuntimeError(f"Failed to dispatch notification: {error}") from error
 
     def render_template(self, template_str, context):
@@ -67,7 +67,7 @@ class WebhookProvider(ABC):
             template = self.jinja_env.from_string(template_str)
             return template.render(context)
         except Exception as error:
-            logger.error(f"Error rendering Jinja2 template: {error}")
+            logger.exception(f"Error rendering Jinja2 template: {error}")
             raise
 
     def add_time_variables(self, event_data):
