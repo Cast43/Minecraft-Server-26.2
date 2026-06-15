@@ -4,9 +4,6 @@ win-dev-build:
   stage: build-and-deploy
   tags:
     - saas-windows-medium-amd64
-  cache:
-    paths:
-      - .venv/
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -20,11 +17,15 @@ win-dev-build:
   script:
     - |
       $ErrorActionPreference = "Stop"
+      if (Test-Path .venv) {
+        Remove-Item -LiteralPath .venv -Recurse -Force
+      }
       C:\\Python312\\python.exe -m venv .venv
       .venv\Scripts\activate.ps1
-      pip install pyinstaller packaging>=24.2
-      pip install -r requirements.txt
-    - pyinstaller -F main.py
+      python -m pip install --upgrade pip setuptools wheel
+      python -m pip install -r requirements.txt
+      python -m pip install --upgrade pyinstaller "packaging>=24.2"
+    - python -m PyInstaller -F main.py
       --distpath .
       --icon app\frontend\static\assets\images\Crafty_4-0_Logo_square.ico
       --name "crafty"
@@ -52,9 +53,6 @@ win-prod-build:
   stage: build-and-deploy
   tags:
     - saas-windows-medium-amd64
-  cache:
-    paths:
-      - .venv/
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
@@ -69,11 +67,15 @@ win-prod-build:
   script:
     - |
       $ErrorActionPreference = "Stop"
+      if (Test-Path .venv) {
+        Remove-Item -LiteralPath .venv -Recurse -Force
+      }
       C:\\Python312\\python.exe -m venv .venv
       .venv\Scripts\activate.ps1
-      pip install pyinstaller packaging>=24.2
-      pip install -r requirements.txt
-    - pyinstaller -F main.py
+      python -m pip install --upgrade pip setuptools wheel
+      python -m pip install -r requirements.txt
+      python -m pip install --upgrade pyinstaller "packaging>=24.2"
+    - python -m PyInstaller -F main.py
       --distpath .
       --icon app\frontend\static\assets\images\Crafty_4-0_Logo_square.ico
       --name "crafty"
