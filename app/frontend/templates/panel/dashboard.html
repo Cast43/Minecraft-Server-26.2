@@ -64,7 +64,7 @@
                       data.get('hosts_data').get('cpu_usage') }}</span>
                   </p>
                   <p id="mem_usage" class="mb-0 text-danger" data-toggle="tooltip" data-placement="top"
-                    title="{{ translate('dashboard', 'memUsage', data['lang']) }}: {{ data.get('hosts_data').get('mem_usage') }}">
+                    title="{{ translate('dashboard', 'memUsage', data['lang']) }}: {{ data.get('hosts_data').get('mem_usage') }} / {{ data.get('hosts_data').get('mem_total') }}">
                     {{ translate('dashboard', 'memUsage', data['lang']) }}: <span id="mem_percent">{{
                       data.get('hosts_data').get('mem_percent') }}%</span>
                   </p>
@@ -161,8 +161,15 @@
             data-placement="top"></span>
           {% end %}
           {% end %}
-          <div><a class="nav-link" href="/server/step1"><i class="ph-fill ph-plus-circle"></i> &nbsp; {{
-              translate('dashboard', 'newServer', data['lang']) }}</a></div>
+          <div class="d-flex align-items-center">
+            {% if data['superuser'] %}
+            <a id="stop_all_servers" class="nav-link text-danger" href="javascript:void(0)"
+                style="{% if data['server_stats']['running'] == 0 %}display:none{% end %}">
+                <i class="ph-fill ph-stop-circle"></i> &nbsp; {{ translate('dashboard', 'stopAllServers', data['lang']) }}</a>
+            {% end %}
+            <a class="nav-link" href="/server/step1"><i class="ph-fill ph-plus-circle"></i> &nbsp; {{
+                translate('dashboard', 'newServer', data['lang']) }}</a>
+          </div>
         </div>
         <div class="card-body">
 
@@ -943,7 +950,7 @@
         let cpuDataTitle = `{% raw translate('dashboard', 'cpuCores', data['lang']) %}: ${hostStats.cpu_cores} <br /> {% raw translate("dashboard", "cpuCurFreq", data['lang']) %}: ${hostStats.cpu_cur_freq} <br /> {% raw translate("dashboard", "cpuMaxFreq", data['lang']) %}: ${hostStats.cpu_max_freq}`;
         cpu_data.setAttribute('data-original-title', cpuDataTitle);
         cpu_usage.textContent = hostStats.cpu_usage;
-        mem_usage.setAttribute('data-original-title', `{% raw translate("dashboard", "memUsage", data['lang']) %}: ${hostStats.mem_usage}`);
+        mem_usage.setAttribute('data-original-title', `{% raw translate("dashboard", "memUsage", data['lang']) %}: ${hostStats.mem_usage} / ${hostStats.mem_total}`);
         mem_percent.textContent = hostStats.mem_percent + '%';
 
         var storage_html = '<div class="row">';
@@ -1025,6 +1032,48 @@
             });
           }
 
+        }
+      });
+    });
+
+    $("#stop_all_servers").click(function () {
+      bootbox.confirm({
+        message: '{% raw translate("dashboard", "stopAllConfirm", data["lang"]) %}',
+        buttons: {
+          confirm: {
+            label: '{% raw translate("dashboard", "stopAll", data["lang"]) %}',
+            className: 'btn-danger'
+          },
+          cancel: {
+            label: '{% raw translate("panelConfig", "cancel", data["lang"]) %}',
+            className: 'btn-secondary'
+          },
+        },
+        callback: function (result) {
+          if (result) {
+            const token = getCookie("_xsrf");
+            fetch('/api/v2/servers/stop_all', {
+              method: 'POST',
+              headers: {
+                'token': token,
+              },
+            }).then(function (response) {
+              return response.json();
+            }).then(function (responseData) {
+              if (responseData.status === "ok") {
+                bootbox.alert({
+                  backdrop: true,
+                  title: '{% raw translate("dashboard", "sendingCommand", data["lang"]) %}',
+                  message: '<div align="center"><i class="ph ph-spinner-gap ph-spin"></i> &nbsp; {% raw translate("dashboard", "stoppingServers", data["lang"]) %}</div>'
+                });
+              } else {
+                bootbox.alert({
+                  title: responseData.error,
+                  message: responseData.error_data
+                });
+              }
+            });
+          }
         }
       });
     });

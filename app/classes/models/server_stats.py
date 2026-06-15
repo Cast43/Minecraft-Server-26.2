@@ -85,7 +85,14 @@ class HelperServerStats:
                 "crafty_server_stats.sqlite",
             )
             self.database = SqliteDatabase(
-                db_file, pragmas={"journal_mode": "wal", "cache_size": -1024 * 10}
+                db_file,
+                pragmas={
+                    "journal_mode": "wal",
+                    "cache_size": -1024 * 10,
+                    "busy_timeout": 5000,  # Allows a wait to hold for up to 5s before
+                    # dropping.
+                    "synchronous": 1,  # NORMAL mode, decrease WAL commit interval.
+                },
             )
             if not os.path.exists(db_file):
                 try:
@@ -119,7 +126,14 @@ class HelperServerStats:
                 "crafty_server_stats.sqlite",
             )
             self.database = SqliteDatabase(
-                db_file, pragmas={"journal_mode": "wal", "cache_size": -1024 * 10}
+                db_file,
+                pragmas={
+                    "journal_mode": "wal",
+                    "cache_size": -1024 * 10,
+                    "busy_timeout": 5000,  # Allows a wait to hold for up to 5s before
+                    # dropping.
+                    "synchronous": 1,  # NORMAL mode, decrease WAL commit interval.
+                },
             )
         except Exception as ex:
             logger.warning(
@@ -141,7 +155,7 @@ class HelperServerStats:
                     }
                 )
         except IndexError as ex:
-            logger.error(
+            logger.exception(
                 f"Stats collection failed with error: {ex}. Was a server just created?"
             )
         self.database.close()
@@ -422,7 +436,7 @@ class HelperServerStats:
                 self.database
             )
         except DoesNotExist as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
 
@@ -450,7 +464,7 @@ class HelperServerStats:
                 self.database
             )
         except Exception as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
         ServerStats.update(first_run=False).where(
@@ -498,7 +512,7 @@ class HelperServerStats:
                 self.database
             )
         except DoesNotExist as ex:
-            logger.error(f"Database entry not found! {ex}")
+            logger.exception(f"Database entry not found! {ex}")
             self.database.close()
             return
         ServerStats.update(waiting_start=value).where(

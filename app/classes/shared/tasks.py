@@ -82,7 +82,7 @@ class TasksManager:
         try:
             self.tz = get_localzone()
         except ZoneInfoNotFoundError as e:
-            logger.error(
+            logger.exception(
                 "Could not capture time zone from system. Falling back to Europe/London"
                 f" error: {e}"
             )
@@ -185,21 +185,28 @@ class TasksManager:
                         svr.cleanup_server_object()
                         svr.record_server_stats()
                     except Exception as e:
-                        logger.error(
+                        logger.exception(
                             f"Could not find PID for requested termsig. Full error: {e}"
                         )
                 case "backup_server":
                     try:
                         svr.server_backup_threader(cmd["action_id"])
                     except (KeyError, DoesNotExist) as why:
-                        logger.error(
+                        logger.exception(
                             "Failed to run server backup on schedule with error %s",
                             why,
                         )
                 case "update_executable":
                     svr.server_upgrade()
                 case _:
-                    svr.send_command(command)
+                    try:
+                        svr.send_command(command)
+                    except AttributeError:
+                        WebSocketManager().broadcast_to_server_users(
+                            svr.server_id,
+                            "send_error",
+                            "Unable to send commands to a offline server",
+                        )
 
             time.sleep(1)
 
@@ -393,7 +400,7 @@ class TasksManager:
             except Exception as e:
                 Console.error(f"Failed to schedule task with error: {e}.")
                 Console.warning(FAILED_DB_IMPORT_MESSAGE)
-                logger.error(f"Failed to schedule task with error: {e}.")
+                logger.exception(f"Failed to schedule task with error: {e}.")
                 logger.warning(FAILED_DB_IMPORT_MESSAGE)
                 # remove items from DB if task fails to add to apscheduler
                 self.controller.management_helper.delete_scheduled_task(schedule_id)
@@ -518,7 +525,7 @@ class TasksManager:
                 new_job = "error"
                 Console.error(f"Failed to schedule task with error: {e}.")
                 Console.warning(FAILED_DB_IMPORT_MESSAGE)
-                logger.error(f"Failed to schedule task with error: {e}.")
+                logger.exception(f"Failed to schedule task with error: {e}.")
                 logger.warning(FAILED_DB_IMPORT_MESSAGE)
                 # remove items from DB if task fails to add to apscheduler
                 self.controller.management_helper.delete_scheduled_task(sch_id)
@@ -807,6 +814,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": json.loads(
                                     host_stats.get("disk_json").replace("'", '"')
                                 ),
@@ -827,6 +835,7 @@ class TasksManager:
                                 "cpu_max_freq": host_stats.get("cpu_max_freq"),
                                 "mem_percent": host_stats.get("mem_percent"),
                                 "mem_usage": host_stats.get("mem_usage"),
+                                "mem_total": host_stats.get("mem_total"),
                                 "disk_usage": {},
                             },
                         )
@@ -898,7 +907,7 @@ class TasksManager:
                 else:
                     path_to_remove.unlink()
             except OSError as why:
-                logger.error(f"Error removing file {path_to_remove}: {why}.")
+                logger.exception(f"Error removing file {path_to_remove}: {why}.")
 
     def check_for_updates(self) -> None:
         """Checks for updates to crafty

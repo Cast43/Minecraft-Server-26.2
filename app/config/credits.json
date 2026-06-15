@@ -88,7 +88,7 @@
 					],
 					"Crafty Advisor"
 				],
-				"blurb": "A Streamer, who is currently working in the insurance industry, self-teaching software development & DevOps, with the hopes of a career change! Enjoys playing games and has a sassy cat called Eve.",
+				"blurb": "DevOps Engineer working in Cybersecurity, Enjoys playing games and has a sassy cat called Eve.",
 				"pic": "/static/assets/images/credits/zedifus.jpg"
 			},
 			{
@@ -105,6 +105,21 @@
 				],
 				"blurb": "Developer at work and at home, testing his own code is a pain, so his coding precept is \"Testing is Doubting\"",
 				"pic": "/static/assets/images/credits/silversthorn.png"
+			},
+			{
+				"name": "Boat",
+				"title": "Software Engineer",
+				"loc": "Colorado, US",
+				"tags": [
+					"Staff",
+					[
+						"Developer",
+						"https://gitlab.com/woutbouckaert"
+					],
+					null
+				],
+				"blurb": "Fully time security professional and computer nerd. Writing python and running Linux since 2015, trying to learn more every day.",
+				"pic": "/static/assets/images/credits/boat.png"
 			}
 		],
 		"support": [

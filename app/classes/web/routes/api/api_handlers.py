@@ -110,6 +110,9 @@ from app.classes.web.routes.api.crafty.exe_cache import (
     ApiCraftySteamCacheIndexHandler,
 )
 from app.classes.web.routes.api.crafty.antilockout.index import ApiCraftyLockoutHandler
+from app.classes.web.routes.api.servers.server.stop_all import (
+    ApiServersServerStopAllHandler,
+)
 
 
 def api_handlers(handler_args):
@@ -330,6 +333,11 @@ def api_handlers(handler_args):
         (
             r"/api/v2/servers/status/?",
             ApiServersServerStatusHandler,
+            handler_args,
+        ),
+        (
+            r"/api/v2/servers/stop_all/?",
+            ApiServersServerStopAllHandler,
             handler_args,
         ),
         (
