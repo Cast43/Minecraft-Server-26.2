@@ -1,11 +1,7 @@
 # Changelog
 ## --- [4.10.6] - 2026/06/15
-### New features
-TBD
 ### Bug fixes
-TBD
-### Tweaks
-TBD
+- Readd packaging to requirements ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1042))
 <br><br>
 
 ## --- [4.10.5] - 2026/06/15
