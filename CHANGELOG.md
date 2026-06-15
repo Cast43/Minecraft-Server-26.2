@@ -1,4 +1,13 @@
 # Changelog
+## --- [4.11.0] - 2026/TBD
+### New features
+TBD
+### Bug fixes
+TBD
+### Tweaks
+TBD
+<br><br>
+
 ## --- [4.10.5] - 2026/06/15
 ### Refactor
 - Sonar refactor: server.py ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1003) | [Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1024))
