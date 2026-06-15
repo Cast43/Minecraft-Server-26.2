@@ -16,26 +16,21 @@ win-dev-build:
   before_script:
     - |
       echo "Prepare python"
-      choco install python --version=3.10.6 -y -f
+      choco install python --version=3.12.9 -y -f
   script:
     - |
       $ErrorActionPreference = "Stop"
-      C:\\Python310\\python.exe -m venv .venv
+      C:\\Python312\\python.exe -m venv .venv
       .venv\Scripts\activate.ps1
-      pip install pyinstaller
+      pip install pyinstaller packaging>=24.2
       pip install -r requirements.txt
     - pyinstaller -F main.py
       --distpath .
       --icon app\frontend\static\assets\images\Crafty_4-0_Logo_square.ico
       --name "crafty"
-      --paths .venv\Lib\site-packages
-      --hidden-import cryptography
-      --hidden-import cffi
-      --hidden-import apscheduler
-      --collect-all tzlocal
-      --collect-all tzdata
-      --collect-all pytz
-      --collect-all six
+      --paths .
+      --collect-submodules app
+      --clean
     - |
       echo "Retrieving 'latest' updater from crafty-controller/crafty-4-windows-updater"
       $src = 'https://gitlab.com/crafty-controller/crafty-4-windows-updater/-/jobs/artifacts/dev/raw/crafty_updater.exe?job=win-dev-build'
@@ -70,26 +65,21 @@ win-prod-build:
   before_script:
     - |
       echo "Prepare python"
-      choco install python --version=3.10.6 -y -f
+      choco install python --version=3.12.9 -y -f
   script:
     - |
       $ErrorActionPreference = "Stop"
-      C:\\Python310\\python.exe -m venv .venv
+      C:\\Python312\\python.exe -m venv .venv
       .venv\Scripts\activate.ps1
-      pip install pyinstaller
+      pip install pyinstaller packaging>=24.2
       pip install -r requirements.txt
     - pyinstaller -F main.py
       --distpath .
       --icon app\frontend\static\assets\images\Crafty_4-0_Logo_square.ico
       --name "crafty"
-      --paths .venv\Lib\site-packages
-      --hidden-import cryptography
-      --hidden-import cffi
-      --hidden-import apscheduler
-      --collect-all tzlocal
-      --collect-all tzdata
-      --collect-all pytz
-      --collect-all six
+      --paths .
+      --collect-submodules app
+      --clean
     - |
       echo "Retrieving 'latest' updater from crafty-controller/crafty-4-windows-updater"
       $src = 'https://gitlab.com/crafty-controller/crafty-4-windows-updater/-/jobs/artifacts/master/raw/crafty_updater.exe?job=win-prod-build'
