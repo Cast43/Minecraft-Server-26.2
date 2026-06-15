@@ -1,5 +1,5 @@
 # Changelog
-## --- [4.11.0] - 2026/TBD
+## --- [4.10.6] - 2026/06/15
 ### New features
 TBD
 ### Bug fixes
