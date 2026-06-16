@@ -8,6 +8,7 @@ TBD
 - Fix Java server updates due to static `FileHelpers.ssl_file_get()` call ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1044))
 - Fix modded server installs failing on non-windows environments ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1047))
 - Fix Hytale server creation hanging on "Importing..." ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1041))
+- Fix CPU pinned at 100% after terminal buffer changes ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1045))
 ### Tweaks
 TBD
 <br><br>
