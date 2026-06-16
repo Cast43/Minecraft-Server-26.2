@@ -176,7 +176,7 @@ class ImportHelpers:
         try:
             if bedrock_url:
                 file_path = os.path.join(path, "bedrock_server.zip")
-                success = FileHelpers.ssl_get_file(
+                success = self.file_helper.ssl_get_file(
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
