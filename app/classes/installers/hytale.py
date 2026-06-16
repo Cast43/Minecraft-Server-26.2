@@ -69,6 +69,10 @@ class HytaleInstaller:
             self.file_helper.ssl_get_file(
                 self.hytale_json.linux_installer_url, server_path, unix_exe
             )
+            # ssl_get_file writes the binary with mode 644 (no execute bit), so
+            # _run_installer would fail with PermissionError when launching
+            # "./<unix_exe>". Mark it executable, mirroring the bedrock path.
+            Path(server_path, unix_exe).chmod(0o0744)
 
     def _run_installer(
         self, install_command: str, server_path: Path, new_id: uuid.UUID

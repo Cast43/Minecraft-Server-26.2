@@ -966,9 +966,7 @@ class FileHelpers:
         """
         hash_hex = CryptoHelper.bytes_to_hex(chunk_hash)
         if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
-            err_msg = f"Provided hash is of incorrect length. Hash: {
-                CryptoHelper.bytes_to_hex(chunk_hash)
-                }."
+            err_msg = f"Provided hash is of incorrect length. Hash: {hash_hex}."
             raise ValueError(err_msg)
         return repository_location / "chunks" / hash_hex[:2] / hash_hex[-126:]
 
@@ -988,9 +986,7 @@ class FileHelpers:
         """
         hash_hex: str = CryptoHelper.bytes_to_hex(file_hash)
         if len(hash_hex) != BLAKE3_HASH_LENGTH_BYTES:
-            err_msg = f"Provided hash is of incorrect length. Hash: {
-                CryptoHelper.bytes_to_hex(file_hash)
-                }"
+            err_msg = f"Provided hash is of incorrect length. Hash: {hash_hex}"
             raise ValueError(err_msg)
         return repository_location / "files" / hash_hex[:2] / hash_hex[-126:]
 
@@ -1201,9 +1197,10 @@ class FileHelpers:
             # Check that manifest is readable with this version.
             if manifest_file.readline() != "00\n":
                 manifest_file.close()
-                err_msg = f"Backup manifest is not of correct version. Manifest: {
-                    manifest_file_path
-                    }."
+                err_msg = (
+                    "Backup manifest is not of correct version."
+                    f"Manifest: { manifest_file_path}."
+                )
                 raise RuntimeError(err_msg)
 
             for line in manifest_file:
@@ -1462,8 +1459,10 @@ class FileHelpers:
                 backup_repo_path,
             )
         except ValueError as why:
-            err_msg = f"Provided hash does not appear to be of proper length. Hash: {
-                CryptoHelper.bytes_to_hex(file_hash)}"
+            err_msg = (
+                f"Provided hash does not appear to be of proper length."
+                f" Hash: {CryptoHelper.bytes_to_hex(file_hash)}"
+            )
             raise RuntimeError(err_msg) from why
 
         # Ensure target folder exists.
@@ -1526,9 +1525,10 @@ class FileHelpers:
         try:
             chunk_file: io.BufferedReader = chunk_path.open("rb")
         except OSError as why:
-            err_msg = (f"Unable to read chunk with hash {
-                    CryptoHelper.bytes_to_hex(chunk_hash)
-                }.",)
+            err_msg = (
+                "Unable to read chunk with hash "
+                f"{CryptoHelper.bytes_to_hex(chunk_hash)}.",
+            )
 
             raise RuntimeError(err_msg) from why
 
@@ -1537,9 +1537,10 @@ class FileHelpers:
         if version != bytes.fromhex("00"):
             # Chunk is of unexpected version here. Close chunk and panic out.
             chunk_file.close()
-            err_msg = f"Chunk is of unexpected version. Unable to read. Version was {
-                CryptoHelper.bytes_to_hex(version)
-            }."
+            err_msg = (
+                "Chunk is of unexpected version. Unable to read."
+                f" Version was {CryptoHelper.bytes_to_hex(version)}."
+            )
 
             raise RuntimeError(err_msg)
 
@@ -1556,9 +1557,10 @@ class FileHelpers:
             try:
                 chunk_data = self.zlib_decompress_bytes(chunk_data)
             except zlib.error as why:
-                err_msg = f"Unable to decompress chunk with hash: {
-                    CryptoHelper.bytes_to_hex(chunk_hash)
-                }."
+                err_msg = (
+                    "Unable to decompress chunk with"
+                    f" hash: {CryptoHelper.bytes_to_hex(chunk_hash)}."
+                )
 
                 raise RuntimeError(err_msg) from why
 

@@ -304,7 +304,9 @@ class ServerInstance:
         self.stats_helper.server_crash_reset()
         self.stats_helper.set_update(False)
         # Start update watcher
-        self.update_manager = UpdateManager(self.import_helper, self.helper)
+        self.update_manager = UpdateManager(
+            self.import_helper, self.helper, self.file_helper
+        )
         self.server_scheduler.add_job(
             self.update_manager.check_server_version,
             "interval",

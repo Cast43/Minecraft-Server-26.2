@@ -176,7 +176,7 @@ class ImportHelpers:
         try:
             if bedrock_url:
                 file_path = os.path.join(path, "bedrock_server.zip")
-                success = FileHelpers.ssl_get_file(
+                success = self.file_helper.ssl_get_file(
                     bedrock_url, path, "bedrock_server.zip"
                 )
                 if not success:
@@ -229,8 +229,30 @@ class ImportHelpers:
         download_thread.start()
 
     def _download_install_hytale(self, server_path: str | Path, new_id: uuid.UUID):
+        """Downloads and runs the Hytale installer for a newly created server.
+
+        Runs on a daemon thread. Any failure is logged and surfaced to the user,
+        and the import status is always cleared so the server does not stay stuck
+        in the "Importing..." state with no feedback.
+
+        Args:
+            server_path (str | Path): filesystem location of the server data
+            new_id (uuid.UUID): Crafty ID for the server
+        """
         bb_cache = self.big_bucket.get_bucket_data(self.helper.big_bucket_hytale_cache)
-        self.hytale_installer.install(bb_cache, server_path, new_id)
+        try:
+            self.hytale_installer.install(bb_cache, server_path, new_id)
+        except Exception as why:
+            logger.exception(
+                "Failed to install Hytale server %s during creation", new_id
+            )
+            ServersController.finish_import(new_id)
+            WebSocketManager().broadcast_to_server_users(
+                new_id,
+                "send_error",
+                {"error": f"Failed to install Hytale server: {why}"},
+            )
+            return
 
         ServersController.finish_import(new_id)
         WebSocketManager().broadcast_to_server_users(new_id, "send_start_reload", {})
