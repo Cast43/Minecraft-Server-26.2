@@ -14,6 +14,7 @@ variables:
 
 include:
   - local: .gitlab/lint.yml
+  - local: .gitlab/tests.yml
   - local: .gitlab/docker-build.yml
   - local: .gitlab/windows-build.yml
   - local: .gitlab/release.yml
