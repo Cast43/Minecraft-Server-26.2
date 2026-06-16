@@ -6,6 +6,7 @@ TBD
 - Fix python `3.13+` specific notation to add support back for `3.10-12` ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1043))
 - Fix Bedrock server creation and updates due to static `FileHelpers.ssl_file_get()` call ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1044))
 - Fix Java server updates due to static `FileHelpers.ssl_file_get()` call ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1044))
+- Fix modded server installs failing on non-windows environments ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1047))
 ### Tweaks
 TBD
 <br><br>
