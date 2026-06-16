@@ -31,6 +31,5 @@ crafty-startup-healthcheck:
     - .python-test-rules
     - .python-test-matrix
   script:
-    - lsb_release -a
     - python --version
     - pip install -r requirements.txt
