@@ -5,16 +5,16 @@ from pathlib import Path
 
 import requests
 
-from app.classes.helpers.file_helpers import FileHelpers
 from app.classes.steamcmd.steamcmd import SteamCMD
 
 logger = logging.getLogger(__name__)
 
 
 class UpdateManager:
-    def __init__(self, import_helper, helper):
+    def __init__(self, import_helper, helper, file_helper):
         self.import_helper = import_helper
         self.helper = helper
+        self.file_helper = file_helper
         self.update_available = False
 
     def update_hytale(self, server_path: Path, server_id: uuid.UUID) -> bool:
@@ -25,7 +25,7 @@ class UpdateManager:
         jar_dir = Path(current_executable).parent
         jar_file_name = Path(current_executable).name
 
-        return FileHelpers.ssl_get_file(update_url, jar_dir, jar_file_name)
+        return self.file_helper.ssl_get_file(update_url, jar_dir, jar_file_name)
 
     def update_steam_cmd(self, server_path: Path):
         try:
