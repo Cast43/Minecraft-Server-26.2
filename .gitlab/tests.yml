@@ -1,0 +1,36 @@
+# yamllint disable rule:line-length
+---
+.python-test-rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "dev" ||
+        $CI_PIPELINE_SOURCE == "merge_request_event"'
+
+.python-test-matrix:
+  parallel:
+    matrix:
+      # Keep in sync with sonar.python.version in sonar-project.properties.
+      - PYTHON_VERSION: "3.10"
+        PYTHON_IMAGE: "python:3.10-trixie"
+      - PYTHON_VERSION: "3.11"
+        PYTHON_IMAGE: "python:3.11-trixie"
+      - PYTHON_VERSION: "3.12"
+        PYTHON_IMAGE: "python:3.12-trixie"
+      - PYTHON_VERSION: "3.13"
+        PYTHON_IMAGE: "python:3.13-trixie"
+      - PYTHON_VERSION: "3.14"
+        PYTHON_IMAGE: "python:3.14-trixie"
+
+crafty-startup-healthcheck:
+  stage: test
+  image: "$PYTHON_IMAGE"
+  tags:
+    - saas-linux-medium-amd64
+  extends:
+    - .python-test-rules
+    - .python-test-matrix
+  script:
+    - lsb_release -a
+    - python --version
+    - pip install -r requirements.txt
