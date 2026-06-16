@@ -1,0 +1,93 @@
+# yamllint disable rule:line-length
+---
+.python-test-rules:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "dev" ||
+        $CI_PIPELINE_SOURCE == "merge_request_event"'
+
+.python-test-matrix:
+  parallel:
+    matrix:
+      # Keep in sync with sonar.python.version in sonar-project.properties.
+      - PYTHON_VERSION: "3.10"
+        PYTHON_IMAGE: "python:3.10-trixie"
+      - PYTHON_VERSION: "3.11"
+        PYTHON_IMAGE: "python:3.11-trixie"
+      - PYTHON_VERSION: "3.12"
+        PYTHON_IMAGE: "python:3.12-trixie"
+      - PYTHON_VERSION: "3.13"
+        PYTHON_IMAGE: "python:3.13-trixie"
+      - PYTHON_VERSION: "3.14"
+        PYTHON_IMAGE: "python:3.14-trixie"
+
+prepare-python-test-deps:
+  stage: test
+  image: python:3.14-trixie
+  tags:
+    - saas-linux-medium-amd64
+  extends:
+    - .python-test-rules
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: "$CI_PIPELINE_ID-python-test-deps"
+    paths:
+      - .cache/pip
+    policy: push
+  script:
+    - python3 -m pip install --upgrade pip setuptools wheel
+    - mkdir -p .cache/pip/wheels
+    - python3 -m pip download --dest .cache/pip/wheels -r requirements.txt
+
+crafty-startup-healthcheck:
+  stage: test
+  image: "$PYTHON_IMAGE"
+  tags:
+    - saas-linux-medium-amd64
+  extends:
+    - .python-test-rules
+    - .python-test-matrix
+  needs:
+    - job: prepare-python-test-deps
+      artifacts: false
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+    CRAFTY_HEALTHCHECK_URL: "https://127.0.0.1:8443/api/v2/crafty/check"
+  cache:
+    key: "$CI_PIPELINE_ID-python-test-deps"
+    paths:
+      - .cache/pip
+    policy: pull
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends curl jq
+    - rm -rf /var/lib/apt/lists/*
+    - useradd --create-home --shell /bin/bash crafty
+    - chown -R crafty:crafty "$CI_PROJECT_DIR"
+  script:
+    - su crafty -c "python3 --version"
+    - su crafty -c "python3 -m venv .venv"
+    - su crafty -c ". .venv/bin/activate && python3 -m pip install --cache-dir \"$PIP_CACHE_DIR\" --upgrade pip setuptools wheel"
+    - su crafty -c ". .venv/bin/activate && pip3 install --cache-dir \"$PIP_CACHE_DIR\" --find-links .cache/pip/wheels -r requirements.txt"
+    - su crafty -c ". .venv/bin/activate && python3 main.py --daemon --ignore" > crafty-startup.log 2>&1 &
+    - |
+      for attempt in $(seq 1 15); do
+        echo "Waiting for Crafty to be ready... ($attempt/15)"
+        response="$(curl --silent --insecure --fail "$CRAFTY_HEALTHCHECK_URL" 2>/dev/null || true)"
+        if [ "$(printf '%s' "$response" | jq -r '.status // empty')" = "ok" ]; then
+          printf '%s\n' "$response"
+          exit 0
+        fi
+        sleep 2
+      done
+      cat crafty-startup.log
+      exit 1
+  after_script:
+    - pkill -f "python3 main.py --daemon --ignore" || true
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - crafty-startup.log

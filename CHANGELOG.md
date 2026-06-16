@@ -1,9 +1,9 @@
 # Changelog
-## --- [4.11.0] - 2026/TBD
+## --- [4.10.7] - 2026/06/16
 ### New features
 TBD
 ### Bug fixes
-TBD
+- Fix python `3.13+` specific notation to add support back for `3.10-12` ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1043))
 ### Tweaks
 TBD
 <br><br>
