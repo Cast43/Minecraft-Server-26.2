@@ -182,7 +182,7 @@ class ServerOutBuf:
         self.start_reader()
 
         while True:
-            # Check if new data available (non-blocking)
+            # Check if new data available
             # rlist, _, _ = select.select([fd], [], [], timeout)
 
             try:
