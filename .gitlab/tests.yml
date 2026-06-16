@@ -74,7 +74,8 @@ crafty-startup-healthcheck:
     - su crafty -c ". .venv/bin/activate && python3 main.py --daemon --ignore" > crafty-startup.log 2>&1 &
     - |
       for attempt in $(seq 1 60); do
-        response="$(curl --silent --show-error --insecure --fail "$CRAFTY_HEALTHCHECK_URL" || true)"
+        echo "Waiting for Crafty to be ready... ($attempt/60)"
+        response="$(curl --silent --insecure --fail "$CRAFTY_HEALTHCHECK_URL" 2>/dev/null || true)"
         if [ "$(printf '%s' "$response" | jq -r '.status // empty')" = "ok" ]; then
           printf '%s\n' "$response"
           exit 0
