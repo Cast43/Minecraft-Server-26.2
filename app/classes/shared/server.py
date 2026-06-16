@@ -176,7 +176,7 @@ class ServerOutBuf:
             x = len(ServerOutBuf.lines[self.server_id]) - self.max_lines
             del ServerOutBuf.lines[self.server_id][:x]
 
-    def check(self, batch_size=20, timeout=0.00):
+    def check(self, batch_size=20, timeout=0.1):
 
         buffer = []
         self.start_reader()
@@ -186,7 +186,7 @@ class ServerOutBuf:
             # rlist, _, _ = select.select([fd], [], [], timeout)
 
             try:
-                line = self._queue.get(timeout=timeout)
+                line = self._queue.get(timeout=timeout, block=True)
                 buffer.append(line)
 
                 if len(buffer) >= batch_size:
