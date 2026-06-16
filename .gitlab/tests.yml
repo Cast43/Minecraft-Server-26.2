@@ -22,6 +22,25 @@
       - PYTHON_VERSION: "3.14"
         PYTHON_IMAGE: "python:3.14-trixie"
 
+prepare-python-test-deps:
+  stage: test
+  image: python:3.14-trixie
+  tags:
+    - saas-linux-medium-amd64
+  extends:
+    - .python-test-rules
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: "$CI_PIPELINE_ID-python-test-deps"
+    paths:
+      - .cache/pip
+    policy: push
+  script:
+    - python3 -m pip install --upgrade pip setuptools wheel
+    - mkdir -p .cache/pip/wheels
+    - python3 -m pip download --dest .cache/pip/wheels -r requirements.txt
+
 crafty-startup-healthcheck:
   stage: test
   image: "$PYTHON_IMAGE"
@@ -30,6 +49,16 @@ crafty-startup-healthcheck:
   extends:
     - .python-test-rules
     - .python-test-matrix
+  needs:
+    - job: prepare-python-test-deps
+      artifacts: false
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: "$CI_PIPELINE_ID-python-test-deps"
+    paths:
+      - .cache/pip
+    policy: pull
   script:
     - python --version
-    - pip install -r requirements.txt
+    - pip3 install --cache-dir "$PIP_CACHE_DIR" --find-links .cache/pip/wheels -r requirements.txt
