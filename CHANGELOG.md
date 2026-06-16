@@ -1,4 +1,14 @@
 # Changelog
+## --- [4.10.7] - 2026/06/16
+### Bug fixes
+- Fix python `3.13+` specific notation to add support back for `3.10-12` ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1043))
+- Fix Bedrock server creation and updates due to static `FileHelpers.ssl_file_get()` call ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1044))
+- Fix Java server updates due to static `FileHelpers.ssl_file_get()` call ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1044))
+- Fix modded server installs failing on non-windows environments ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1047))
+- Fix Hytale server creation hanging on "Importing..." ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1041))
+- Fix CPU pinned at 100% after terminal buffer changes ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1045))
+<br><br>
+
 ## --- [4.10.6] - 2026/06/15
 ### Bug fixes
 - Readd packaging to requirements ([Merge Request](https://gitlab.com/crafty-controller/crafty-4/-/merge_requests/1042))

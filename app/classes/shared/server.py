@@ -176,17 +176,17 @@ class ServerOutBuf:
             x = len(ServerOutBuf.lines[self.server_id]) - self.max_lines
             del ServerOutBuf.lines[self.server_id][:x]
 
-    def check(self, batch_size=20, timeout=0.00):
+    def check(self, batch_size=20, timeout=0.1):
 
         buffer = []
         self.start_reader()
 
         while True:
-            # Check if new data available (non-blocking)
+            # Check if new data available
             # rlist, _, _ = select.select([fd], [], [], timeout)
 
             try:
-                line = self._queue.get(timeout=timeout)
+                line = self._queue.get(timeout=timeout, block=True)
                 buffer.append(line)
 
                 if len(buffer) >= batch_size:
@@ -304,7 +304,9 @@ class ServerInstance:
         self.stats_helper.server_crash_reset()
         self.stats_helper.set_update(False)
         # Start update watcher
-        self.update_manager = UpdateManager(self.import_helper, self.helper)
+        self.update_manager = UpdateManager(
+            self.import_helper, self.helper, self.file_helper
+        )
         self.server_scheduler.add_job(
             self.update_manager.check_server_version,
             "interval",
