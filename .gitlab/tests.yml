@@ -59,6 +59,11 @@ crafty-startup-healthcheck:
     paths:
       - .cache/pip
     policy: pull
+  before_script:
+    - useradd --create-home --shell /bin/bash crafty
+    - chown -R crafty:crafty "$CI_PROJECT_DIR"
   script:
-    - python --version
-    - pip3 install --cache-dir "$PIP_CACHE_DIR" --find-links .cache/pip/wheels -r requirements.txt
+    - su crafty -c "python3 --version"
+    - su crafty -c "python3 -m venv .venv"
+    - su crafty -c ". .venv/bin/activate && python3 -m pip install --cache-dir \"$PIP_CACHE_DIR\" --upgrade pip setuptools wheel"
+    - su crafty -c ". .venv/bin/activate && pip3 install --cache-dir \"$PIP_CACHE_DIR\" --find-links .cache/pip/wheels -r requirements.txt"
