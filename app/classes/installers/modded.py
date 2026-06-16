@@ -1,6 +1,7 @@
 import os
 import re
 import glob
+import shlex
 import logging
 import subprocess
 from pathlib import Path
@@ -40,8 +41,9 @@ class ModdedInstaller:
             logger.debug("Could not configure Forge server.", exc_info=True)
 
     def _run_installer(self, server_obj, server_path, new_id):
+        install_command = shlex.split(server_obj.execution_command)
         process = subprocess.Popen(
-            server_obj.execution_command,
+            install_command,
             cwd=server_path,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
