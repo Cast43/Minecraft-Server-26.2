@@ -20,7 +20,6 @@ venv.bak/
 .idea/
 /import/
 /imports/
-/servers/
 /app/frontend/static/assets/images/auth/custom/
 /backups/
 /temp/
